@@ -1,0 +1,127 @@
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+body {
+  font-family: var(--font-geist-sans), Arial, Helvetica, sans-serif;
+}
+
+@layer base {
+  :root {
+    --background: 240 20% 98%; /* Very Light Neutral Gray */
+    --foreground: 240 10% 10%; /* Dark Neutral Gray */
+
+    --card: 0 0% 100%; /* White */
+    --card-foreground: 240 10% 10%; /* Dark Neutral Gray */
+
+    --popover: 0 0% 100%; /* White */
+    --popover-foreground: 240 10% 10%; /* Dark Neutral Gray */
+
+    --primary: 275 70% 58%; /* Royal Violet */
+    --primary-foreground: 0 0% 100%; /* White */
+
+    --secondary: 280 60% 75%; /* Lighter Supporting Violet */
+    --secondary-foreground: 280 60% 15%; /* Darker Violet Text for contrast */
+
+    --muted: 240 15% 94%; /* Light Neutral Gray */
+    --muted-foreground: 240 10% 45%; /* Muted Neutral Text */
+
+    --accent: 335 85% 65%; /* Vibrant Pink */
+    --accent-foreground: 0 0% 100%; /* White */
+
+    --destructive: 0 84.2% 60.2%;
+    --destructive-foreground: 0 0% 98%;
+
+    --border: 240 10% 88%; /* Neutral Gray Border */
+    --input: 240 10% 92%; /* Neutral Gray Input BG */
+    --ring: 275 70% 58%; /* Primary Violet for rings */
+
+    --chart-1: 275 70% 58%; /* Royal Violet */
+    --chart-2: 335 85% 65%; /* Vibrant Pink */
+    --chart-3: 280 60% 75%; /* Lighter Supporting Violet */
+    --chart-4: 190 60% 60%; /* Teal/Cyan - kept for variety */
+    --chart-5: 45 90% 60%;  /* Yellow/Gold - kept for variety */
+    
+    --radius: 0.5rem;
+
+    /* Sidebar specific colors - Light Theme */
+    --sidebar-background: 275 60% 97%; /* Very Light Violet */
+    --sidebar-foreground: 275 30% 20%; /* Darker Violet Text */
+    --sidebar-primary: 275 70% 55%; /* Slightly adjusted Royal Violet */
+    --sidebar-primary-foreground: 0 0% 100%; /* White */
+    --sidebar-accent: 335 80% 75%; /* Lighter Pink */
+    --sidebar-accent-foreground: 335 60% 30%; /* Darker Pink Text */
+    --sidebar-border: 275 30% 85%; /* Light Violet Border */
+    --sidebar-ring: 275 70% 55%; /* Sidebar Primary Violet for rings */
+
+    /* Match strength colors - Kept as is for functional distinction */
+    --match-perfect: 280 70% 60%; /* Violet */
+    --match-great: 130 55% 50%; /* Green */
+    --match-average: 45 85% 55%; /* Yellow */
+    --match-low: 25 90% 60%; /* Orange */
+    --match-bad: 0 75% 55%; /* Red */
+  }
+
+  .dark {
+    --background: 240 15% 10%; /* Very Dark Neutral Gray */
+    --foreground: 240 10% 95%; /* Light Neutral Gray */
+
+    --card: 240 15% 13%; /* Slightly Lighter Dark Neutral Gray */
+    --card-foreground: 240 10% 95%; /* Light Neutral Gray */
+
+    --popover: 240 15% 10%; /* Very Dark Neutral Gray */
+    --popover-foreground: 240 10% 95%; /* Light Neutral Gray */
+
+    --primary: 275 70% 70%; /* Lighter Royal Violet for Dark Mode */
+    --primary-foreground: 0 0% 100%; /* White */
+
+    --secondary: 280 50% 55%; /* Darker Supporting Violet */
+    --secondary-foreground: 0 0% 100%; /* White */
+
+    --muted: 240 10% 18%; /* Darker Neutral Gray */
+    --muted-foreground: 240 10% 65%; /* Muted Light Neutral Text */
+
+    --accent: 335 80% 60%; /* Vibrant Pink for Dark Mode */
+    --accent-foreground: 0 0% 100%; /* White */
+
+    --destructive: 0 70% 40%;
+    --destructive-foreground: 0 0% 98%;
+
+    --border: 240 10% 25%; /* Dark Neutral Border */
+    --input: 240 10% 22%; /* Dark Neutral Input BG */
+    --ring: 275 70% 70%; /* Primary Violet for rings (dark theme variant) */
+
+    --chart-1: 275 70% 70%;
+    --chart-2: 335 80% 60%;
+    --chart-3: 280 50% 55%;
+    --chart-4: 190 60% 70%;
+    --chart-5: 45 90% 70%;
+
+    /* Sidebar specific colors - Dark Theme */
+    --sidebar-background: 275 35% 12%; /* Darker Violet for sidebar bg */
+    --sidebar-foreground: 275 30% 88%; /* Lighter Violet text */
+    --sidebar-primary: 275 70% 65%; /* Lighter Violet for sidebar primary */
+    --sidebar-primary-foreground: 0 0% 100%; /* White */
+    --sidebar-accent: 335 75% 55%; /* Darker Pink for sidebar accents */
+    --sidebar-accent-foreground: 0 0% 100%; /* White */
+    --sidebar-border: 275 25% 22%; /* Dark Violet Border */
+    --sidebar-ring: 275 70% 65%; /* Sidebar Primary Violet for rings (dark) */
+
+    /* Match strength colors - Dark Theme - Kept as is */
+    --match-perfect: 280 70% 70%;
+    --match-great: 130 55% 60%;
+    --match-average: 45 85% 65%;
+    --match-low: 25 90% 70%;
+    --match-bad: 0 75% 65%;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+  body {
+    @apply bg-background text-foreground;
+  }
+}
