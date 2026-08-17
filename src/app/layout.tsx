@@ -1,9 +1,6 @@
-
 import type { Metadata } from 'next';
 import { Geist, Geist_Mono } from 'next/font/google';
 import './globals.css';
-import { AppHeader } from '@/components/layout/AppHeader';
-import { Toaster } from '@/components/ui/toaster';
 
 const geistSans = Geist({
   variable: '--font-geist-sans',
@@ -16,7 +13,7 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: 'Surrogate Network',
+  title: 'Surrogate Companion',
   description: 'Find and offer support through needs-based connections.',
 };
 
@@ -30,9 +27,7 @@ export default function RootLayout({
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased flex flex-col min-h-screen bg-background`}
       >
-        <AppHeader />
-        <div className="flex-grow">{children}</div>
-        <Toaster />
+        {children}
       </body>
     </html>
   );
