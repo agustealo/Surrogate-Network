@@ -38,15 +38,16 @@ export function EmptyState({
       <div className="flex flex-col sm:flex-row gap-3">
         {primaryAction && (
           primaryAction.href ? (
-            <a
+            <Link
               href={primaryAction.href}
               className="inline-flex items-center justify-center px-6 py-2 bg-primary text-primary-foreground rounded-md text-sm font-medium hover:bg-primary/90 transition-colors"
             >
               {primaryAction.label}
-            </a>
+            </Link>
           ) : (
             <button
               onClick={primaryAction.onClick}
+              type="button"
               className="inline-flex items-center justify-center px-6 py-2 bg-primary text-primary-foreground rounded-md text-sm font-medium hover:bg-primary/90 transition-colors"
             >
               {primaryAction.label}
@@ -56,15 +57,16 @@ export function EmptyState({
         
         {secondaryAction && (
           secondaryAction.href ? (
-            <a
+            <Link
               href={secondaryAction.href}
               className="inline-flex items-center justify-center px-6 py-2 border border-input bg-background hover:bg-accent hover:text-accent-foreground rounded-md text-sm font-medium transition-colors"
             >
               {secondaryAction.label}
-            </a>
+            </Link>
           ) : (
             <button
               onClick={secondaryAction.onClick}
+              type="button"
               className="inline-flex items-center justify-center px-6 py-2 border border-input bg-background hover:bg-accent hover:text-accent-foreground rounded-md text-sm font-medium transition-colors"
             >
               {secondaryAction.label}
