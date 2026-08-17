@@ -4,6 +4,25 @@
 
 Surrogate Companion is a Next.js application that facilitates needs-based relationships between members. The platform connects people who have needs with those who can fulfill them through structured surrogacy relationships.
 
+## Technology Stack
+
+**Frontend**:
+- Next.js 15
+- React
+- TypeScript
+- TanStack Query
+- Radix UI / shadcn components
+- Tailwind CSS
+
+**Backend Platform**:
+- Supabase (PostgreSQL, Auth, Storage, Realtime, Row Level Security)
+
+**Architecture**:
+- Domain-driven design
+- Repository pattern
+- Service layer orchestration
+- RLS-based security
+
 ## Core Application Model
 
 The platform follows this lifecycle: **Need → Offer → Discovery → Proposal → Surrogacy → Moment → Exchange → Feedback**
@@ -118,8 +137,16 @@ The platform uses domain-specific components that reflect the core vocabulary:
 React pages do not become containers for substantial business logic. The architecture follows:
 
 ```
-Page → Feature hook/controller → Application service → Repository/service → Firebase
+Page → Feature hook/controller → Application service → Repository → Supabase
 ```
+
+### Layer Responsibilities
+
+- **App/Components** - Render the product and handle user interaction
+- **Application** - Perform use cases and orchestrate domain operations  
+- **Domain** - Contain business logic and truth
+- **Repositories** - Define persistence contracts
+- **Infrastructure** - Implement repositories with Supabase
 
 ## Mobile-First Design
 
@@ -203,8 +230,8 @@ All async screens support:
 - Lazy-load heavy charts and dialogs
 - Optimize images and media
 - Introduce pagination for large collections
-- Avoid N+1 Firestore reads
-- Indexed queries with limits
+- Use Supabase indexes for efficient queries
+- Leverage Supabase Realtime for collaborative features
 
 ## Security Principles
 
@@ -239,8 +266,17 @@ src/
 │   ├── member/           # Member-specific components
 │   ├── admin/            # Admin-specific components
 │   └── layout/           # Layout components
-├── domain/               # Domain types and models
-├── services/             # Application services
+├── domain/               # Domain types and business logic
+├── application/          # Use case orchestration
+│   ├── commands/         # Write operations
+│   ├── queries/          # Read operations
+│   ├── services/         # Business services
+│   └── events/           # Event handling
+├── repositories/         # Persistence interfaces
+├── infrastructure/       # Supabase implementation
+│   ├── supabase/         # Supabase clients and config
+│   ├── storage/          # Storage implementation
+│   └── realtime/         # Realtime implementation
 ├── lib/                  # Utilities and helpers
 └── hooks/                # React hooks
 ```
@@ -277,23 +313,29 @@ The following systems are architecturally anticipated but not implemented in thi
 - Full Trust & Safety automation, large analytics suite
 - Advanced admin configuration, deep relationship intelligence
 - Token inflation controls, full economy management
+- **Supabase advanced features** (Realtime collaborative features, advanced RLS policies)
 
-## Migration Strategy
+## Backend Infrastructure
 
-1. **Phase 1** ✅ - Application shells and routing
-2. **Phase 2** ✅ - Navigation and responsive layout  
-3. **Phase 3** 🔄 - Profile component extraction
-4. **Phase 4** ✅ - Home/Dashboard refactor
-5. **Phase 5** ✅ - Matches → Discover transformation
-6. **Phase 6** ✅ - Need/Offer separation
-7. **Phase 7** ⏳ - Surrogacy workspace shell
-8. **Phase 8** ✅ - Messages context refactor
-9. **Phase 9** ✅ - Rewards shell
-10. **Phase 10** ✅ - Admin console shell
-11. **Phase 11** ⏳ - Loading/error/empty states
-12. **Phase 12** ⏳ - Accessibility pass
-13. **Phase 13** ⏳ - Testing and regression
-14. **Phase 14** ⏳ - Documentation completion
+### Supabase Configuration
+- **Database**: PostgreSQL with proper indexing and constraints
+- **Auth**: Built-in authentication with email/password providers
+- **Storage**: File storage for media assets with access controls
+- **Realtime**: WebSocket connections for real-time features
+- **RLS**: Row-level security for all user-controlled tables
+
+### Database Schema
+All tables follow the naming convention `snake_case` and include:
+- `id` (UUID primary key)
+- `created_at` and `updated_at` timestamps
+- Proper foreign key relationships
+- Indexes for frequently queried columns
+
+### Security
+- All member-controlled tables have RLS policies
+- Service role key for admin operations
+- API key separation between anon and service roles
+- Audit trail for all administrative actions
 
 ---
 
