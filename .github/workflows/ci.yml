@@ -1,5 +1,5 @@
-// CI/CD Pipeline Configuration for Surrogate Companion
-// Automated quality gates as specified in sprint requirements
+# CI/CD Pipeline Configuration for Surrogate Companion
+# Automated quality gates as specified in sprint requirements
 
 name: Surrogate Companion CI
 
@@ -122,6 +122,7 @@ jobs:
         with:
           files: ./coverage/lcov.info
           flags: unittests
+          fail_ci_if_error: false
 
   # Job 5: Component tests
   test-component:
@@ -158,6 +159,7 @@ jobs:
         with:
           files: ./coverage/lcov.info
           flags: component
+          fail_ci_if_error: false
 
   # Job 6: Build
   build:
@@ -199,11 +201,6 @@ jobs:
           name: build-output
           path: .next
           retention-days: 7
-
-      - name: Check bundle size
-        run: |
-          echo "Bundle size check - looking for significant increases"
-          # Add bundle size analysis tools if needed
 
   # Job 7: E2E Tests (Smoke Tests)
   test-e2e:
@@ -303,14 +300,47 @@ jobs:
     steps:
       - name: Check all jobs passed
         run: |
-          if [ "${{ needs.typecheck.result }}" != "success" ] || \
-             [ "${{ needs.lint.result }}" != "success" ] || \
-             [ "${{ needs.build.result }}" != "success" ]; then
-            echo "❌ Quality gate failed - typecheck, lint, or build failed"
+          if [ "${{ needs.typecheck.result }}" != "success" ]; then
+            echo "❌ Type check failed"
             exit 1
           fi
           
-          echo "✅ Quality gate passed - all required checks successful"
+          if [ "${{ needs.lint.result }}" != "success" ]; then
+            echo "❌ Lint failed"
+            exit 1
+          fi
+          
+          if [ "${{ needs.build.result }}" != "success" ]; then
+            echo "❌ Build failed"
+            exit 1
+          fi
+          
+          if [ "${{ needs.test-unit.result }}" != "success" ]; then
+            echo "❌ Unit tests failed"
+            exit 1
+          fi
+          
+          if [ "${{ needs.test-component.result }}" != "success" ]; then
+            echo "❌ Component tests failed"
+            exit 1
+          fi
+          
+          if [ "${{ needs.test-e2e.result }}" != "success" ]; then
+            echo "❌ E2E tests failed"
+            exit 1
+          fi
+          
+          if [ "${{ needs.accessibility.result }}" != "success" ]; then
+            echo "❌ Accessibility tests failed"
+            exit 1
+          fi
+          
+          echo "✅ All quality gates passed - ready for merge"
+
+      - name: Quality Gate Summary
+        if: success()
+        run: |
+          echo "Quality Gate Status:"
           echo "Type check: ${{ needs.typecheck.result }}"
           echo "Lint: ${{ needs.lint.result }}"
           echo "Build: ${{ needs.build.result }}"
@@ -318,13 +348,5 @@ jobs:
           echo "Component tests: ${{ needs.test-component.result }}"
           echo "E2E tests: ${{ needs.test-e2e.result }}"
           echo "Accessibility: ${{ needs.accessibility.result }}"
-
-      - name: Notify success
-        if: success()
-        run: echo "🎉 All quality gates passed! Ready for merge."
-
-      - name: Notify failure
-        if: failure()
-        run: |
-          echo "❌ Quality gate failed. Please fix the issues before merging."
-          exit 1
+          echo ""
+          echo "🎉 All quality gates passed! Ready for merge."
