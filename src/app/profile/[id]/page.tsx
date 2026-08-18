@@ -303,6 +303,11 @@ export default function UserProfilePage() {
   const [selectedRequest, setSelectedRequest] = useState<ProfileRequest | null>(null);
   const [selectedOffering, setSelectedOffering] = useState<Offering | null>(null);
 
+  // Type guard to check if profile is legacy Profile type
+  const isLegacyProfile = (p: ProfileType): p is Profile => {
+    return 'offerings' in p && 'requests' in p;
+  };
+
 
   useEffect(() => {
     if (userId) {
@@ -311,12 +316,12 @@ export default function UserProfilePage() {
         try {
           const data = await fetchProfileById(userId);
           if (data) {
-            setProfile(data);
+            setProfile(data as ProfileType);
             document.title = `${data.name} - Profile | Surrogate Network`;
           } else {
             const dummyProfile = dummyProfiles.find(p => p.id === userId);
             if (dummyProfile) {
-                setProfile(dummyProfile);
+                setProfile(dummyProfile as ProfileType);
                 document.title = `${dummyProfile.name} - Profile (Demo) | Surrogate Network`;
                  toast({
                     title: "Using Demo Data",
@@ -337,7 +342,7 @@ export default function UserProfilePage() {
             console.error(`Error in UserProfilePage for ID '${userId}':`, error);
             const dummyProfile = dummyProfiles.find(p => p.id === userId);
             if (dummyProfile) {
-                setProfile(dummyProfile);
+                setProfile(dummyProfile as ProfileType);
                 document.title = `${dummyProfile.name} - Profile (Demo Fallback) | Surrogate Network`;
                 let description = `Displaying sample data for ${dummyProfile.name}. `;
                 if (error.message && error.message.toLowerCase().includes('client is offline')) {
