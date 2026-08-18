@@ -82,23 +82,23 @@ export class DiscoveryService {
     let needs = await this.needRepository.findAll(50)
 
     if (filters.category) {
-      needs = needs.filter(need => need.category === filters.category)
+      needs = needs.filter((need: any) => need.category === filters.category)
     }
 
     if (filters.locationMode) {
-      needs = needs.filter(need => need.locationMode === filters.locationMode)
+      needs = needs.filter((need: any) => need.locationMode === filters.locationMode)
     }
 
     if (filters.urgency) {
-      needs = needs.filter(need => need.urgency === filters.urgency)
+      needs = needs.filter((need: any) => need.urgency === filters.urgency)
     }
 
     if (filters.searchTerm) {
       const term = filters.searchTerm.toLowerCase()
-      needs = needs.filter(need => 
+      needs = needs.filter((need: any) => 
         need.title.toLowerCase().includes(term) ||
         need.description.toLowerCase().includes(term) ||
-        need.tags.some(tag => tag.toLowerCase().includes(term))
+        need.tags.some((tag: string) => tag.toLowerCase().includes(term))
       )
     }
 
@@ -113,16 +113,16 @@ export class DiscoveryService {
     let offers = await this.offerRepository.findAll(50)
 
     if (filters.category) {
-      offers = offers.filter(offer => offer.category === filters.category)
+      offers = offers.filter((offer: any) => offer.category === filters.category)
     }
 
     if (filters.locationMode) {
-      offers = offers.filter(offer => offer.locationMode === filters.locationMode)
+      offers = offers.filter((offer: any) => offer.locationMode === filters.locationMode)
     }
 
     if (filters.searchTerm) {
       const term = filters.searchTerm.toLowerCase()
-      offers = offers.filter(offer => 
+      offers = offers.filter((offer: any) => 
         offer.title.toLowerCase().includes(term) ||
         offer.description.toLowerCase().includes(term)
       )
