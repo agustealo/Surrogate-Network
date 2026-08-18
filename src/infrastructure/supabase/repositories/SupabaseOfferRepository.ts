@@ -8,7 +8,7 @@ import type {
 
 export class SupabaseOfferRepository implements OfferRepository {
   async findById(id: string): Promise<Offer | null> {
-    const supabase = createSupabaseClient()
+    const supabase = await createSupabaseClient()
     const { data, error } = await supabase
       .from('offers')
       .select('*')
@@ -23,7 +23,7 @@ export class SupabaseOfferRepository implements OfferRepository {
   }
 
   async findAll(limit: number = 20): Promise<Offer[]> {
-    const supabase = createSupabaseClient()
+    const supabase = await createSupabaseClient()
     const { data, error } = await supabase
       .from('offers')
       .select('*')
@@ -34,11 +34,11 @@ export class SupabaseOfferRepository implements OfferRepository {
       return []
     }
 
-    return data.map(offer => this.mapToOffer(offer))
+    return data.map((offer: any) => this.mapToOffer(offer))
   }
 
   async findByUserId(userId: string, limit: number = 20): Promise<Offer[]> {
-    const supabase = createSupabaseClient()
+    const supabase = await createSupabaseClient()
     const { data, error } = await supabase
       .from('offers')
       .select('*')
@@ -50,11 +50,11 @@ export class SupabaseOfferRepository implements OfferRepository {
       return []
     }
 
-    return data.map(offer => this.mapToOffer(offer))
+    return data.map((offer: any) => this.mapToOffer(offer))
   }
 
   async findByCategory(category: string, limit: number = 20): Promise<Offer[]> {
-    const supabase = createSupabaseClient()
+    const supabase = await createSupabaseClient()
     const { data, error } = await supabase
       .from('offers')
       .select('*')
@@ -66,11 +66,11 @@ export class SupabaseOfferRepository implements OfferRepository {
       return []
     }
 
-    return data.map(offer => this.mapToOffer(offer))
+    return data.map((offer: any) => this.mapToOffer(offer))
   }
 
   async create(offer: CreateOfferDto): Promise<Offer> {
-    const supabase = createSupabaseClient()
+    const supabase = await createSupabaseClient()
     const { data, error } = await supabase
       .from('offers')
       .insert({
@@ -100,7 +100,7 @@ export class SupabaseOfferRepository implements OfferRepository {
   }
 
   async update(id: string, offer: UpdateOfferDto): Promise<Offer> {
-    const supabase = createSupabaseClient()
+    const supabase = await createSupabaseClient()
     const { data, error } = await supabase
       .from('offers')
       .update({
@@ -128,7 +128,7 @@ export class SupabaseOfferRepository implements OfferRepository {
   }
 
   async delete(id: string): Promise<void> {
-    const supabase = createSupabaseClient()
+    const supabase = await createSupabaseClient()
     const { error } = await supabase
       .from('offers')
       .delete()

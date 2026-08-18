@@ -2,7 +2,7 @@ import { createClient as createSupabaseClient } from '@/infrastructure/supabase/
 
 export class CapabilityService {
   async canUserAccess(userId: string, resourceType: string, resourceId: string): Promise<boolean> {
-    const supabase = createSupabaseClient()
+    const supabase = await createSupabaseClient()
     
     // Check if user is suspended
     const { data: profile } = await supabase
@@ -30,7 +30,7 @@ export class CapabilityService {
   }
 
   async canCreateNeed(userId: string): Promise<boolean> {
-    const supabase = createSupabaseClient()
+    const supabase = await createSupabaseClient()
     
     // Check user status
     const { data: profile } = await supabase
@@ -48,7 +48,7 @@ export class CapabilityService {
   }
 
   async canCreateOffer(userId: string): Promise<boolean> {
-    const supabase = createSupabaseClient()
+    const supabase = await createSupabaseClient()
     
     // Check user status
     const { data: profile } = await supabase
@@ -71,7 +71,7 @@ export class CapabilityService {
       return true
     }
 
-    const supabase = createSupabaseClient()
+    const supabase = await createSupabaseClient()
     const { data: profile } = await supabase
       .from('profiles')
       .select('id')
@@ -82,7 +82,7 @@ export class CapabilityService {
   }
 
   private async canAccessNeed(userId: string, needId: string): Promise<boolean> {
-    const supabase = createSupabaseClient()
+    const supabase = await createSupabaseClient()
     const { data: need } = await supabase
       .from('needs')
       .select('user_id, status')
@@ -103,7 +103,7 @@ export class CapabilityService {
   }
 
   private async canAccessOffer(userId: string, offerId: string): Promise<boolean> {
-    const supabase = createSupabaseClient()
+    const supabase = await createSupabaseClient()
     const { data: offer } = await supabase
       .from('offers')
       .select('user_id, status')
@@ -124,7 +124,7 @@ export class CapabilityService {
   }
 
   private async canAccessSurrogacy(userId: string, surrogacyId: string): Promise<boolean> {
-    const supabase = createSupabaseClient()
+    const supabase = await createSupabaseClient()
     const { data: surrogacy } = await supabase
       .from('surrogacies')
       .select('partner_ids')

@@ -7,7 +7,7 @@ import { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Link } from 'next/link';
+import Link from 'next/link';
 import { Heart, Handshake, MessageSquare, ArrowRight, PlusCircle, Users, TrendingUp, Sparkles, Calendar, Star } from 'lucide-react';
 import { Progress } from '@/components/ui/progress';
 import { Badge } from '@/components/ui/badge';

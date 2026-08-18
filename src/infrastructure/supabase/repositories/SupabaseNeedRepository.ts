@@ -8,7 +8,7 @@ import type {
 
 export class SupabaseNeedRepository implements NeedRepository {
   async findById(id: string): Promise<Need | null> {
-    const supabase = createSupabaseClient()
+    const supabase = await createSupabaseClient()
     const { data, error } = await supabase
       .from('needs')
       .select('*')
@@ -23,7 +23,7 @@ export class SupabaseNeedRepository implements NeedRepository {
   }
 
   async findAll(limit: number = 20): Promise<Need[]> {
-    const supabase = createSupabaseClient()
+    const supabase = await createSupabaseClient()
     const { data, error } = await supabase
       .from('needs')
       .select('*')
@@ -34,11 +34,11 @@ export class SupabaseNeedRepository implements NeedRepository {
       return []
     }
 
-    return data.map(need => this.mapToNeed(need))
+    return data.map((need: any) => this.mapToNeed(need))
   }
 
   async findByUserId(userId: string, limit: number = 20): Promise<Need[]> {
-    const supabase = createSupabaseClient()
+    const supabase = await createSupabaseClient()
     const { data, error } = await supabase
       .from('needs')
       .select('*')
@@ -50,11 +50,11 @@ export class SupabaseNeedRepository implements NeedRepository {
       return []
     }
 
-    return data.map(need => this.mapToNeed(need))
+    return data.map((need: any) => this.mapToNeed(need))
   }
 
   async findByCategory(category: string, limit: number = 20): Promise<Need[]> {
-    const supabase = createSupabaseClient()
+    const supabase = await createSupabaseClient()
     const { data, error } = await supabase
       .from('needs')
       .select('*')
@@ -66,11 +66,11 @@ export class SupabaseNeedRepository implements NeedRepository {
       return []
     }
 
-    return data.map(need => this.mapToNeed(need))
+    return data.map((need: any) => this.mapToNeed(need))
   }
 
   async create(need: CreateNeedDto): Promise<Need> {
-    const supabase = createSupabaseClient()
+    const supabase = await createSupabaseClient()
     const { data, error } = await supabase
       .from('needs')
       .insert({
@@ -99,7 +99,7 @@ export class SupabaseNeedRepository implements NeedRepository {
   }
 
   async update(id: string, need: UpdateNeedDto): Promise<Need> {
-    const supabase = createSupabaseClient()
+    const supabase = await createSupabaseClient()
     const { data, error } = await supabase
       .from('needs')
       .update({
@@ -126,7 +126,7 @@ export class SupabaseNeedRepository implements NeedRepository {
   }
 
   async delete(id: string): Promise<void> {
-    const supabase = createSupabaseClient()
+    const supabase = await createSupabaseClient()
     const { error } = await supabase
       .from('needs')
       .delete()

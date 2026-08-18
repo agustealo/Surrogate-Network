@@ -8,7 +8,7 @@ import type {
 
 export class SupabaseProfileRepository implements ProfileRepository {
   async findById(id: string): Promise<Profile | null> {
-    const supabase = createSupabaseClient()
+    const supabase = await createSupabaseClient()
     const { data, error } = await supabase
       .from('profiles')
       .select('*')
@@ -23,7 +23,7 @@ export class SupabaseProfileRepository implements ProfileRepository {
   }
 
   async findAll(limit: number = 20): Promise<Profile[]> {
-    const supabase = createSupabaseClient()
+    const supabase = await createSupabaseClient()
     const { data, error } = await supabase
       .from('profiles')
       .select('*')
@@ -38,7 +38,7 @@ export class SupabaseProfileRepository implements ProfileRepository {
   }
 
   async findByEmail(email: string): Promise<Profile | null> {
-    const supabase = createSupabaseClient()
+    const supabase = await createSupabaseClient()
     const { data, error } = await supabase
       .from('profiles')
       .select('*')
@@ -53,7 +53,7 @@ export class SupabaseProfileRepository implements ProfileRepository {
   }
 
   async create(profile: CreateProfileDto): Promise<Profile> {
-    const supabase = createSupabaseClient()
+    const supabase = await createSupabaseClient()
     const { data, error } = await supabase
       .from('profiles')
       .insert({
@@ -80,7 +80,7 @@ export class SupabaseProfileRepository implements ProfileRepository {
   }
 
   async update(id: string, profile: UpdateProfileDto): Promise<Profile> {
-    const supabase = createSupabaseClient()
+    const supabase = await createSupabaseClient()
     const { data, error } = await supabase
       .from('profiles')
       .update({
@@ -109,7 +109,7 @@ export class SupabaseProfileRepository implements ProfileRepository {
   }
 
   async delete(id: string): Promise<void> {
-    const supabase = createSupabaseClient()
+    const supabase = await createSupabaseClient()
     const { error } = await supabase
       .from('profiles')
       .delete()

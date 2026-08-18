@@ -7,6 +7,7 @@ import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { MessageSquare, Search, Heart, Handshake, Clock, Filter, UserPlus } from 'lucide-react';
 import Link from 'next/link';
+import { cn } from '@/lib/utils';
 import { formatDistanceToNow } from 'date-fns';
 
 type InteractionContext = {

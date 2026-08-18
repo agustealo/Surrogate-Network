@@ -10,6 +10,8 @@ import { useToast } from '@/hooks/use-toast';
 import { getDemoData } from '@/dev/fixtures';
 import { EmptyState, LoadingState, ErrorState } from '@/components/shared';
 
+type ProfileType = Profile | DomainProfile;
+
 interface UseProfileViewResult {
   profile: ProfileType | null;
   isLoading: boolean;
