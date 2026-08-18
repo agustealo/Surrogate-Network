@@ -4,13 +4,14 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useParams } from 'next/navigation';
 import type { Profile, Offering, Request as ProfileRequest } from '@/lib/types';
+import type { Profile as DomainProfile } from '@/domain/types';
 import { fetchProfileById } from '@/services/profileService';
 import { useToast } from '@/hooks/use-toast';
 import { getDemoData } from '@/dev/fixtures';
 import { EmptyState, LoadingState, ErrorState } from '@/components/shared';
 
 interface UseProfileViewResult {
-  profile: Profile | null;
+  profile: ProfileType | null;
   isLoading: boolean;
   error: string | null;
   activeTab: string;
@@ -30,7 +31,7 @@ export function useProfileView(): UseProfileViewResult {
   const userId = params.id as string;
   const { toast } = useToast();
   
-  const [profile, setProfile] = useState<Profile | null>(null);
+  const [profile, setProfile] = useState<ProfileType | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState('overview');

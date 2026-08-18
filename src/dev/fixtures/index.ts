@@ -1,7 +1,13 @@
 // Demo fixtures for development and testing
 // Centralized to prevent scattered demo data in production pages
 
-import type { Profile, Need, Offer, Proposal, ActiveConnection, ChatSession } from '@/lib/types';
+import type { Profile } from '@/domain/types';
+import type { Proposal, ActiveConnection, ChatSession } from '@/lib/types';
+import type { Need as DomainNeed, Offer as DomainOffer } from '@/domain/types';
+
+// Aliases for legacy compatibility
+type Need = DomainNeed;
+type Offer = DomainOffer;
 
 export const mockUsers = {
   currentUser: {

@@ -2,6 +2,16 @@
 // Prevents manually constructed query keys scattered throughout the app
 
 export const queryKeys = {
+  // Legacy keys for backward compatibility
+  profiles: ['profiles'] as const,
+  users: ['users'] as const,
+  needs: ['needs'] as const,
+  offers: ['offers'] as const,
+  surrogacies: ['surrogacies'] as const,
+  proposals: ['proposals'] as const,
+  activeConnections: ['activeConnections'] as const,
+  chatSessions: ['chatSessions'] as const,
+
   // Profile queries
   profile: {
     all: ['profiles'] as const,

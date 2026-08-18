@@ -1,6 +1,4 @@
 
-import type { Timestamp } from 'firebase/firestore';
-
 export type SurrogateCategory = 'personal' | 'utilitarian_business' | 'casual';
 export type Boundary = 'platonic' | 'romantic' | 'physical' | 'virtual' | 'one-off' | 'recurring';
 
@@ -64,13 +62,14 @@ export interface Profile extends User {
   reviewSummary?: ReviewSummaryPoint[];
 }
 
-// DTO for Firestore interactions, using Firestore Timestamp
-export interface FirestoreProfileDTO extends Omit<Profile, 'createdAt' | 'id' | 'strengthMatrix' | 'reviewSummary'> {
-  createdAt: Timestamp;
+// Legacy DTO for compatibility, should use domain types going forward
+export interface LegacyProfileDTO extends Omit<Profile, 'createdAt' | 'id' | 'strengthMatrix' | 'reviewSummary'> {
+  createdAt: string;
   strengthMatrix?: StrengthMatrixPoint[];
   reviewSummary?: ReviewSummaryPoint[];
 }
-// Ensure embedded arrays are plain objects for Firestore
+
+// Ensure embedded arrays are plain objects for database compatibility
 export type NewProfileData = Omit<Profile, 'id' | 'createdAt'>;
 
 
@@ -99,8 +98,8 @@ export interface FeedItem {
   relatedNeedTitle?: string;
 }
 
-export interface FirestoreFeedItemDTO extends Omit<FeedItem, 'id' | 'createdAt'> {
-  createdAt: Timestamp;
+export interface LegacyFeedItemDTO extends Omit<FeedItem, 'id' | 'createdAt'> {
+  createdAt: string;
 }
 
 export interface ChatSession {
