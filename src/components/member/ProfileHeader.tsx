@@ -9,7 +9,7 @@ import { MessageCircle, UserCircle, Link as LinkIcon, Video } from 'lucide-react
 import Link from 'next/link';
 import { routes } from '@/lib/routes';
 import { cn } from '@/lib/utils';
-import type { Profile } from '@/lib/types';
+import type { Profile } from '@/domain/types';
 import { formatRelativeTime } from '@/lib/formatters';
 
 interface ProfileHeaderProps {

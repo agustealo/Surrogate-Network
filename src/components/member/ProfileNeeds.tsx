@@ -9,7 +9,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { formatRating } from '@/lib/formatters';
-import type { Request as ProfileRequest } from '@/lib/types';
+import type { LegacyRequest } from '@/domain/types';
 
 interface ProfileNeedsProps {
   needs: ProfileRequest[];

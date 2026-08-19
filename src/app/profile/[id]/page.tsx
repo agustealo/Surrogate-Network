@@ -12,7 +12,8 @@ import { Button } from '@/components/ui/button';
 import { TagBadge } from '@/components/common/TagBadge';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogClose, DialogTrigger } from '@/components/ui/dialog';
 import { Briefcase, Target, UserCircle, Link as LinkIcon, Video, ShieldCheck, BarChart3, Award, MessageCircle, UserPlus, Heart, Coffee, BookOpen, Star, Palette as PaletteIconLucide, Sparkles as SparklesIconLucide, Info, Leaf as LeafIconLucide, Loader2, Brain, Building, Package, Users, TrendingUp, Activity, Send, Gift, Coins } from 'lucide-react';
-import type { Profile, Offering, Request as ProfileRequest, ProfileBadge, SurrogateCategory, StrengthMatrixPoint, ReviewSummaryPoint } from '@/lib/types';
+import type { Profile } from '@/domain/types';
+import type { LegacyProfile, LegacyOffering, LegacyRequest, ProfileBadge, SurrogateCategory, StrengthMatrixPoint, ReviewSummaryPoint } from '@/domain/types';
 import type { Profile as DomainProfile } from '@/domain/types';
 
 // Type compatibility adapter

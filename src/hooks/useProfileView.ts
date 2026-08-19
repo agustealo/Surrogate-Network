@@ -3,7 +3,8 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { useParams } from 'next/navigation';
-import type { Profile, Offering, Request as ProfileRequest } from '@/lib/types';
+import type { Profile } from '@/domain/types';
+import type { LegacyProfile, LegacyOffering, LegacyRequest } from '@/domain/types';
 import type { Profile as DomainProfile } from '@/domain/types';
 import { fetchProfileById } from '@/services/profileService';
 import { useToast } from '@/hooks/use-toast';

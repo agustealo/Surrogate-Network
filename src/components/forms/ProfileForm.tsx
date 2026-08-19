@@ -22,7 +22,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { PlusCircle, MinusCircle, Send, Link as LinkIcon, Video, Loader2, Briefcase, User, Zap as ZapIcon } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { addProfile } from '@/services/profileService';
-import type { NewProfileData, SurrogateCategory } from '@/lib/types';
+import type { LegacyProfile, SurrogateCategory } from '@/domain/types';
 
 const surrogateCategories: [SurrogateCategory, ...SurrogateCategory[]] = ['personal', 'utilitarian_business', 'casual'];
 

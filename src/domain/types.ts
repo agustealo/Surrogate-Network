@@ -30,6 +30,145 @@ export type VerificationStatus =
   | 'identity_verified'
   | 'fully_verified';
 
+// UI/Presentation types (for component layer only)
+export interface ProfileBadge {
+  id: string;
+  name: string;
+  iconUrl?: string;
+  description?: string;
+}
+
+export interface StrengthMatrixPoint {
+  attribute: string;
+  proficiency: number;
+}
+
+export interface ReviewSummaryPoint {
+  rating: string;
+  count: number;
+}
+
+// Legacy Profile type for backward compatibility (will be phased out)
+export interface LegacyProfile extends Profile {
+  offerings: LegacyOffering[];
+  requests: LegacyRequest[];
+  portfolioUrl?: string;
+  videoIntroUrl?: string;
+  badges?: ProfileBadge[];
+  matchScore?: number;
+  strengthMatrix?: StrengthMatrixPoint[];
+  reviewSummary?: ReviewSummaryPoint[];
+}
+
+export interface LegacyOffering {
+  id: string;
+  title: string;
+  description: string;
+  category: SurrogateCategory;
+  averageRating?: number;
+  ratingCount?: number;
+  boundaries?: Boundary[];
+  tokenReward?: number;
+}
+
+export interface LegacyRequest {
+  id: string;
+  title: string;
+  description: string;
+  category: SurrogateCategory;
+  tags?: string[];
+  averageRating?: number;
+  ratingCount?: number;
+  boundaries?: Boundary[];
+  tokenCost?: number;
+}
+
+// Legacy types for backward compatibility
+export interface LegacyProposal {
+  id: string;
+  proposingUser: {
+    id: string;
+    name: string;
+    avatarUrl?: string;
+  };
+  theirOffering: {
+    id: string;
+    title: string;
+    category: SurrogateCategory;
+  };
+  forYourRequest: {
+    id: string;
+    title: string;
+    category: SurrogateCategory;
+  };
+  status: 'pending' | 'accepted' | 'declined';
+  createdAt: string;
+  message?: string;
+}
+
+export interface ActiveConnection {
+  id: string;
+  partner: {
+    id: string;
+    name: string;
+    avatarUrl?: string;
+  };
+  yourOffering: {
+    id: string;
+    title: string;
+    category: SurrogateCategory;
+  };
+  theirOffering: {
+    id: string;
+    title: string;
+    category: SurrogateCategory;
+  };
+  startedAt: string;
+  status: 'active' | 'completed' | 'archived';
+}
+
+export interface ChatSession {
+  id: string;
+  userId: string;
+  userName: string;
+  lastMessage: string;
+  unreadCount: number;
+  avatarUrl?: string;
+  timestamp: string;
+  interactionFocus?: 'offering' | 'seeking' | 'mutual';
+  offerings?: {
+    id: string;
+    title: string;
+    category: SurrogateCategory;
+  }[];
+}
+
+// Legacy types for UI compatibility
+export interface LegacyFeedback {
+  punctuality: number;
+  reliability: number;
+  communicationClarity: number;
+  comments?: string;
+  skillEndorsements?: string;
+}
+
+// Type aliases for backward compatibility during migration
+export type Offering = LegacyOffering;
+export type ProfileRequest = LegacyRequest;
+export type Proposal = LegacyProposal;
+
+// Type alias for form compatibility
+export type NewProfileData = Omit<Profile, 'id' | 'createdAt'> & {
+  offerings?: LegacyOffering[];
+  requests?: LegacyRequest[];
+  badges?: ProfileBadge[];
+  portfolioUrl?: string;
+  videoIntroUrl?: string;
+  matchScore?: number;
+  strengthMatrix?: StrengthMatrixPoint[];
+  reviewSummary?: ReviewSummaryPoint[];
+}
+
 export interface Need {
   id: string;
   title: string;

@@ -24,7 +24,7 @@ import {
   CartesianGrid,
   ResponsiveContainer,
 } from "recharts";
-import type { StrengthMatrixPoint, ReviewSummaryPoint } from '@/lib/types';
+import type { StrengthMatrixPoint, ReviewSummaryPoint } from '@/domain/types';
 import { cn } from '@/lib/utils';
 
 interface ProfileReputationProps {
