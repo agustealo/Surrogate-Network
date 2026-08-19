@@ -66,7 +66,6 @@ const dummyProfiles: ProfileType[] = [
     portfolioUrl: 'https://elara.example.com',
     videoIntroUrl: 'https://youtube.com/elara',
     badges: [{id: 'b1', name: 'Top Listener', iconUrl: 'Award', description: 'Recognized for deep empathy.'}],
-    createdAt: new Date().toISOString(),
     strengthMatrix: [
       { attribute: 'Listening', proficiency: 90 },
       { attribute: 'Empathy', proficiency: 95 },
@@ -102,7 +101,6 @@ const dummyProfiles: ProfileType[] = [
     ],
     matchScore: 78,
     badges: [{id: 'b2', name: 'Culinary Star', iconUrl: 'PaletteIconLucide', description: 'Known for delicious home cooking.'}],
-    createdAt: new Date().toISOString(),
     strengthMatrix: [
       { attribute: 'Cooking', proficiency: 95 },
       { attribute: 'Storytelling', proficiency: 85 },
@@ -123,9 +121,9 @@ const dummyProfiles: ProfileType[] = [
     email: 'lena@example.com',
     avatarUrl: 'https://placehold.co/100x100.png?text=LP',
     bio: 'A patient listener and a supportive friend. I believe in the power of empathy and genuine connection. Offering a shoulder to lean on and heartfelt encouragement. I also love teaching simple crafts. Seeking a hiking companion or a gardening mentor. I am a truly good listener.',
-    verificationStatus: 'phone_verified',
-    updatedAt: new Date().toISOString(),
+    verificationStatus: 'fully_verified',
     createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString(),
     offerings: [
       { id: 'o5', title: 'Truly Patient & Empathetic Listener', category: 'personal', description: 'A safe space to share your thoughts and feelings without judgment. I will genuinely hear you, and I am great at remembering details.', averageRating: 5.0, ratingCount: 20, tokenReward: 3 },
       { id: 'o6', title: 'Craft Workshop Facilitator', category: 'casual', description: 'Can teach basic knitting, crochet, or simple jewelry making in a fun, relaxed environment. No experience necessary!', averageRating: 4.7, ratingCount: 12, tokenReward: 2 },
@@ -137,7 +135,6 @@ const dummyProfiles: ProfileType[] = [
     ],
     matchScore: 65,
     badges: [{id: 'b3', name: 'Nature Enthusiast', iconUrl: 'LeafIconLucide', description: 'Loves the great outdoors.'}],
-    createdAt: new Date().toISOString(),
     strengthMatrix: [
       { attribute: 'Listening', proficiency: 98 },
       { attribute: 'Crafting', proficiency: 85 },
@@ -170,6 +167,7 @@ const dummyProfiles: ProfileType[] = [
     matchScore: 88,
     badges: [{id: 'b4', name: 'Master of Wit', iconUrl: 'MessageCircle', description: 'Sharp and engaging conversations.'}],
     createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString(),
     strengthMatrix: [
       { attribute: 'Conversation', proficiency: 95 },
       { attribute: 'Humor', proficiency: 85 },
@@ -201,6 +199,7 @@ const dummyProfiles: ProfileType[] = [
     matchScore: 85,
     badges: [{id: 'b5', name: 'Deep Thinker', iconUrl: 'Brain', description: 'Values profound conversations.'}],
     createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString(),
      strengthMatrix: [
       { attribute: 'Philosophy', proficiency: 80 },
       { attribute: 'Vulnerability', proficiency: 90 },
@@ -232,6 +231,7 @@ const dummyProfiles: ProfileType[] = [
     matchScore: 75,
     badges: [{id: 'b6', name: 'Top Project Manager', iconUrl: 'Briefcase', description: 'Excelled in numerous project deliveries.'}],
     createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString(),
     strengthMatrix: [
       { attribute: 'Project Mgmt', proficiency: 95 },
       { attribute: 'Strategy', proficiency: 90 },

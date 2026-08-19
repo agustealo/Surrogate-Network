@@ -32,16 +32,11 @@ additional_redirect_urls = ["https://localhost:3000"]
 jwt_expiry = 3600
 
 [auth.email]
-enabled = true
-double_confirm_changes = true
 enable_signup = true
-enable_confirmations = true
-secure_password_change = false
-min_password_length = 8
+double_confirm_changes = true
 max_frequency = "1m"
 
 [functions]
-enabled = false
 
 [analytics]
 enabled = false

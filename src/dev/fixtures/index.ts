@@ -1,12 +1,41 @@
 // Demo fixtures for development and testing
 // Centralized to prevent scattered demo data in production pages
 
-import type { Profile, LegacyProposal, ActiveConnection, ChatSession, Proposal } from '@/domain/types';
+import type { Profile, LegacyProposal, Proposal } from '@/domain/types';
 import type { Need as DomainNeed, Offer as DomainOffer } from '@/domain/types';
 
 // Aliases for legacy compatibility
 type Need = DomainNeed;
 type Offer = DomainOffer;
+export type ActiveConnection = {
+  id: string;
+  partnerId: string;
+  partnerName: string;
+  partnerAvatar?: string;
+  status: 'active' | 'paused' | 'completed';
+  lastActivity: string;
+  needsShared?: string[];
+  offersShared?: string[];
+};
+
+export type ChatSession = {
+  id: string;
+  partnerId: string;
+  partnerName: string;
+  partnerAvatar?: string;
+  messages: ChatMessage[];
+  unreadCount?: number;
+  lastMessageAt?: string;
+};
+
+export type ChatMessage = {
+  id: string;
+  senderId: string;
+  senderName: string;
+  content: string;
+  timestamp: string;
+  readAt?: string;
+};
 
 export const mockUsers = {
   currentUser: {
@@ -56,6 +85,7 @@ export const mockProposals: Proposal[] = [
     offerId: 'o1',
     status: 'pending',
     createdAt: new Date(Date.now() - 1000 * 60 * 60 * 2).toISOString(),
+    updatedAt: new Date(Date.now() - 1000 * 60 * 60 * 2).toISOString(),
     message: "I saw you're looking for a mindfulness buddy. I'm also on a journey of presence and would love to offer my listening skills.",
   },
   {
@@ -66,6 +96,7 @@ export const mockProposals: Proposal[] = [
     offerId: 'o4',
     status: 'pending',
     createdAt: new Date(Date.now() - 1000 * 60 * 60 * 24).toISOString(),
+    updatedAt: new Date(Date.now() - 1000 * 60 * 60 * 24).toISOString(),
     message: "I'd love to share stories and home-cooked meals. Let's create some meaningful moments together.",
   },
 ];

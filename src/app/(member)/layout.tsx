@@ -4,6 +4,7 @@ import { MemberNavigation } from '@/components/member/MemberNavigation';
 import { MemberHeader } from '@/components/member/MemberHeader';
 import { MobileNavigation } from '@/components/member/MobileNavigation';
 import { redirect } from 'next/navigation';
+import { createServiceClient } from '@/infrastructure/supabase/server';
 
 export const metadata: Metadata = {
   title: 'Surrogate Companion - Member Area',
@@ -15,7 +16,7 @@ export default async function MemberLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
-  const supabase = await createServerClient();
+  const supabase = await createServiceClient();
   const { data: { user } } = await supabase.auth.getUser();
   
   if (!user) {

@@ -1,4 +1,3 @@
-'use client';
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -179,34 +178,11 @@ const ActivityItem = ({ activity }: { activity: typeof mockRecentActivity[0] }) 
   );
 };
 
-import { createClient } from '@/infrastructure/supabase/client';
+import { createServiceClient } from '@/infrastructure/supabase/server';
 import { redirect } from 'next/navigation';
 
 async function checkAdminAccess() {
-  const supabase = await createClient();
-  const { data: { user } } = await supabase.auth.getUser();
-  
-  if (!user) {
-    redirect('/login');
-  }
-  
-  // Check if user is admin
-  const { data: profile } = await supabase
-    .from('profiles')
-    .select('is_admin')
-    .eq('id', user.id)
-    .single();
-  
-  if (!profile?.is_admin) {
-    redirect('/');
-  }
-}
-
-import { createServerClient } from '@/infrastructure/supabase/server';
-import { redirect } from 'next/navigation';
-
-async function checkAdminAccess() {
-  const supabase = await createServerClient();
+  const supabase = await createServiceClient();
   const { data: { user } } = await supabase.auth.getUser();
   
   if (!user) {

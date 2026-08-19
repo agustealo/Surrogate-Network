@@ -48,6 +48,87 @@ export interface ReviewSummaryPoint {
   count: number;
 }
 
+// Legacy types for backward compatibility during migration (DEPRECATED - use canonical types)
+export interface LegacyProfile extends Profile {
+  offerings: LegacyOffering[];
+  requests: LegacyRequest[];
+  portfolioUrl?: string;
+  videoIntroUrl?: string;
+  badges?: ProfileBadge[];
+  matchScore?: number;
+  strengthMatrix?: StrengthMatrixPoint[];
+  reviewSummary?: ReviewSummaryPoint[];
+}
+
+export interface LegacyOffering {
+  id: string;
+  title: string;
+  description: string;
+  category: SurrogateCategory;
+  averageRating?: number;
+  ratingCount?: number;
+  boundaries?: Boundary[];
+  tokenReward?: number;
+}
+
+export interface LegacyRequest {
+  id: string;
+  title: string;
+  description: string;
+  category: SurrogateCategory;
+  tags?: string[];
+  averageRating?: number;
+  ratingCount?: number;
+  boundaries?: Boundary[];
+  tokenCost?: number;
+}
+
+export interface LegacyProposal {
+  id: string;
+  proposingUser: {
+    id: string;
+    name: string;
+    avatarUrl?: string;
+  };
+  theirOffering: {
+    id: string;
+    title: string;
+    category: SurrogateCategory;
+  };
+  forYourRequest: {
+    id: string;
+    title: string;
+    category: SurrogateCategory;
+  };
+  status: 'pending' | 'accepted' | 'declined';
+  createdAt: string;
+  message?: string;
+}
+
+export interface LegacyFeedback {
+  punctuality: number;
+  reliability: number;
+  communicationClarity: number;
+  comments?: string;
+  skillEndorsements?: string;
+}
+
+// Type aliases for backward compatibility during migration (DEPRECATED - use canonical types)
+export type Offering = LegacyOffering;
+export type ProfileRequest = LegacyRequest;
+
+// Type alias for form compatibility
+export type NewProfileData = Omit<Profile, 'id' | 'createdAt'> & {
+  offerings?: LegacyOffering[];
+  requests?: LegacyRequest[];
+  badges?: ProfileBadge[];
+  portfolioUrl?: string;
+  videoIntroUrl?: string;
+  matchScore?: number;
+  strengthMatrix?: StrengthMatrixPoint[];
+  reviewSummary?: ReviewSummaryPoint[];
+}
+
 
 
 export interface Need {
@@ -258,7 +339,7 @@ export type Capability =
 
 export interface AuditLog {
   id: string;
-  actorId: string;
+  actorId?: string | null; // Made nullable to preserve audit history when actor is deleted
   action: string;
   targetId?: string;
   targetType?: string;
