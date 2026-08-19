@@ -12,12 +12,11 @@ import { Button } from '@/components/ui/button';
 import { TagBadge } from '@/components/common/TagBadge';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogClose, DialogTrigger } from '@/components/ui/dialog';
 import { Briefcase, Target, UserCircle, Link as LinkIcon, Video, ShieldCheck, BarChart3, Award, MessageCircle, UserPlus, Heart, Coffee, BookOpen, Star, Palette as PaletteIconLucide, Sparkles as SparklesIconLucide, Info, Leaf as LeafIconLucide, Loader2, Brain, Building, Package, Users, TrendingUp, Activity, Send, Gift, Coins } from 'lucide-react';
-import type { Profile } from '@/domain/types';
-import type { LegacyProfile, LegacyOffering, LegacyRequest, ProfileBadge, SurrogateCategory, StrengthMatrixPoint, ReviewSummaryPoint } from '@/domain/types';
+import type { Profile, LegacyProfile, LegacyOffering, LegacyRequest, ProfileBadge, SurrogateCategory, StrengthMatrixPoint, ReviewSummaryPoint, Offering, ProfileRequest } from '@/domain/types';
 import type { Profile as DomainProfile } from '@/domain/types';
 
 // Type compatibility adapter
-type ProfileType = Profile | DomainProfile;
+type ProfileType = LegacyProfile;
 import { cn } from '@/lib/utils';
 import { fetchProfileById } from '@/services/profileService';
 import { useToast } from '@/hooks/use-toast';
@@ -48,8 +47,12 @@ const dummyProfiles: ProfileType[] = [
   {
     id: '1',
     name: 'Elara Vance',
+    email: 'elara@example.com',
     avatarUrl: 'https://placehold.co/100x100.png?text=EV',
     bio: 'A lover of quiet mornings and deep conversations. I offer a comforting presence, a shoulder to lean on, and enjoy sharing peaceful moments. I truly believe in the power of gentle touch and empathetic listening. Seeking a cafe exploration partner or a mindfulness buddy. Also, a warm cuddle buddy for cozy evenings.',
+    verificationStatus: 'email_verified',
+    updatedAt: new Date().toISOString(),
+    createdAt: new Date().toISOString(),
     offerings: [
       { id: 'o1', title: 'Empathetic Listener', category: 'personal', description: 'Offering a calm and understanding space for you to be yourself, judgment-free. I can listen for hours and provide thoughtful feedback if desired.', averageRating: 4.8, ratingCount: 25, tokenReward: 3 },
       { id: 'o2', title: 'Warm Cuddle Buddy', category: 'personal', description: 'Providing comforting, non-sexual cuddles for relaxation and emotional support. Great for de-stressing after a long week.', averageRating: 4.9, ratingCount: 18, tokenReward: 5 },
@@ -83,8 +86,12 @@ const dummyProfiles: ProfileType[] = [
   {
     id: '2',
     name: 'Marcus Thorne',
+    email: 'marcus@example.com',
     avatarUrl: 'https://placehold.co/100x100.png?text=MT',
     bio: 'Film buff and home cook, always ready for an engaging discussion or a shared meal prepared with care. I offer stimulating conversations and a shared appreciation for arts, culture, and good food. Looking for an art exhibit partner or a thoughtful debate friend. I love to cook for people with genuine affection.',
+    verificationStatus: 'fully_verified',
+    updatedAt: new Date().toISOString(),
+    createdAt: new Date().toISOString(),
     offerings: [
       { id: 'o3', title: 'Engaging Book/Film Talks', category: 'casual', description: 'Passionate discussions about literature, cinema, and storytelling. Let\'s dissect the latest Oscar nominations!', averageRating: 4.6, ratingCount: 30, tokenReward: 2 },
       { id: 'o4', title: 'Home-Cooked Meals with Love', category: 'personal', description: 'I enjoy cooking for others with care and attention, like a partner would. Happy to share a meal and good conversation. My specialty is Italian comfort food.', averageRating: 4.9, ratingCount: 15, tokenReward: 4 },
@@ -113,8 +120,12 @@ const dummyProfiles: ProfileType[] = [
   {
     id: '3',
     name: 'Lena Petrova',
+    email: 'lena@example.com',
     avatarUrl: 'https://placehold.co/100x100.png?text=LP',
     bio: 'A patient listener and a supportive friend. I believe in the power of empathy and genuine connection. Offering a shoulder to lean on and heartfelt encouragement. I also love teaching simple crafts. Seeking a hiking companion or a gardening mentor. I am a truly good listener.',
+    verificationStatus: 'phone_verified',
+    updatedAt: new Date().toISOString(),
+    createdAt: new Date().toISOString(),
     offerings: [
       { id: 'o5', title: 'Truly Patient & Empathetic Listener', category: 'personal', description: 'A safe space to share your thoughts and feelings without judgment. I will genuinely hear you, and I am great at remembering details.', averageRating: 5.0, ratingCount: 20, tokenReward: 3 },
       { id: 'o6', title: 'Craft Workshop Facilitator', category: 'casual', description: 'Can teach basic knitting, crochet, or simple jewelry making in a fun, relaxed environment. No experience necessary!', averageRating: 4.7, ratingCount: 12, tokenReward: 2 },
@@ -142,8 +153,12 @@ const dummyProfiles: ProfileType[] = [
   {
     id: 'vivian',
     name: 'Vivian C.',
+    email: 'vivian@example.com',
     avatarUrl: 'https://placehold.co/100x100.png?text=VC',
     bio: "Happily partnered, but my wonderful husband and I have different conversational wavelengths. I'm seeking a vibrant phone companion for stimulating chats – someone who loves to dive deep into topics, can share a laugh, and isn't afraid of some witty, playful banter to brighten the day. Discretion and mutual respect are key.",
+    verificationStatus: 'identity_verified',
+    updatedAt: new Date().toISOString(),
+    createdAt: new Date().toISOString(),
     offerings: [
       { id: 'o9', title: 'Engaging Conversationalist (Phone)', category: 'personal', description: 'Ready to explore any topic, from philosophy to pop culture, with humor and insight, primarily via phone/voice. I have a broad range of interests!', averageRating: 4.7, ratingCount: 12, tokenReward: 2 },
       { id: 'o10', title: 'A Ray of Sunshine (Voice Only)', category: 'personal', description: 'I bring positivity and lightheartedness to our calls. Let\'s make each other smile! Perfect for a mood boost.', averageRating: 4.9, ratingCount: 8, tokenReward: 1 },
@@ -169,8 +184,12 @@ const dummyProfiles: ProfileType[] = [
   {
     id: 'caleb',
     name: 'Caleb Greene',
+    email: 'caleb@example.com',
     avatarUrl: 'https://placehold.co/100x100.png?text=CG',
     bio: 'Seeking a deep connection. I offer a listening ear and thoughtful conversation. I enjoy quiet evenings, shared meals, and intellectual discussions. Looking for someone who values vulnerability and emotional intimacy. Perhaps a cuddle buddy for platonic comfort.',
+    verificationStatus: 'photo_verified',
+    updatedAt: new Date().toISOString(),
+    createdAt: new Date().toISOString(),
     offerings: [
       { id: 'o7', title: 'Deep Conversation Partner', category: 'personal', description: 'Engaging in meaningful discussions about life, philosophy, and everything in between. I enjoy exploring complex topics.', averageRating: 4.7, ratingCount: 10, tokenReward: 3 },
       { id: 'o8', title: 'Thoughtful Companion for Quiet Evenings', category: 'personal', description: 'Offering a calm and supportive presence for shared activities or quiet moments. Happy to just be present or share silence.', averageRating: 4.9, ratingCount: 7, tokenReward: 2 },
@@ -196,8 +215,12 @@ const dummyProfiles: ProfileType[] = [
   {
     id: 'bizconnect',
     name: 'BizConnect Solutions',
+    email: 'biz@example.com',
     avatarUrl: 'https://placehold.co/100x100.png?text=BS',
     bio: 'Dynamic consultancy offering project management expertise, virtual assistant services, and strategic business planning. We help entrepreneurs and SMEs scale effectively. Looking for freelance talent and innovative projects.',
+    verificationStatus: 'fully_verified',
+    updatedAt: new Date().toISOString(),
+    createdAt: new Date().toISOString(),
     offerings: [
       { id: 'o11', title: 'Project Management Pro', category: 'utilitarian_business', description: 'Full-cycle project management, from initiation to completion. Agile & Waterfall. Certified PMP.', averageRating: 4.9, ratingCount: 35, tokenReward: 10 },
       { id: 'o12', title: 'Executive Virtual Assistant', category: 'utilitarian_business', description: 'High-level administrative, technical, and creative assistance to executives. 10+ years experience.', averageRating: 4.8, ratingCount: 20, tokenReward: 8 },
@@ -305,7 +328,7 @@ export default function UserProfilePage() {
   const [selectedOffering, setSelectedOffering] = useState<Offering | null>(null);
 
   // Type guard to check if profile is legacy Profile type
-  const isLegacyProfile = (p: ProfileType): p is Profile => {
+  const isLegacyProfile = (p: ProfileType): p is LegacyProfile => {
     return 'offerings' in p && 'requests' in p;
   };
 
@@ -566,24 +589,24 @@ export default function UserProfilePage() {
               </CardDescription>
             </CardHeader>
             <CardContent className="text-center space-y-3 px-4 pb-4">
-                {(profile.portfolioUrl || profile.videoIntroUrl) && (
+                {(profile as any).portfolioUrl || (profile as any).videoIntroUrl ? (
                     <div className="flex flex-col sm:flex-row justify-center gap-2">
-                        {profile.portfolioUrl && (
-                        <Button variant="outline" size="sm" asChild className="flex-1 sm:flex-none">
-                            <a href={profile.portfolioUrl} target="_blank" rel="noopener noreferrer" className="truncate">
-                            <LinkIcon className="mr-2 h-4 w-4" /> My Story/Portfolio
-                            </a>
-                        </Button>
+                        {(profile as any).portfolioUrl && (
+                            <Button variant="outline" size="sm" asChild className="flex-1 sm:flex-none">
+                                <a href={(profile as any).portfolioUrl} target="_blank" rel="noopener noreferrer" className="truncate">
+                                    <LinkIcon className="mr-2 h-4 w-4" /> My Story/Portfolio
+                                </a>
+                            </Button>
                         )}
-                        {profile.videoIntroUrl && (
-                        <Button variant="outline" size="sm" asChild className="flex-1 sm:flex-none">
-                            <a href={profile.videoIntroUrl} target="_blank" rel="noopener noreferrer" className="truncate">
-                            <Video className="mr-2 h-4 w-4" /> Hear My Voice
-                            </a>
-                        </Button>
+                        {(profile as any).videoIntroUrl && (
+                            <Button variant="outline" size="sm" asChild className="flex-1 sm:flex-none">
+                                <a href={(profile as any).videoIntroUrl} target="_blank" rel="noopener noreferrer" className="truncate">
+                                    <Video className="mr-2 h-4 w-4" /> Hear My Voice
+                                </a>
+                            </Button>
                         )}
                     </div>
-                )}
+                ) : null}
             </CardContent>
             <CardFooter className="flex flex-col gap-2 p-4 border-t bg-muted/20">
               <Button size="lg" className="w-full bg-primary hover:bg-primary/90 text-primary-foreground">
@@ -592,13 +615,13 @@ export default function UserProfilePage() {
             </CardFooter>
           </Card>
 
-          {profile.badges && profile.badges.length > 0 && (
+          {(profile as LegacyProfile).badges && (profile as LegacyProfile).badges.length > 0 && (
             <Card className="shadow-xl rounded-lg">
               <CardHeader>
                 <CardTitle className="text-xl flex items-center gap-2"><Award className="text-primary h-5 w-5"/> Qualities &amp; Recognition</CardTitle>
               </CardHeader>
               <CardContent className="space-y-3">
-                {profile.badges.map(badge => (
+                {(profile as LegacyProfile).badges.map(badge => (
                   <div key={badge.id} className="flex items-start gap-3 p-3 border rounded-md hover:bg-muted/50 transition-colors shadow-sm">
                     <div className="flex-shrink-0 mt-0.5">
                       {renderBadgeIcon(badge.iconUrl)}
@@ -629,8 +652,8 @@ export default function UserProfilePage() {
             <CardHeader>
               <CardTitle className="text-xl flex items-center gap-2"><Heart className="text-primary h-5 w-5" /> Surrogate Offer</CardTitle>
             </CardHeader>
-            <CardContent className="space-y-3">
-              {profile.offerings.length > 0 ? profile.offerings.map((offering: Offering) => (
+              <CardContent className="space-y-3">
+                {(profile as LegacyProfile).offerings.length > 0 ? (profile as LegacyProfile).offerings.map((offering: Offering) => (
                 <Dialog key={offering.id}>
                   <DialogTrigger asChild>
                     <div className="p-4 border rounded-md shadow-sm bg-card hover:shadow-md hover:border-primary/70 transition-all cursor-pointer group block">
@@ -662,8 +685,8 @@ export default function UserProfilePage() {
             <CardHeader>
               <CardTitle className="text-xl flex items-center gap-2"><Coffee className="text-accent h-5 w-5" /> Surrogacy needed for</CardTitle>
             </CardHeader>
-            <CardContent className="space-y-3">
-              {profile.requests.length > 0 ? profile.requests.map((request: ProfileRequest) => (
+              <CardContent className="space-y-3">
+              {(profile as LegacyProfile).requests.length > 0 ? (profile as LegacyProfile).requests.map((request: ProfileRequest) => (
                  <div key={request.id} className="p-4 border rounded-md shadow-sm bg-card transition-all group block">
                     <div className="flex items-start justify-between mb-1">
                         <div>
@@ -698,9 +721,9 @@ export default function UserProfilePage() {
               <CardDescription>Self-assessed proficiency in various attributes relevant to connections on Surrogate Network.</CardDescription>
             </CardHeader>
             <CardContent className="pt-4">
-              {profile.strengthMatrix && profile.strengthMatrix.length > 0 ? (
+              {(profile as LegacyProfile).strengthMatrix && (profile as LegacyProfile).strengthMatrix.length > 0 ? (
                 <ChartContainer config={strengthChartConfig} className="mx-auto aspect-square max-h-[300px]">
-                  <RadarChart data={profile.strengthMatrix} margin={{ top: 10, right: 30, left: 30, bottom: 0 }}>
+                  <RadarChart data={(profile as LegacyProfile).strengthMatrix} margin={{ top: 10, right: 30, left: 30, bottom: 0 }}>
                     <CartesianGrid  className="stroke-border/50" />
                     <PolarAngleAxis dataKey="attribute" tick={{ fill: 'hsl(var(--muted-foreground))', fontSize: 12 }} />
                     <PolarRadiusAxis angle={30} domain={[0, 100]} tick={{ fill: 'hsl(var(--muted-foreground))', fontSize: 10 }} />
@@ -722,9 +745,9 @@ export default function UserProfilePage() {
               <CardDescription>A summary of ratings received from past connections on Surrogate Network.</CardDescription>
             </CardHeader>
             <CardContent className="pt-4">
-               {profile.reviewSummary && profile.reviewSummary.length > 0 ? (
+               {(profile as LegacyProfile).reviewSummary && (profile as LegacyProfile).reviewSummary.length > 0 ? (
                 <ChartContainer config={reviewChartConfig} className="mx-auto aspect-[16/9] max-h-[300px]">
-                  <BarChart data={profile.reviewSummary} margin={{ top: 5, right: 10, left: -20, bottom: 5 }}>
+                  <BarChart data={(profile as LegacyProfile).reviewSummary} margin={{ top: 5, right: 10, left: -20, bottom: 5 }}>
                     <CartesianGrid vertical={false} className="stroke-border/50" />
                     <XAxis dataKey="rating" tickLine={false} axisLine={false} tickMargin={8} tick={{ fill: 'hsl(var(--muted-foreground))', fontSize: 12 }}/>
                     <YAxis tickLine={false} axisLine={false} tickMargin={8} tick={{ fill: 'hsl(var(--muted-foreground))', fontSize: 12 }} />

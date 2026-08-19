@@ -9,18 +9,18 @@ import { MessageCircle, UserCircle, Link as LinkIcon, Video } from 'lucide-react
 import Link from 'next/link';
 import { routes } from '@/lib/routes';
 import { cn } from '@/lib/utils';
-import type { Profile } from '@/domain/types';
+import type { LegacyProfile } from '@/domain/types';
 import { formatRelativeTime } from '@/lib/formatters';
 
 interface ProfileHeaderProps {
-  profile: Profile;
+  profile: LegacyProfile;
   currentUserCanMessage?: boolean;
   onSendMessage?: () => void;
 }
 
 export function ProfileHeader({ profile, currentUserCanMessage = true, onSendMessage }: ProfileHeaderProps) {
-  const hasPortfolio = !!profile.portfolioUrl;
-  const hasVideoIntro = !!profile.videoIntroUrl;
+  const hasPortfolio = !!(profile as any).portfolioUrl;
+  const hasVideoIntro = !!(profile as any).videoIntroUrl;
 
   return (
     <div className="space-y-6">
@@ -58,7 +58,7 @@ export function ProfileHeader({ profile, currentUserCanMessage = true, onSendMes
         <div className="flex justify-center gap-2 px-4">
           {hasPortfolio && (
             <Button variant="outline" size="sm" asChild className="flex-1 sm:flex-none max-w-[200px]">
-              <a href={profile.portfolioUrl} target="_blank" rel="noopener noreferrer" className="truncate">
+              <a href={(profile as any).portfolioUrl} target="_blank" rel="noopener noreferrer" className="truncate">
                 <LinkIcon className="mr-2 h-4 w-4" />
                 My Story/Portfolio
               </a>
@@ -66,7 +66,7 @@ export function ProfileHeader({ profile, currentUserCanMessage = true, onSendMes
           )}
           {hasVideoIntro && (
             <Button variant="outline" size="sm" asChild className="flex-1 sm:flex-none max-w-[200px]">
-              <a href={profile.videoIntroUrl} target="_blank" rel="noopener noreferrer" className="truncate">
+              <a href={(profile as any).videoIntroUrl} target="_blank" rel="noopener noreferrer" className="truncate">
                 <Video className="mr-2 h-4 w-4" />
                 Hear My Voice
               </a>

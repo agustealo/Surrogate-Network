@@ -11,7 +11,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { formatRating, formatTokenAmount } from '@/lib/formatters';
-import type { LegacyOffering } from '@/domain/types';
+import type { LegacyOffering, Offering } from '@/domain/types';
 
 interface ProfileOffersProps {
   offerings: Offering[];

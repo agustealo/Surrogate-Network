@@ -1,7 +1,7 @@
 // Demo fixtures for development and testing
 // Centralized to prevent scattered demo data in production pages
 
-import type { Profile, LegacyProposal, ActiveConnection, ChatSession } from '@/domain/types';
+import type { Profile, LegacyProposal, ActiveConnection, ChatSession, Proposal } from '@/domain/types';
 import type { Need as DomainNeed, Offer as DomainOffer } from '@/domain/types';
 
 // Aliases for legacy compatibility
@@ -50,36 +50,23 @@ export const mockUsers = {
 export const mockProposals: Proposal[] = [
   {
     id: 'prop1',
-    proposingUser: mockUsers.elara,
-    theirOffering: { 
-      id: 'o1', 
-      title: 'Empathetic Listener', 
-      category: 'personal' 
-    },
-    forYourRequest: { 
-      id: 'r-user-1', 
-      title: 'Mindfulness Buddy', 
-      category: 'personal' 
-    },
+    proposingUserId: mockUsers.elara.id,
+    receivingUserId: 'currentUser',
+    needId: 'r-user-1',
+    offerId: 'o1',
     status: 'pending',
     createdAt: new Date(Date.now() - 1000 * 60 * 60 * 2).toISOString(),
     message: "I saw you're looking for a mindfulness buddy. I'm also on a journey of presence and would love to offer my listening skills.",
   },
   {
     id: 'prop2',
-    proposingUser: mockUsers.marcus,
-    theirOffering: { 
-      id: 'o4', 
-      title: 'Home-Cooked Meals with Love', 
-      category: 'personal' 
-    },
-    forYourRequest: { 
-      id: 'r-user-2', 
-      title: 'Someone to Share Stories With', 
-      category: 'casual' 
-    },
+    proposingUserId: mockUsers.marcus.id,
+    receivingUserId: 'currentUser',
+    needId: 'r-user-2',
+    offerId: 'o4',
     status: 'pending',
     createdAt: new Date(Date.now() - 1000 * 60 * 60 * 24).toISOString(),
+    message: "I'd love to share stories and home-cooked meals. Let's create some meaningful moments together.",
   },
 ];
 

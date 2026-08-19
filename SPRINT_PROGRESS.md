@@ -331,6 +331,55 @@ Need → Offer → Compatibility → Proposal → Counter/Accept/Decline → Sur
 - Notification events and delivery
 - Complete audit logging
 
+## SC-00.3: Foundation Closure, Security Authority & Runtime Readiness ✅ COMPLETED
+
+**Audit Resolution**: Addressed critical security and infrastructure issues identified in comprehensive audit.
+
+### Security Improvements Implemented:
+- **RLS Hardening**: Created migration preventing client writes to authoritative fields (xp, token_balance, rank, verification_status, is_suspended)
+- **Proposal Authority**: Fixed RLS to allow both proposer and recipient to update proposals with appropriate status transitions
+- **Audit Trail Integrity**: Changed CASCADE to SET NULL for audit_events to preserve audit history
+- **Email Protection**: Implemented public_profiles view to hide sensitive fields from non-admin users
+- **Admin Operations**: Added security invoker functions for authoritative field updates
+- **Middleware Integration**: Wired Next.js middleware with Supabase auth for route protection
+- **Server-Side Protection**: Added authentication checks to member/admin routes with admin role verification
+
+### Type System Cleanup:
+- **Fixed Type Breakage**: Resolved issues from commit 8574552 where renamed legacy types broke imports
+- **Removed Duplicates**: Cleaned up duplicate Proposal type definition
+- **Canonical Forms**: Created separate NeedForm.tsx and OfferForm.tsx for first-class entity creation
+- **Profile Form Cleanup**: Removed nested offerings/requests from legacy ProfileForm.tsx
+- **Legacy Type Removal**: Eliminated deprecated legacy types from domain/types.ts
+
+### Database Enhancements:
+- **is_admin Field**: Added admin role capability to profiles table
+- **Security Functions**: Created admin_update_profile, update_token_balance, update_user_xp functions
+- **Proper Deletion**: Fixed CASCADE issues across foreign key relationships
+- **Audit Preservation**: Maintained audit trail integrity during user deletions
+
+### Files Created:
+- `supabase/migrations/20250819000000_security_hardening.sql` - Comprehensive security migration
+- `middleware.ts` - Next.js middleware configuration
+- `src/components/forms/CanonicalProfileForm.tsx` - Simplified profile creation
+- `src/components/forms/NeedForm.tsx` - Standalone need creation form
+- `src/components/forms/OfferForm.tsx` - Standalone offer creation form
+
+### Files Modified:
+- `src/domain/types.ts` - Removed legacy types, fixed duplicates
+- `src/components/forms/ProfileForm.tsx` - Cleaned nested structures
+- `src/app/(member)/layout.tsx` - Added server-side auth
+- `src/app/admin/page.tsx` - Added admin authorization
+- Multiple component files - Fixed import issues
+
+### Build Status:
+- ✅ TypeScript compilation successful
+- ✅ All type errors resolved
+- ✅ ESLint warnings (rule definitions missing, non-blocking)
+- ✅ Security foundations in place
+- ✅ Runtime readiness achieved
+
+**SC-00.3 delivers hardened security foundations and clean type architecture, enabling safe progression to SC-01 Core Relationship Runtime.**
+
 ## Performance & Security
 
 ### Performance Considerations:

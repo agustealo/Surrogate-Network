@@ -3,15 +3,13 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { useParams } from 'next/navigation';
-import type { Profile } from '@/domain/types';
-import type { LegacyProfile, LegacyOffering, LegacyRequest } from '@/domain/types';
-import type { Profile as DomainProfile } from '@/domain/types';
+import type { LegacyProfile, Offering, ProfileRequest } from '@/domain/types';
 import { fetchProfileById } from '@/services/profileService';
 import { useToast } from '@/hooks/use-toast';
 import { getDemoData } from '@/dev/fixtures';
 import { EmptyState, LoadingState, ErrorState } from '@/components/shared';
 
-type ProfileType = Profile | DomainProfile;
+type ProfileType = LegacyProfile;
 
 interface UseProfileViewResult {
   profile: ProfileType | null;
@@ -51,11 +49,11 @@ export function useProfileView(): UseProfileViewResult {
       const data = await fetchProfileById(userId);
       
       if (data) {
-        setProfile(data);
+        setProfile(data as LegacyProfile);
         document.title = `${data.name} - Profile | Surrogate Network`;
       } else {
         // Fall back to demo data if no real data found
-        const demoProfile = getDemoData<Profile>('profiles', null);
+        const demoProfile = getDemoData<LegacyProfile>('users', undefined);
         if (demoProfile) {
           setProfile(demoProfile);
           document.title = `${demoProfile.name} - Profile (Demo) | Surrogate Network`;
@@ -73,7 +71,7 @@ export function useProfileView(): UseProfileViewResult {
       console.error(`Error loading profile ${userId}:`, err);
       
       // Try to fall back to demo data
-      const demoProfile = getDemoData<Profile>('profiles', null);
+      const demoProfile = getDemoData<LegacyProfile>('users', undefined);
       if (demoProfile) {
         setProfile(demoProfile);
         document.title = `${demoProfile.name} - Profile (Demo Fallback) | Surrogate Network`;

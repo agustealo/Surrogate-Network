@@ -179,7 +179,55 @@ const ActivityItem = ({ activity }: { activity: typeof mockRecentActivity[0] }) 
   );
 };
 
-export default function AdminDashboardPage() {
+import { createClient } from '@/infrastructure/supabase/client';
+import { redirect } from 'next/navigation';
+
+async function checkAdminAccess() {
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  
+  if (!user) {
+    redirect('/login');
+  }
+  
+  // Check if user is admin
+  const { data: profile } = await supabase
+    .from('profiles')
+    .select('is_admin')
+    .eq('id', user.id)
+    .single();
+  
+  if (!profile?.is_admin) {
+    redirect('/');
+  }
+}
+
+import { createServerClient } from '@/infrastructure/supabase/server';
+import { redirect } from 'next/navigation';
+
+async function checkAdminAccess() {
+  const supabase = await createServerClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  
+  if (!user) {
+    redirect('/login');
+  }
+  
+  // Check if user is admin
+  const { data: profile } = await supabase
+    .from('profiles')
+    .select('is_admin')
+    .eq('id', user.id)
+    .single();
+  
+  if (!profile?.is_admin) {
+    redirect('/');
+  }
+}
+
+async function AdminDashboardContent() {
+  await checkAdminAccess();
+
   return (
     <div className="container mx-auto px-4 py-6 max-w-7xl">
       <div className="mb-6">
@@ -402,4 +450,8 @@ export default function AdminDashboardPage() {
       </Tabs>
     </div>
   );
+}
+
+export default function AdminDashboardPage() {
+  return <AdminDashboardContent />;
 }

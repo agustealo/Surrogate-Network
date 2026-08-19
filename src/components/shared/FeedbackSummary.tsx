@@ -52,7 +52,7 @@ const RatingDisplay = ({ rating, reviewCount, compact }: { rating?: number; revi
   );
 };
 
-const RatingBreakdown = ({ breakdown, compact }: { breakdown: FeedbackSummaryProps['breakdown']; compact?: boolean }) => {
+const RatingBreakdownInternal = ({ breakdown, compact }: { breakdown: FeedbackSummaryProps['breakdown']; compact?: boolean }) => {
   if (!breakdown) return null;
 
   const dimensions = [
@@ -60,7 +60,7 @@ const RatingBreakdown = ({ breakdown, compact }: { breakdown: FeedbackSummaryPro
     { key: 'communication', label: 'Communication' },
     { key: 'boundaryRespect', label: 'Boundary Respect' },
     { key: 'consideration', label: 'Consideration' },
-    { key: 'followThrough', label: 'Follow-through' },
+    { key: 'followThrough', label: 'Follow Through' },
   ] as const;
 
   return (
@@ -129,7 +129,7 @@ export function FeedbackSummary({
           )}
           
           {showBreakdown && breakdown && (
-            <RatingBreakdown breakdown={breakdown} compact={compact} />
+            <RatingBreakdownInternal breakdown={breakdown} compact={compact} />
           )}
 
           {recentFeedbackCount && recentFeedbackCount > 0 && (
