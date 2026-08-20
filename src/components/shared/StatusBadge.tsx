@@ -22,7 +22,7 @@ const getStatusConfig = (status: string): StatusConfig => {
     active: { variant: 'success', label: 'Active' },
     pending: { variant: 'warning', label: 'Pending' },
     completed: { variant: 'success', label: 'Completed' },
-    in_progress: { variant: 'info', label: 'In Progress' },
+    'in-progress': { variant: 'info', label: 'In Progress' },
     cancelled: { variant: 'neutral', label: 'Cancelled' },
     paused: { variant: 'warning', label: 'Paused' },
     expired: { variant: 'error', label: 'Expired' },
@@ -49,32 +49,32 @@ const getStatusConfig = (status: string): StatusConfig => {
     approved: { variant: 'success', label: 'Approved' },
     rejected: { variant: 'error', label: 'Rejected' },
     flagged: { variant: 'error', label: 'Flagged' },
-    under_review: { variant: 'warning', label: 'Under Review' },
+    'under-review': { variant: 'warning', label: 'Under Review' },
     
     // Media states
     visible: { variant: 'success', label: 'Visible' },
     blurred: { variant: 'warning', label: 'Blurred' },
     private: { variant: 'error', label: 'Private' },
     requestable: { variant: 'info', label: 'Requestable' },
-    request_pending: { variant: 'warning', label: 'Request Pending' },
+    'request-pending': { variant: 'warning', label: 'Request Pending' },
     granted: { variant: 'success', label: 'Granted' },
     
     // Verification statuses
     unverified: { variant: 'neutral', label: 'Unverified' },
-    email_verified: { variant: 'success', label: 'Email Verified' },
-    phone_verified: { variant: 'success', label: 'Phone Verified' },
-    photo_verified: { variant: 'success', label: 'Photo Verified' },
-    identity_verified: { variant: 'success', label: 'Identity Verified' },
-    fully_verified: { variant: 'success', label: 'Fully Verified' },
+    'email-verified': { variant: 'success', label: 'Email Verified' },
+    'phone-verified': { variant: 'success', label: 'Phone Verified' },
+    'photo-verified': { variant: 'success', label: 'Photo Verified' },
+    'identity-verified': { variant: 'success', label: 'Identity Verified' },
+    'fully-verified': { variant: 'success', label: 'Fully Verified' },
     
     // Account states
     suspended: { variant: 'error', label: 'Suspended' },
     restricted: { variant: 'warning', label: 'Restricted' },
-    onboarding_incomplete: { variant: 'info', label: 'Setup Required' },
+    'onboarding-incomplete': { variant: 'info', label: 'Setup Required' },
   };
   
   return statusMap[normalizedStatus] || { 
-    variant: 'neutral', 
+    variant: 'default', 
     label: status.replace(/[_\s]/g, ' ').replace(/\b\w/g, c => c.toUpperCase())
   };
 };

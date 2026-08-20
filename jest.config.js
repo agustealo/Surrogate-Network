@@ -8,7 +8,7 @@ const createJestConfig = nextJest({
 })
 
 const customJestConfig = {
-  setupFilesAfterEnv: ['<rootDir>/jest.setup.js'],
+  setupFilesAfterEnv: ['<rootDir>/jest.setup.jsx'],
   testEnvironment: 'jest-environment-jsdom',
   moduleNameMapper: {
     '^@/(.*)$': '<rootDir>/src/$1',
@@ -33,6 +33,10 @@ const customJestConfig = {
   transform: {
     '^.+\\.(js|jsx|ts|tsx)$': ['@swc/jest', {
       jsc: {
+        parser: {
+          syntax: 'typescript',
+          tsx: true,
+        },
         transform: {
           react: {
             runtime: 'automatic',

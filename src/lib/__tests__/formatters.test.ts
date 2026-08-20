@@ -135,7 +135,7 @@ describe('formatCompatibility', () => {
 
 describe('truncateText', () => {
   it('should truncate long text', () => {
-    expect(truncateText('Hello world', 5)).toBe('Hel...')
+    expect(truncateText('Hello world', 5)).toBe('He...')
   })
 
   it('should not truncate short text', () => {

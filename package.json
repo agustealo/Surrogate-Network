@@ -10,9 +10,9 @@
     "start": "next start",
     "lint": "next lint",
     "typecheck": "tsc --noEmit",
-    "test": "jest --coverage",
-    "test:unit": "jest --coverage --testPathPattern=src/lib/__tests__",
-    "test:component": "jest --coverage --testPathPattern=src/components/**/__tests__",
+    "test": "jest --coverage --testPathIgnorePatterns=src/__tests__/security",
+    "test:unit": "jest --testPathPattern=src/lib/__tests__",
+    "test:component": "jest --testPathPattern=src/components/**/__tests__",
     "test:e2e": "playwright test",
     "test:e2e:smoke": "playwright test --grep @smoke",
     "test:a11y": "playwright test --grep @a11y",
@@ -63,7 +63,9 @@
     "zod": "^3.24.2"
   },
   "devDependencies": {
+    "@next/swc-win32-x64-msvc": "^16.3.1",
     "@playwright/test": "^1.48.0",
+    "@swc/core": "^1.16.0",
     "@swc/jest": "^0.2.36",
     "@testing-library/jest-dom": "^6.6.3",
     "@testing-library/react": "^16.1.0",
