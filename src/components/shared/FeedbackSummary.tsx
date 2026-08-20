@@ -160,7 +160,7 @@ export function FeedbackSummary({
       
       {showBreakdown && breakdown && (
         <div className="pt-2 border-t">
-          <RatingBreakdown breakdown={breakdown} compact={compact} />
+          <RatingBreakdownInternal breakdown={breakdown} />
         </div>
       )}
 

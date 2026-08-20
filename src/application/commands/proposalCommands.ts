@@ -328,7 +328,7 @@ export class AcceptProposalHandler {
             },
             occurredAt: new Date(),
           });
-          return { proposal, surrogacy, eventId };
+          return { proposal, surrogacy, eventId, auditId };
         }
       )
       .build(

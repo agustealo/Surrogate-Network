@@ -3,7 +3,7 @@
 import { Badge, type BadgeProps } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
 
-interface TagBadgeProps extends BadgeProps {
+interface TagBadgeProps extends Omit<BadgeProps, 'onClick'> {
   tag: string;
   interactive?: boolean;
   onClick?: (tag: string) => void;
@@ -26,7 +26,7 @@ export function TagBadge({ tag, interactive, onClick, isSelected, className, var
         isSelected && interactive && "ring-2 ring-primary ring-offset-1",
         className
       )}
-      onClick={handleClick}
+      onClick={handleClick as any}
       aria-pressed={interactive ? isSelected : undefined}
       {...props}
     >

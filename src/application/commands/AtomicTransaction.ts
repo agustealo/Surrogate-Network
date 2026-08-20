@@ -54,6 +54,7 @@ export class AtomicTransaction<TInput = any, TFinalOutput = any> {
   private stepResults: Map<string, StepResult> = new Map();
   private state: TransactionState = TransactionState.NOT_STARTED;
   private context: Map<string, any> = new Map();
+  private tx: Transaction | null = null;
 
   constructor(
     private name: string,
@@ -78,20 +79,19 @@ export class AtomicTransaction<TInput = any, TFinalOutput = any> {
       this.state = TransactionState.IN_PROGRESS;
       this.context.set('input', input);
 
-      const tx = await this.transactionManager();
+      this.tx = await this.transactionManager();
 
       // Execute steps in order
       for (const step of this.steps) {
         if (this.state !== TransactionState.IN_PROGRESS) {
-          break; // Stop if transaction already failed/rolled back
+          break;
         }
 
-        const stepResult = await this.executeStep(step, input, tx);
+        const stepResult = await this.executeStep(step, input, this.tx);
         this.stepResults.set(step.name, stepResult);
 
         if (!stepResult.executed && step.required) {
-          // Required step failed - rollback
-          await this.rollback(tx);
+          await this.rollback(this.tx);
           const error = stepResult.error || createDomainError(
             'INVALID_STATE_TRANSITION',
             `Required step '${step.name}' failed`,
@@ -101,8 +101,7 @@ export class AtomicTransaction<TInput = any, TFinalOutput = any> {
         }
       }
 
-      // All steps executed successfully - commit
-      await tx.commit();
+      await this.tx.commit();
       this.state = TransactionState.COMPLETED;
 
       return createSuccessResult(
@@ -113,20 +112,23 @@ export class AtomicTransaction<TInput = any, TFinalOutput = any> {
       this.state = TransactionState.FAILED;
       const domainError = this.convertToDomainError(error);
       
-      try {
-        const tx = await this.transactionManager();
-        await this.rollback(tx);
-      } catch (rollbackError) {
-        return createErrorResult({
-          ...domainError,
-          details: {
-            ...domainError.details,
-            rollbackError: String(rollbackError),
-          },
-        });
+      if (this.tx) {
+        try {
+          await this.rollback(this.tx);
+        } catch (rollbackError) {
+          return createErrorResult({
+            ...domainError,
+            details: {
+              ...domainError.details,
+              rollbackError: String(rollbackError),
+            },
+          });
+        }
       }
 
       return createErrorResult(domainError);
+    } finally {
+      this.tx = null;
     }
   }
 
@@ -331,7 +333,7 @@ export class TransactionSteps {
       execute: async (input, tx) => {
         return await recordAudit(input, tx);
       },
-      required: false, // Audit failure shouldn't block business logic
+      required: true,
     };
   }
 
@@ -347,7 +349,7 @@ export class TransactionSteps {
       execute: async (input, tx) => {
         await publishEvent(input, tx);
       },
-      required: false, // Event publishing failure shouldn't block business logic
+      required: true,
     };
   }
 

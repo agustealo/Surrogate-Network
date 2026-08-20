@@ -2,7 +2,7 @@
 
 import * as React from "react";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useForm } from "react-hook-form";
+import { useForm, useFieldArray } from "react-hook-form";
 import * as z from "zod";
 import { Button } from "@/components/ui/button";
 import {
@@ -64,7 +64,8 @@ export function NeedForm({ onSuccess, onCancel, userId = 'current-user', userNam
     mode: "onChange",
   });
 
-  const { fields: tagFields, append: appendTag, remove: removeTag } = form.useFieldArray({
+  const { fields: tagFields, append: appendTag, remove: removeTag } = useFieldArray({
+    control: form.control,
     name: "tags",
   });
 
@@ -318,7 +319,7 @@ export function NeedForm({ onSuccess, onCancel, userId = 'current-user', userNam
             <div>
               <FormLabel>Tags (Optional)</FormLabel>
               <div className="mt-2 space-y-2">
-                {tagFields.map((field, index) => (
+                {tagFields.map((field: { id: string }, index: number) => (
                   <div key={field.id} className="flex gap-2">
                     <Input 
                       placeholder="Add a tag (e.g., Companionship, Support)"

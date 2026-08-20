@@ -104,17 +104,9 @@ export const mockProposals: Proposal[] = [
 export const mockActiveConnections: ActiveConnection[] = [
   {
     id: 'conn1',
-    partner: mockUsers.caleb,
-    yourOffering: { 
-      id: 'o-user-3', 
-      title: 'Technical Troubleshooting', 
-      category: 'utilitarian_business' 
-    },
-    theirOffering: { 
-      id: 'o7', 
-      title: 'Deep Conversation Partner', 
-      category: 'personal' 
-    },
+    partnerId: mockUsers.caleb.id,
+    partnerName: mockUsers.caleb.name,
+    partnerAvatar: mockUsers.caleb.avatarUrl,
     startedAt: new Date(Date.now() - 1000 * 60 * 60 * 24 * 5).toISOString(),
     status: 'active',
   },
@@ -123,31 +115,37 @@ export const mockActiveConnections: ActiveConnection[] = [
 export const mockChatSessions: ChatSession[] = [
   {
     id: 'chat1',
-    userId: '1',
-    userName: 'Elara Vance',
-    lastMessage: 'That cafe exploration idea sounds lovely! When are you free?',
-    unreadCount: 1,
-    avatarUrl: 'https://placehold.co/100x100.png?text=EV',
-    timestamp: '11:45 AM',
-    interactionFocus: 'seeking',
-    offerings: [
-      { id: 'o1', title: 'Empathetic Listener', category: 'personal' },
-      { id: 'o2', title: 'Warm Cuddle Buddy', category: 'personal' },
+    partnerId: mockUsers.caleb.id,
+    partnerName: 'Elara Vance',
+    partnerAvatar: 'https://placehold.co/100x100.png?text=EV',
+    messages: [
+      { 
+        id: 'm1', 
+        senderId: mockUsers.caleb.id, 
+        senderName: 'Elara Vance', 
+        content: 'That cafe exploration idea sounds lovely! When are you free?', 
+        timestamp: '11:45 AM' 
+      }
     ],
+    unreadCount: 1,
+    lastMessageAt: '11:45 AM',
   },
   {
     id: 'chat2',
-    userId: '2',
-    userName: 'Marcus Thorne',
-    lastMessage: 'I found a new recipe I\'d love to try cooking for someone. Interested?',
-    unreadCount: 0,
-    avatarUrl: 'https://placehold.co/100x100.png?text=MT',
-    timestamp: 'Yesterday',
-    interactionFocus: 'offering',
-    offerings: [
-      { id: 'o3', title: 'Engaging Book/Film Talks', category: 'casual' },
-      { id: 'o4', title: 'Home-Cooked Meals with Love', category: 'personal' },
+    partnerId: mockUsers.marcus.id,
+    partnerName: 'Marcus Thorne',
+    partnerAvatar: 'https://placehold.co/100x100.png?text=MT',
+    messages: [
+      { 
+        id: 'm2', 
+        senderId: mockUsers.marcus.id, 
+        senderName: 'Marcus Thorne', 
+        content: 'I found a new recipe I\'d love to try cooking for someone. Interested?', 
+        timestamp: 'Yesterday' 
+      }
     ],
+    unreadCount: 0,
+    lastMessageAt: 'Yesterday',
   },
 ];
 

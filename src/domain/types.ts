@@ -69,6 +69,7 @@ export interface LegacyOffering {
   ratingCount?: number;
   boundaries?: Boundary[];
   tokenReward?: number;
+  tokenCost?: number;
 }
 
 export interface LegacyRequest {
@@ -81,6 +82,7 @@ export interface LegacyRequest {
   ratingCount?: number;
   boundaries?: Boundary[];
   tokenCost?: number;
+  tokenReward?: number;
 }
 
 export interface LegacyProposal {

@@ -145,7 +145,7 @@ COMMENT ON FUNCTION admin_update_profile IS 'Security-definer function for admin
 CREATE TABLE IF NOT EXISTS command_idempotency (
   id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
   key TEXT NOT NULL UNIQUE,
-  actor_id UUID NOT NULL REFERENCES profiles(id) ON DELETE SET NULL,
+  actor_id UUID REFERENCES profiles(id) ON DELETE SET NULL,
   command_type TEXT NOT NULL,
   aggregate_id TEXT,
   result JSONB,

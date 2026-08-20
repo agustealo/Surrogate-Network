@@ -166,8 +166,6 @@ const dummyProfiles: ProfileType[] = [
     ],
     matchScore: 88,
     badges: [{id: 'b4', name: 'Master of Wit', iconUrl: 'MessageCircle', description: 'Sharp and engaging conversations.'}],
-    createdAt: new Date().toISOString(),
-    updatedAt: new Date().toISOString(),
     strengthMatrix: [
       { attribute: 'Conversation', proficiency: 95 },
       { attribute: 'Humor', proficiency: 85 },
@@ -198,9 +196,7 @@ const dummyProfiles: ProfileType[] = [
     ],
     matchScore: 85,
     badges: [{id: 'b5', name: 'Deep Thinker', iconUrl: 'Brain', description: 'Values profound conversations.'}],
-    createdAt: new Date().toISOString(),
-    updatedAt: new Date().toISOString(),
-     strengthMatrix: [
+    strengthMatrix: [
       { attribute: 'Philosophy', proficiency: 80 },
       { attribute: 'Vulnerability', proficiency: 90 },
       { attribute: 'Listening', proficiency: 88 },
@@ -230,8 +226,6 @@ const dummyProfiles: ProfileType[] = [
     ],
     matchScore: 75,
     badges: [{id: 'b6', name: 'Top Project Manager', iconUrl: 'Briefcase', description: 'Excelled in numerous project deliveries.'}],
-    createdAt: new Date().toISOString(),
-    updatedAt: new Date().toISOString(),
     strengthMatrix: [
       { attribute: 'Project Mgmt', proficiency: 95 },
       { attribute: 'Strategy', proficiency: 90 },
@@ -475,12 +469,12 @@ export default function UserProfilePage() {
         </DialogTitle>
         <div className="pt-1 flex justify-between items-center">
           {getCategoryDisplay(item.category)}
-           {type === 'Offering' && typeof item.tokenReward === 'number' && (
+           {type === 'Offering' && ('tokenReward' in item && typeof item.tokenReward === 'number') && (
               <div className="flex items-center gap-1.5 text-sm font-semibold text-green-600">
                 <span>Reward:</span> <Coins className="h-4 w-4" /> <span>+{item.tokenReward}</span>
               </div>
             )}
-            {type === 'Request' && typeof item.tokenCost === 'number' && (
+            {type === 'Request' && ('tokenCost' in item && typeof item.tokenCost === 'number') && (
               <div className="flex items-center gap-1.5 text-sm font-semibold text-accent">
                 <span>Cost:</span> <Coins className="h-4 w-4" /> <span>{item.tokenCost}</span>
               </div>
@@ -615,13 +609,13 @@ export default function UserProfilePage() {
             </CardFooter>
           </Card>
 
-          {(profile as LegacyProfile).badges && (profile as LegacyProfile).badges.length > 0 && (
+          {((profile as LegacyProfile).badges && (profile as LegacyProfile).badges?.length > 0) && (
             <Card className="shadow-xl rounded-lg">
               <CardHeader>
                 <CardTitle className="text-xl flex items-center gap-2"><Award className="text-primary h-5 w-5"/> Qualities &amp; Recognition</CardTitle>
               </CardHeader>
               <CardContent className="space-y-3">
-                {(profile as LegacyProfile).badges.map(badge => (
+                {(profile as LegacyProfile).badges?.map(badge => (
                   <div key={badge.id} className="flex items-start gap-3 p-3 border rounded-md hover:bg-muted/50 transition-colors shadow-sm">
                     <div className="flex-shrink-0 mt-0.5">
                       {renderBadgeIcon(badge.iconUrl)}
@@ -721,7 +715,7 @@ export default function UserProfilePage() {
               <CardDescription>Self-assessed proficiency in various attributes relevant to connections on Surrogate Network.</CardDescription>
             </CardHeader>
             <CardContent className="pt-4">
-              {(profile as LegacyProfile).strengthMatrix && (profile as LegacyProfile).strengthMatrix.length > 0 ? (
+              {((profile as LegacyProfile).strengthMatrix && (profile as LegacyProfile).strengthMatrix?.length > 0) ? (
                 <ChartContainer config={strengthChartConfig} className="mx-auto aspect-square max-h-[300px]">
                   <RadarChart data={(profile as LegacyProfile).strengthMatrix} margin={{ top: 10, right: 30, left: 30, bottom: 0 }}>
                     <CartesianGrid  className="stroke-border/50" />

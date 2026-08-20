@@ -19,7 +19,6 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Sparkles, Loader2, CheckCircle } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useState, type Dispatch, type SetStateAction } from "react";
-import { generateNeedTags, type GenerateNeedTagsInput, type GenerateNeedTagsOutput } from "@/ai/flows/generate-need-tags";
 import { TagBadge } from "@/components/common/TagBadge";
 
 const needCreatorFormSchema = z.object({
@@ -57,27 +56,35 @@ export function NeedCreatorForm({ onTagsGenerated, initialDescription = "", setF
     setSuggestedTags([]);
     setSelectedTags([]);
     try {
-      const input: GenerateNeedTagsInput = { needDescription: data.needDescription };
-      const result: GenerateNeedTagsOutput = await generateNeedTags(input);
+      // Simple tag extraction without AI (Genkit removed in SC-00.5)
+      const words = data.needDescription
+        .toLowerCase()
+        .split(/\s+/)
+        .filter(word => word.length > 3);
       
-      if (result.suggestedTags && result.suggestedTags.length > 0) {
-        setSuggestedTags(result.suggestedTags);
-        setSelectedTags(result.suggestedTags); // Auto-select all initially
+      // Extract some common keywords as potential tags
+      const commonTags = ['conversation', 'friendship', 'support', 'help', 'companion', 'partner', 'buddy', 'talk', 'chat', 'connect', 'social', 'relationship'];
+      const suggestedTags = [...new Set(words.filter(word => commonTags.includes(word)))];
+      
+      if (suggestedTags.length > 0) {
+        setSuggestedTags(suggestedTags);
+        setSelectedTags(suggestedTags);
         toast({
           title: "Tags Suggested!",
-          description: "AI has suggested some tags for your need. Review and adjust them below.",
+          description: "Some keywords have been extracted as tags. Review and adjust them below.",
         });
       } else {
+        setSuggestedTags(['companionship', 'support', 'connection']);
+        setSelectedTags(['companionship', 'support', 'connection']);
         toast({
-          title: "No Tags Suggested",
-          description: "The AI couldn't suggest tags for this description. Try rephrasing or adding more detail.",
-          variant: "destructive",
+          title: "Default Tags",
+          description: "Some default tags have been suggested. Review and adjust them below.",
         });
       }
     } catch (error) {
       console.error("Error generating tags:", error);
       toast({
-        title: "Error Generating Tags",
+        title: "Error",
         description: "Something went wrong. Please try again.",
         variant: "destructive",
       });

@@ -1,7 +1,7 @@
 // Command Architecture Foundation for SC-00.4
 // Provides the base infrastructure for atomic, idempotent business operations
 
-import type { VerificationStatus } from '../domain/types';
+import type { VerificationStatus } from '@/domain/types';
 
 /**
  * Command result type - represents the outcome of any command execution
