@@ -107,7 +107,7 @@ export const mockActiveConnections: ActiveConnection[] = [
     partnerId: mockUsers.caleb.id,
     partnerName: mockUsers.caleb.name,
     partnerAvatar: mockUsers.caleb.avatarUrl,
-    startedAt: new Date(Date.now() - 1000 * 60 * 60 * 24 * 5).toISOString(),
+    lastActivity: new Date(Date.now() - 1000 * 60 * 60 * 24 * 5).toISOString(),
     status: 'active',
   },
 ];

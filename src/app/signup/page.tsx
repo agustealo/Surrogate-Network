@@ -10,12 +10,6 @@ export const metadata: Metadata = {
 };
 
 export default function SignUpPage() {
-  const handleSignUp = (data: any) => {
-    // In a real app, you would register the user here
-    console.log('Sign up attempt with:', data);
-    // Redirect to profile creation or dashboard upon successful sign-up
-  };
-
   return (
     <PageWrapper title="Create Your Account" className="max-w-md mx-auto">
       <Card className="shadow-xl">
@@ -24,7 +18,7 @@ export default function SignUpPage() {
           <CardDescription>Start your journey by creating an account. It's quick and easy!</CardDescription>
         </CardHeader>
         <CardContent>
-          <SignUpForm onSubmit={handleSignUp} />
+          <SignUpForm />
         </CardContent>
       </Card>
     </PageWrapper>

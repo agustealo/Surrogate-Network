@@ -1,7 +1,8 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 
-export default function MemberPlaceholderPage({ params }: { params: { slug: string[] } }) {
-  const path = params.slug.join('/');
+export default async function MemberPlaceholderPage({ params }: { params: Promise<{ slug: string[] }> }) {
+  const { slug } = await params;
+  const path = slug.join('/');
   return (
     <div className="container mx-auto px-4 py-6 max-w-5xl">
       <Card>

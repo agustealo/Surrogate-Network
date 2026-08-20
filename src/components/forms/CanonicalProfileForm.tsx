@@ -81,7 +81,7 @@ export function CanonicalProfileForm({ onSuccess, onCancel }: CanonicalProfileFo
       });
       
       form.reset(defaultValues);
-      onSuccess?.(profileId as string);
+      onSuccess?.(typeof profileId === 'string' ? profileId : profileId.id);
     } catch (error: any) {
       console.error("Error creating profile:", error);
       toast({

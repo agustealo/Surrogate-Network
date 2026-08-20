@@ -1,5 +1,6 @@
 // Tests for EmptyState component
 
+import '@testing-library/jest-dom'
 import { render, screen } from '@testing-library/react'
 import { EmptyState } from '@/components/shared/EmptyState'
 import { Home, UserPlus } from 'lucide-react'

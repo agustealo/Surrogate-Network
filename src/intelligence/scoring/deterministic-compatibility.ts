@@ -205,7 +205,7 @@ export class DeterministicCompatibilityScorer implements PredictionScorer {
     return 0.3;
   }
 
-  private getCategoryAlignmentType(needCategory: SurrogateCategory, offerCategory: SurrogateCategory): string {
+  private getCategoryAlignmentType(needCategory: SurrogateCategory, offerCategory: SurrogateCategory): 'exact' | 'related' | 'different' {
     if (needCategory === offerCategory) return 'exact';
     if (CATEGORY_COMPATIBILITY[needCategory]?.includes(offerCategory)) return 'related';
     return 'different';

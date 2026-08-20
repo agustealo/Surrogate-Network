@@ -609,7 +609,7 @@ export default function UserProfilePage() {
             </CardFooter>
           </Card>
 
-          {((profile as LegacyProfile).badges && (profile as LegacyProfile).badges?.length > 0) && (
+          {(() => { const b = (profile as LegacyProfile).badges; return b != null && b.length > 0; })() && (
             <Card className="shadow-xl rounded-lg">
               <CardHeader>
                 <CardTitle className="text-xl flex items-center gap-2"><Award className="text-primary h-5 w-5"/> Qualities &amp; Recognition</CardTitle>
@@ -715,7 +715,7 @@ export default function UserProfilePage() {
               <CardDescription>Self-assessed proficiency in various attributes relevant to connections on Surrogate Network.</CardDescription>
             </CardHeader>
             <CardContent className="pt-4">
-              {((profile as LegacyProfile).strengthMatrix && (profile as LegacyProfile).strengthMatrix?.length > 0) ? (
+              {(() => { const s = (profile as LegacyProfile).strengthMatrix; return s != null && s.length > 0; })() ? (
                 <ChartContainer config={strengthChartConfig} className="mx-auto aspect-square max-h-[300px]">
                   <RadarChart data={(profile as LegacyProfile).strengthMatrix} margin={{ top: 10, right: 30, left: 30, bottom: 0 }}>
                     <CartesianGrid  className="stroke-border/50" />
@@ -739,7 +739,7 @@ export default function UserProfilePage() {
               <CardDescription>A summary of ratings received from past connections on Surrogate Network.</CardDescription>
             </CardHeader>
             <CardContent className="pt-4">
-               {(profile as LegacyProfile).reviewSummary && (profile as LegacyProfile).reviewSummary.length > 0 ? (
+               {(() => { const r = (profile as LegacyProfile).reviewSummary; return r != null && r.length > 0; })() ? (
                 <ChartContainer config={reviewChartConfig} className="mx-auto aspect-[16/9] max-h-[300px]">
                   <BarChart data={(profile as LegacyProfile).reviewSummary} margin={{ top: 5, right: 10, left: -20, bottom: 5 }}>
                     <CartesianGrid vertical={false} className="stroke-border/50" />

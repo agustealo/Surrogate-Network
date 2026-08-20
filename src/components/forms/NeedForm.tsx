@@ -2,7 +2,7 @@
 
 import * as React from "react";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useForm, useFieldArray } from "react-hook-form";
+import { useForm, useFieldArray, type FieldPath } from "react-hook-form";
 import * as z from "zod";
 import { Button } from "@/components/ui/button";
 import {
@@ -66,8 +66,8 @@ export function NeedForm({ onSuccess, onCancel, userId = 'current-user', userNam
 
   const { fields: tagFields, append: appendTag, remove: removeTag } = useFieldArray({
     control: form.control,
-    name: "tags",
-  });
+    name: 'tags',
+  } as any);
 
   async function onSubmit(data: NeedFormValues) {
     try {

@@ -32,7 +32,7 @@ const signUpFormSchema = z.object({
 type SignUpFormValues = z.infer<typeof signUpFormSchema>;
 
 interface SignUpFormProps {
-  onSubmit: (data: SignUpFormValues) => void;
+  onSubmit?: (data: SignUpFormValues) => void;
 }
 
 export function SignUpForm({ onSubmit }: SignUpFormProps) {
@@ -49,13 +49,15 @@ export function SignUpForm({ onSubmit }: SignUpFormProps) {
   });
 
   const handleFormSubmit = (data: SignUpFormValues) => {
-    onSubmit(data);
-    // In a real app, onSubmit would handle success/error toasts based on API response
+    if (onSubmit) {
+      onSubmit(data);
+    } else {
+      console.log('Sign up attempt with:', data);
+    }
     toast({
       title: "Sign Up Submitted (Mock)",
       description: "Your registration attempt has been processed. You might be redirected soon.",
     });
-    // router.push('/profile/create'); // Example redirect
   };
 
   return (

@@ -1,5 +1,6 @@
 // Tests for StatusBadge component
 
+import '@testing-library/jest-dom'
 import { render, screen } from '@testing-library/react'
 import { StatusBadge, StatusDot, getStatusColor, getStatusBgColor } from '@/components/shared/StatusBadge'
 
