@@ -1,269 +1,201 @@
 # Surrogate Network
 
-A needs-based social companion platform that connects people through meaningful exchanges of support and companionship.
+A needs-based social companion platform for meaningful exchanges of support, companionship, and capability.
 
-## 🌟 About
+## About
 
-Surrogate Network is a social co-op where members articulate their **Needs** and offer their **capabilities** (Offers) to create mutually beneficial relationships. Unlike traditional social networks that focus on connections or dating apps that focus on candidates, Surrogate models **fulfillment** through structured relationships.
+Surrogate Network is a social co-op where members articulate their Needs and Offers so the product can model fulfillment instead of simple connection counts. Members can publish what they need, describe what they can provide, discover compatible matches, and move from proposal to ongoing relationship.
 
-### Core Concept
+## Core Model
 
-Members create profiles that define what they need and what they can offer. The platform facilitates discovery, compatibility matching, and relationship management through:
+- **Needs**: Something a member wants fulfilled.
+- **Offers**: Something a member is willing and able to provide.
+- **Surrogacies**: Established relationships around one or more Needs and Offers.
+- **Moments**: Scheduled or completed occurrences inside a Surrogacy.
+- **Exchanges**: Records of agreed interactions, feedback, trust, XP, and token effects.
 
-- **Needs**: Something I want fulfilled
-- **Offers**: Something I'm willing/able to provide
-- **Surrogacy**: An established relationship around one or more Needs/Offers
-- **Moments**: Individual occurrences of that Surrogacy
-- **Exchanges**: The recorded fulfillment of agreed interactions
+The intended loop is:
 
-## ✨ Key Features
-
-### Current Features (Phase 0)
-
-- Profile creation with offerings and requests
-- Basic needs/offers discovery board
-- Simple proposal system
-- AI-powered need tag generation
-- Basic token economy hints
-- Firebase integration for data persistence
-
-### Phase 1 Vision (In Progress)
-
-The platform is evolving to support the complete relationship lifecycle:
-
-**🔄 Complete Relationship Loop**
-```
-Need → Discovery → Proposal → Agreement → Surrogacy → Moment → Exchange → Feedback → Trust/XP/Tokens → Better Discovery
+```text
+Need -> Discovery -> Proposal -> Agreement -> Surrogacy -> Moment -> Exchange -> Feedback -> Trust/XP/Tokens -> Better Discovery
 ```
 
-**🎯 Core Infrastructure**
-- Richer Need/Offer data models with multiple dimensions
-- Compatibility Matrix (multi-dimensional matching)
-- Three-level boundary system (Global/Surrogacy/Moment)
-- Dynamic consent and permission grants
-- Trust Matrix (multi-dimensional reputation)
-- Basic scheduling and availability
-- Media visibility controls and blur states
-- Token economy with ledger
-- XP and rank progression system
-- Capability/permission resolver
+## Current Product Surface
 
-**🛡️ Safety & Trust**
-- Block, mute, restrict functionality
-- Media access controls
-- Profile visibility levels
-- Basic moderation tools
-- Audit logging
+- Public, member, and admin application shells.
+- Profile, needs, offers, discovery, messaging, settings, and admin routes.
+- Navigation registry with surface-specific public, member, and admin navigation.
+- Supabase-backed repositories for profiles, needs, offers, and capability data.
+- Demo fixtures and development helpers for local iteration.
+- Jest, Playwright, lint, and TypeScript validation scripts.
 
-**👥 User Experience**
-- Separate Public/Member/Admin application shells
-- Member navigation: Home, Discover, Needs, Offers, Surrogacies, Messages, Pods, Rewards, Profile
-- Relationship Dashboard showing social landscape coverage
-- Contextual feedback on completed exchanges
+## Roadmap
 
-**🏛️ Admin Console**
-- Member lookup and inspection
-- Needs/Offers management
-- Surrogacy oversight
-- Feedback review
-- Media moderation
-- Token ledger inspection
-- Rank/XP verification
-- Basic reports and moderation actions
-- Audit log access
+### Phase 0: Foundation
 
-## 🚀 Getting Started
+- Basic profile system.
+- Simple needs/offers discovery.
+- Mock proposal flow.
+- Need tagging and form helpers.
+- Initial UI component system.
+
+### Phase 1: Relationship Loop
+
+Goal: make the central Surrogate lifecycle real end to end.
+
+Key deliverables:
+
+- Complete social objects: Need, Offer, Surrogacy, Moment, and Exchange.
+- Full proposal lifecycle: counter, accept, decline, and agreement.
+- Compatibility matrix with clear matching breakdowns.
+- Boundary system across global, Surrogacy, and Moment contexts.
+- Consent and permission infrastructure.
+- Scheduling and availability primitives.
+- Trust matrix, XP, rank progression, and token ledger.
+- Media visibility controls.
+- Operational admin console and audit logging.
+
+### Phase 2: Community Systems
+
+- Advanced pods.
+- Community governance and treasury.
+- Advanced media permissions.
+- Relationship analytics.
+- Social landscape intelligence.
+- Fraud and abuse detection.
+
+## Getting Started
 
 ### Prerequisites
 
-- Node.js 18+
-- npm or yarn
-- Firebase project with Firestore enabled
-- Google AI API key (for Genkit/need tagging)
+- Node.js 22 or newer.
+- npm.
+- A Supabase project for database/auth/storage features.
+- An OpenAI API key if AI-backed features are enabled.
 
 ### Installation
 
 ```bash
-# Clone the repository
 git clone https://github.com/yourusername/surrogate-network.git
 cd surrogate-network
-
-# Install dependencies
 npm install
-
-# Set up environment variables
 cp .env.example .env.local
-# Edit .env.local with your Firebase and API keys
 ```
 
-### Environment Variables
+Edit `.env.local` with your local or hosted Supabase values:
 
 ```env
-# Firebase Configuration
-NEXT_PUBLIC_FIREBASE_API_KEY=your_api_key
-NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN=your_project.firebaseapp.com
-NEXT_PUBLIC_FIREBASE_PROJECT_ID=your_project_id
-NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET=your_project.appspot.com
-NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID=your_sender_id
-NEXT_PUBLIC_FIREBASE_APP_ID=your_app_id
-NEXT_PUBLIC_FIREBASE_MEASUREMENT_ID=your_measurement_id
+NEXT_PUBLIC_SUPABASE_URL=your_supabase_project_url
+NEXT_PUBLIC_SUPABASE_ANON_KEY=your_supabase_anon_key
+SUPABASE_SERVICE_ROLE_KEY=your_supabase_service_role_key
 
-# Google AI (for Genkit)
-GOOGLE_GENAI_API_KEY=your_google_ai_api_key
+NEXT_PUBLIC_DEMO_MODE=false
+NEXT_PUBLIC_APP_URL=http://localhost:9002
+
+OPENAI_API_KEY=your_openai_api_key
+NODE_ENV=development
 ```
 
 ### Development
 
 ```bash
-# Run development server (with Turbopack for faster builds)
 npm run dev
-
-# Run Genkit development server (for AI flows)
-npm run genkit:dev
-
-# Build for production
-npm run build
-
-# Start production server
-npm start
-
-# Run type checking
-npm run typecheck
-
-# Run linting
 npm run lint
+npm run typecheck
+npm test
 ```
 
-The application will be available at `http://localhost:9002`
+The development server runs at `http://localhost:9002`.
 
-## 🏗️ Tech Stack
+### Test Commands
 
-- **Frontend**: Next.js 15, React 18, TypeScript
-- **Styling**: Tailwind CSS, Radix UI components
-- **Database**: Firebase Firestore
-- **AI Integration**: Google Genkit for need tag generation
-- **Charts**: Recharts for data visualization
-- **Forms**: React Hook Form with Zod validation
-- **State Management**: React Query (TanStack Query) with Firebase
-- **Date Handling**: date-fns
-
-## 📁 Project Structure
-
+```bash
+npm run test:unit
+npm run test:component
+npm run test:security
+npm run test:e2e
+npm run test:e2e:smoke
+npm run test:a11y
 ```
+
+### Production Build
+
+```bash
+npm run build
+npm start
+```
+
+## Tech Stack
+
+- **Framework**: Next.js 16, React 19, TypeScript.
+- **Styling**: Tailwind CSS and Radix UI primitives.
+- **Data**: Supabase PostgreSQL, Auth, Storage, Realtime, and Row Level Security.
+- **State and forms**: TanStack Query, React Hook Form, and Zod.
+- **Testing**: Jest, Testing Library, Playwright, and accessibility smoke tests.
+- **Charts and UI utilities**: Recharts, Lucide React, date-fns, and class-variance-authority.
+
+## Project Structure
+
+```text
 surrogate-network/
-├── src/
-│   ├── app/                    # Next.js app directory
-│   │   ├── page.tsx           # Landing page
-│   │   ├── dashboard/         # Member dashboard
-│   │   ├── matches/           # Discovery board
-│   │   ├── profile/           # Profile pages
-│   │   ├── needs/             # Need creation
-│   │   ├── chat/              # Messaging
-│   │   └── settings/          # User settings
-│   ├── components/
-│   │   ├── common/            # Shared components
-│   │   ├── forms/             # Form components
-│   │   ├── layout/            # Layout components
-│   │   └── ui/                # UI primitives (Radix)
-│   ├── lib/
-│   │   ├── types.ts           # TypeScript type definitions
-│   │   ├── utils.ts           # Utility functions
-│   │   └── firebase/          # Firebase configuration
-│   ├── services/              # Business logic services
-│   ├── ai/                    # AI integration (Genkit)
-│   └── hooks/                 # Custom React hooks
-├── docs/                      # Documentation
-├── public/                    # Static assets
-└── package.json
+|-- src/
+|   |-- app/                    # Next.js app directory and route groups
+|   |-- application/            # Application services and use-case orchestration
+|   |-- components/             # Shared UI, forms, layout, and feature components
+|   |-- dev/                    # Fixtures and local development helpers
+|   |-- domain/                 # Domain entities, interfaces, and business rules
+|   |-- hooks/                  # Shared React hooks
+|   |-- infrastructure/         # Supabase clients, repositories, and adapters
+|   |-- intelligence/           # Matching and intelligence helpers
+|   |-- lib/                    # Shared utilities and types
+|   |-- navigation/             # Navigation registry and surface-specific navigation
+|   |-- repositories/           # Repository interfaces and supporting code
+|   |-- services/               # Legacy and cross-cutting services
+|   `-- __tests__/              # Security and regression tests
+|-- docs/                       # Architecture, development, API, and model docs
+|-- e2e/                        # Playwright test suites
+|-- supabase/                   # Supabase config, migrations, and seed data
+`-- package.json
 ```
 
-## 🗺️ Roadmap
+## Development Guidelines
 
-### Phase 0 ✅ (Complete)
-- Basic profile system
-- Simple needs/offers discovery
-- Mock proposal flow
-- AI need tagging
-- Basic UI components
+- Keep business logic in application/domain/services layers, not React components.
+- Use shared design-system primitives from `src/components/ui/`.
+- Prefer repository interfaces and Supabase infrastructure adapters for data access.
+- Keep navigation changes registered through `src/navigation/`.
+- Add focused tests for user-facing behavior, domain rules, and shared contracts.
+- Update documentation when setup, architecture, or workflows change.
 
-### Phase 1 🚧 (In Progress)
-**Goal**: Make the central Surrogate loop real and complete
+## Documentation
 
-**Success Criteria**: A user can register, complete profile, create needs/offers, discover matches, send proposals, establish surrogacies, schedule moments, complete exchanges, leave feedback, build reputation, earn XP/tokens, progress through ranks, manage media access, and view everything from both member and admin perspectives.
+- [Architecture Documentation](docs/ARCHITECTURE.md)
+- [Development Guide](docs/DEVELOPMENT.md)
+- [API Reference](docs/API.md)
+- [Data Models](docs/DATA_MODELS.md)
+- [Contributing Guide](docs/CONTRIBUTING.md)
 
-**Key Deliverables**:
-- Complete social objects (Need, Offer, Surrogacy, Moment, Exchange)
-- Full proposal lifecycle (counter, accept, decline)
-- Compatibility matrix with breakdowns
-- Boundary system (Global/Surrogacy/Moment)
-- Consent/permission infrastructure
-- Basic scheduling system
-- Trust matrix and reputation
-- Token ledger and economy rules
-- XP/rank progression
-- Media visibility controls
-- Separate Public/Member/Admin shells
-- Admin console with basic operational tools
+## Design Principles
 
-### Phase 2 🔮 (Future)
-- Advanced Pods
-- Battle Pass system
-- Community governance
-- Community treasury
-- Advanced media permissions
-- AI relationship analytics
-- Social Landscape intelligence
-- Advanced fraud detection
+- **Human-first**: people are the product, not the algorithm.
+- **Fulfillment over connection**: meaningful support matters more than passive graph growth.
+- **Consent-centric**: permissions should be specific, reversible, and understandable.
+- **Multi-dimensional**: needs, boundaries, compatibility, and trust all need nuance.
+- **Community-driven**: the co-op model should support participation and accountability.
 
-## 🤝 Contributing
+## Safety and Privacy
 
-We welcome contributions! Please see [CONTRIBUTING.md](docs/CONTRIBUTING.md) for guidelines.
+- Granular boundary systems.
+- Media access controls and blur states.
+- Block, mute, and restrict functionality.
+- Audit logging for accountability.
+- Permission-based capabilities.
+- Reputation signals separated from popularity.
 
-### Development Guidelines
+## License
 
-- Keep business logic in `src/services/`, not React components
-- Use shared design-system primitives from `src/components/ui/`
-- Follow existing code style and patterns
-- Add type definitions for new features
-- Update documentation as needed
-
-## 📖 Documentation
-
-- [Architecture Documentation](docs/ARCHITECTURE.md) - Technical design and system components
-- [Development Guide](docs/DEVELOPMENT.md) - Setup and workflows
-- [API Reference](docs/API.md) - Service interfaces and contracts
-- [Data Models](docs/DATA_MODELS.md) - Type definitions and schemas
-
-## 🎨 Design Principles
-
-- **Human-First**: People are the product, not AI algorithms
-- **Fulfillment over Connection**: Focus on meaningful exchanges, not just relationships
-- **Consent-Centric**: Dynamic, specific, and reversible permission systems
-- **Multi-Dimensional**: Complex relationships require nuanced matching and reputation systems
-- **Community-Driven**: Co-op model with governance participation
-
-## 🛡️ Safety & Privacy
-
-Surrogate Network takes safety seriously:
-
-- Granular boundary systems at multiple levels
-- Media access controls and blur states
-- Block, mute, and restrict functionality
-- Audit logging for accountability
-- Permission-based capabilities
-- Reputation separate from popularity
-
-## 📄 License
-
-[Your License Here] - See LICENSE file for details
-
-## 🙏 Acknowledgments
-
-- Firebase for the backend infrastructure
-- Google Genkit for AI capabilities
-- Radix UI for accessible component primitives
-- The open-source community for amazing tools and libraries
+License information has not been added yet.
 
 ---
 
-**Built with ❤️ for meaningful human connections**
+Built for meaningful human connections.

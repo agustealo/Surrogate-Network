@@ -23,6 +23,7 @@
 # misc
 .DS_Store
 *.pem
+.eslintignore
 
 # debug
 npm-debug.log*
@@ -43,6 +44,9 @@ next-env.d.ts
 # firebase
 firebase-debug.log
 firestore-debug.log
+
+# supabase
+supabase/.temp/
 
 # ans and sec files
 *.ans

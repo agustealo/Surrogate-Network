@@ -48,7 +48,7 @@ export interface ReviewSummaryPoint {
   count: number;
 }
 
-// Legacy types for backward compatibility during migration (DEPRECATED - use canonical types)
+// Legacy types for backward compatibility during migration.
 export interface LegacyProfile extends Profile {
   offerings: LegacyOffering[];
   requests: LegacyRequest[];
@@ -115,11 +115,9 @@ export interface LegacyFeedback {
   skillEndorsements?: string;
 }
 
-// Type aliases for backward compatibility during migration (DEPRECATED - use canonical types)
 export type Offering = LegacyOffering;
 export type ProfileRequest = LegacyRequest;
 
-// Type alias for form compatibility
 export type NewProfileData = Omit<Profile, 'id' | 'createdAt'> & {
   offerings?: LegacyOffering[];
   requests?: LegacyRequest[];
@@ -130,8 +128,6 @@ export type NewProfileData = Omit<Profile, 'id' | 'createdAt'> & {
   strengthMatrix?: StrengthMatrixPoint[];
   reviewSummary?: ReviewSummaryPoint[];
 }
-
-
 
 export interface Need {
   id: string;

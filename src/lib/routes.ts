@@ -58,13 +58,6 @@ export const routes = {
     audit: '/admin/audit',
     settings: '/admin/settings',
   },
-
-  // Legacy redirects (for backward compatibility)
-  legacy: {
-    dashboard: '/dashboard',
-    matches: '/matches',
-    chat: '/chat',
-  },
 } as const;
 
 export type RoutePath = typeof routes.public[keyof typeof routes.public] 

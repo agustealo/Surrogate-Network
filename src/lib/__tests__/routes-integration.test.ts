@@ -28,12 +28,6 @@ describe('Route helpers integration', () => {
     expect(routes.memberDynamic.surrogacy('surg789')).toBe('/surrogacies/surg789')
   })
 
-  it('should maintain legacy redirect routes', () => {
-    expect(routes.legacy.dashboard).toBe('/dashboard')
-    expect(routes.legacy.matches).toBe('/matches')
-    expect(routes.legacy.chat).toBe('/chat')
-  })
-
   it('should not have route conflicts between surfaces', () => {
     const allRoutes = new Set([
       ...Object.values(routes.public),
@@ -43,12 +37,5 @@ describe('Route helpers integration', () => {
 
     const uniqueRoutes = new Set(allRoutes)
     expect(uniqueRoutes.size).toBe(allRoutes.size)
-  })
-
-  it('should support route migration strategy', () => {
-    // Old routes should map to new routes
-    expect(routes.legacy.dashboard).not.toBe(routes.member.home)
-    expect(routes.legacy.matches).not.toBe(routes.member.discover)
-    expect(routes.legacy.chat).not.toBe(routes.member.messages)
   })
 })

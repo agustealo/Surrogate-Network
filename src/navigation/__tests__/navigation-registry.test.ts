@@ -214,4 +214,34 @@ describe('Navigation Registry', () => {
       expect(mobileItems.length).toBeLessThan(desktopItems.length);
     });
   });
+
+  describe('surface isolation', () => {
+    it('public navigation should contain only public surface items', () => {
+      const publicItems = filterNavigationItems(publicNavigation, 'public', 'desktop');
+      expect(publicItems.every(item => item.surfaces.includes('public'))).toBe(true);
+      expect(publicItems.some(item => item.surfaces.includes('member'))).toBe(false);
+      expect(publicItems.some(item => item.surfaces.includes('admin'))).toBe(false);
+    });
+
+    it('member navigation should contain only member surface items', () => {
+      const memberItems = filterNavigationItems(memberNavigation, 'member', 'desktop');
+      expect(memberItems.every(item => item.surfaces.includes('member'))).toBe(true);
+      expect(memberItems.some(item => item.surfaces.includes('public'))).toBe(false);
+      expect(memberItems.some(item => item.surfaces.includes('admin'))).toBe(false);
+    });
+
+    it('admin navigation should contain only admin surface items', () => {
+      const adminItems = filterNavigationItems(adminNavigation, 'admin', 'desktop');
+      expect(adminItems.every(item => item.surfaces.includes('admin'))).toBe(true);
+      expect(adminItems.some(item => item.surfaces.includes('public'))).toBe(false);
+      expect(adminItems.some(item => item.surfaces.includes('member'))).toBe(false);
+    });
+
+    it('member actions should target only member surface', () => {
+      const actions = filterNavigationActions(memberActions, 'member', 'desktop');
+      expect(actions.every(action => action.surfaces.includes('member'))).toBe(true);
+      expect(actions.some(action => action.surfaces.includes('public'))).toBe(false);
+      expect(actions.some(action => action.surfaces.includes('admin'))).toBe(false);
+    });
+  });
 });

@@ -3,13 +3,38 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { useParams } from 'next/navigation';
-import type { LegacyProfile, Offering, ProfileRequest } from '@/domain/types';
+import type { Profile } from '@/repositories/ProfileRepository';
 import { fetchProfileById } from '@/services/profileService';
 import { useToast } from '@/hooks/use-toast';
 import { getDemoData } from '@/dev/fixtures';
 import { EmptyState, LoadingState, ErrorState } from '@/components/shared';
 
-type ProfileType = LegacyProfile;
+type ProfileType = Profile;
+
+interface Offering {
+  id: string;
+  title: string;
+  description: string;
+  category: string;
+  averageRating?: number;
+  ratingCount?: number;
+  boundaries?: string[];
+  tokenReward?: number;
+  tokenCost?: number;
+}
+
+interface ProfileRequest {
+  id: string;
+  title: string;
+  description: string;
+  category: string;
+  tags?: string[];
+  averageRating?: number;
+  ratingCount?: number;
+  boundaries?: string[];
+  tokenCost?: number;
+  tokenReward?: number;
+}
 
 interface UseProfileViewResult {
   profile: ProfileType | null;
@@ -49,11 +74,11 @@ export function useProfileView(): UseProfileViewResult {
       const data = await fetchProfileById(userId);
       
       if (data) {
-        setProfile(data as LegacyProfile);
+        setProfile(data as ProfileType);
         document.title = `${data.name} - Profile | Surrogate Network`;
       } else {
         // Fall back to demo data if no real data found
-        const demoProfile = getDemoData<LegacyProfile>('users', undefined);
+        const demoProfile = getDemoData<ProfileType>('users', undefined);
         if (demoProfile) {
           setProfile(demoProfile);
           document.title = `${demoProfile.name} - Profile (Demo) | Surrogate Network`;
@@ -71,7 +96,7 @@ export function useProfileView(): UseProfileViewResult {
       console.error(`Error loading profile ${userId}:`, err);
       
       // Try to fall back to demo data
-      const demoProfile = getDemoData<LegacyProfile>('users', undefined);
+      const demoProfile = getDemoData<ProfileType>('users', undefined);
       if (demoProfile) {
         setProfile(demoProfile);
         document.title = `${demoProfile.name} - Profile (Demo Fallback) | Surrogate Network`;

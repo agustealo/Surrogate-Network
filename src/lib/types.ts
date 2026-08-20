@@ -62,13 +62,6 @@ export interface Profile extends User {
   reviewSummary?: ReviewSummaryPoint[];
 }
 
-// Legacy DTO for compatibility, should use domain types going forward
-export interface LegacyProfileDTO extends Omit<Profile, 'createdAt' | 'id' | 'strengthMatrix' | 'reviewSummary'> {
-  createdAt: string;
-  strengthMatrix?: StrengthMatrixPoint[];
-  reviewSummary?: ReviewSummaryPoint[];
-}
-
 // Ensure embedded arrays are plain objects for database compatibility
 export type NewProfileData = Omit<Profile, 'id' | 'createdAt'>;
 
@@ -96,10 +89,6 @@ export interface FeedItem {
   commentsCount: number;
   relatedNeedId?: string;
   relatedNeedTitle?: string;
-}
-
-export interface LegacyFeedItemDTO extends Omit<FeedItem, 'id' | 'createdAt'> {
-  createdAt: string;
 }
 
 export interface ChatSession {

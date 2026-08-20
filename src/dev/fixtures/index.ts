@@ -1,7 +1,7 @@
 // Demo fixtures for development and testing
 // Centralized to prevent scattered demo data in production pages
 
-import type { Profile, LegacyProposal, Proposal } from '@/domain/types';
+import type { Profile, Proposal } from '@/domain/types';
 import type { Need as DomainNeed, Offer as DomainOffer } from '@/domain/types';
 
 // Aliases for legacy compatibility
