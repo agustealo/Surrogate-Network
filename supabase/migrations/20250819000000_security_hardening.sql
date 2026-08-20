@@ -23,12 +23,7 @@ CREATE POLICY "Users can update their own non-authoritative profile fields" ON p
 DROP POLICY IF EXISTS "Public profiles are readable by all authenticated users" ON profiles;
 
 CREATE POLICY "Users can view public profile fields excluding email" ON profiles
-  FOR SELECT USING (auth.role() = 'authenticated')
-  WITH CHECK (
-    -- Restrict email column access
-    -- This doesn't actually hide the email column, but we'll need to use views or security invoker functions for full protection
-    true -- This policy allows reads, but email protection needs a view approach
-  );
+  FOR SELECT USING (auth.role() = 'authenticated');
 
 -- Fix 2: Cascade deletion on audit_events should not delete actor profiles
 ALTER TABLE audit_events 
