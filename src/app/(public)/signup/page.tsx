@@ -1,4 +1,3 @@
-
 import { PageWrapper } from '@/components/layout/PageWrapper';
 import { SignUpForm } from '@/components/forms/SignUpForm';
 import type { Metadata } from 'next';

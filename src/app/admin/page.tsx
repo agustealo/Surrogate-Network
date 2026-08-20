@@ -180,8 +180,13 @@ const ActivityItem = ({ activity }: { activity: typeof mockRecentActivity[0] }) 
 
 import { createServiceClient } from '@/infrastructure/supabase/server';
 import { redirect } from 'next/navigation';
+import { isExplicitDemoMode } from '@/lib/runtime-mode';
 
 async function checkAdminAccess() {
+  if (isExplicitDemoMode()) {
+    return;
+  }
+
   const supabase = await createServiceClient();
   const { data: { user } } = await supabase.auth.getUser();
   

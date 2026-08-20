@@ -6,7 +6,7 @@ import { test, expect } from '@playwright/test'
 test.describe('Public Surface', () => {
   test('should load landing page', async ({ page }) => {
     await page.goto('/')
-    await expect(page).toHaveTitle(/Surrogate Companion/)
+    await expect(page).toHaveTitle(/Surrogate Network/)
     
     // Check for key elements
     await expect(page.locator('h1')).toContainText('Meaningful Connections')
@@ -55,21 +55,21 @@ test.describe('Responsive Design @smoke', () => {
     await page.goto('/')
     
     // Check mobile navigation appears
-    await expect(page).toHaveTitle(/Surrogate Companion/)
+    await expect(page).toHaveTitle(/Surrogate Network/)
   })
 
   test('should work on tablet viewport', async ({ page }) => {
     await page.setViewportSize({ width: 768, height: 1024 })
     await page.goto('/')
     
-    await expect(page).toHaveTitle(/Surrogate Companion/)
+    await expect(page).toHaveTitle(/Surrogate Network/)
   })
 
   test('should work on desktop viewport', async ({ page }) => {
     await page.setViewportSize({ width: 1920, height: 1080 })
     await page.goto('/')
     
-    await expect(page).toHaveTitle(/Surrogate Companion/)
+    await expect(page).toHaveTitle(/Surrogate Network/)
   })
 })
 
@@ -82,7 +82,7 @@ test.describe('Error Handling @smoke', () => {
   test('should handle server errors gracefully', async ({ page }) => {
     // This would test a known error endpoint if we had one
     await page.goto('/')
-    await expect(page).toHaveTitle(/Surrogate Companion/)
+    await expect(page).toHaveTitle(/Surrogate Network/)
   })
 })
 
@@ -95,7 +95,7 @@ test.describe('Accessibility @smoke', () => {
     
     // Check h1 is the first heading
     const firstHeading = await page.locator('h1, h2, h3').first()
-    await expect(firstHeading).toHaveTag('h1')
+    await expect(await firstHeading.evaluate((node) => node.tagName)).toBe('H1')
   })
 
   test('should have accessible navigation', async ({ page }) => {

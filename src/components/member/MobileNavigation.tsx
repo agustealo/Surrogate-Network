@@ -10,6 +10,7 @@ import {
   memberActions,
   filterNavigationItems,
   filterNavigationActions,
+  getMemberActionHref,
   isRouteActive,
 } from '@/navigation';
 
@@ -71,17 +72,25 @@ export function MobileNavigation() {
                       <p className="text-xs font-semibold text-muted-foreground mb-2 px-2">Create</p>
                       {mobileActions
                         .filter(a => a.id !== 'create')
-                        .map((subAction) => (
-                          <Link
-                            key={subAction.id}
-                            href={subAction.id === 'create-need' ? '/needs/create' : '/offers/create'}
-                            className="flex items-center gap-2 px-3 py-2 hover:bg-accent rounded-md text-sm"
-                            onClick={() => setCreateMenuOpen(false)}
-                          >
-                            <Plus className="h-4 w-4 text-pink-500" />
-                            {subAction.label}
-                          </Link>
-                        ))}
+                        .map((subAction) => {
+                          const href = getMemberActionHref(subAction.id);
+
+                          if (!href) {
+                            return null;
+                          }
+
+                          return (
+                            <Link
+                              key={subAction.id}
+                              href={href}
+                              className="flex items-center gap-2 px-3 py-2 hover:bg-accent rounded-md text-sm"
+                              onClick={() => setCreateMenuOpen(false)}
+                            >
+                              <Plus className="h-4 w-4 text-pink-500" />
+                              {subAction.label}
+                            </Link>
+                          );
+                        })}
                     </div>
                   )}
                 </div>

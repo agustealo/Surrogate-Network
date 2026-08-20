@@ -183,6 +183,11 @@ export const memberActions: NavigationAction[] = [
   },
 ];
 
+const memberActionRoutes = {
+  'create-need': routes.member.needsCreate,
+  'create-offer': routes.member.offersCreate,
+} as const;
+
 // Admin navigation configuration - canonical lifecycle coverage
 export const adminNavigation: (NavigationItem | NavigationAction)[] = [
   {
@@ -366,6 +371,10 @@ export function filterNavigationActions(
     .filter(item => item.surfaces.includes(surface))
     .filter(item => item.modes.includes(mode) || item.modes.includes('all'))
     .filter((item): item is NavigationAction => !('href' in item));
+}
+
+export function getMemberActionHref(actionId: string): string | null {
+  return memberActionRoutes[actionId as keyof typeof memberActionRoutes] ?? null;
 }
 
 export function groupNavigationBySection(items: NavigationItem[]): Record<string, NavigationItem[]> {
