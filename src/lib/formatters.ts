@@ -1,11 +1,11 @@
 // Shared formatting utilities
 // Centralized to prevent duplicate formatting logic across the app
 
-import { formatDistanceToNow, format, parse } from 'date-fns';
+import { formatDistanceToNow, format } from 'date-fns';
 
 // Date formatting
-export const formatDate = (date: string | Date, formatStr: string = 'PPP') => {
-  const dateObj = typeof date === 'string' ? parse(date, 'yyyy-MM-dd', new Date()) : date;
+export const formatDate = (date: string | Date, formatStr: string = 'PPP'): string => {
+  const dateObj = typeof date === 'string' ? new Date(date + 'T00:00:00') : date;
   return format(dateObj, formatStr);
 };
 
