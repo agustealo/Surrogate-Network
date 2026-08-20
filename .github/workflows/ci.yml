@@ -171,7 +171,7 @@ jobs:
           supabase start
           sleep 15
         env:
-          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+          SUPABASE_SERVICE_ROLE_KEY: local-service-role-key
 
       - name: Apply migrations
         run: supabase db reset --no-seed
@@ -182,8 +182,8 @@ jobs:
         env:
           CI: true
           NEXT_PUBLIC_SUPABASE_URL: http://localhost:54321
-          NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}
-          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+          NEXT_PUBLIC_SUPABASE_ANON_KEY: local-anon-key
+          SUPABASE_SERVICE_ROLE_KEY: local-service-role-key
 
   test-navigation:
     name: NAVIGATION
