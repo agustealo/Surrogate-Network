@@ -9,6 +9,7 @@ import {
   groupNavigationBySection,
   isRouteActive,
 } from '@/navigation';
+import type { NavigationItem, NavigationAction } from '@/navigation';
 import { routes } from '@/lib/routes';
 
 describe('Navigation Registry', () => {
@@ -157,11 +158,11 @@ describe('Navigation Registry', () => {
 
   describe('no fake routes', () => {
     it('should not have placeholder routes in navigation', () => {
-      const allItems = [...memberNavigation, ...adminNavigation, ...publicNavigation];
+      const allItems = [...memberNavigation, ...adminNavigation, ...publicNavigation] as (NavigationItem | NavigationAction)[];
       const fakePatterns = ['placeholder', 'todo', 'coming-soon', 'wip'];
       
       allItems.forEach(item => {
-        if ('href' in item) {
+        if ('href' in item && typeof item.href === 'string') {
           fakePatterns.forEach(pattern => {
             expect(item.href.toLowerCase()).not.toContain(pattern);
           });
