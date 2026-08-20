@@ -1,10 +1,9 @@
-
-'use client'; 
+'use client';
 
 import { PageWrapper } from '@/components/layout/PageWrapper';
 import { LoginForm } from '@/components/forms/LoginForm';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { useEffect } from 'react'; 
+import { useEffect } from 'react';
 
 export default function LoginPage() {
   useEffect(() => {
@@ -12,9 +11,7 @@ export default function LoginPage() {
   }, []);
 
   const handleLogin = (data: any) => {
-    // In a real app, you would authenticate the user here
     console.log('Login attempt with:', data);
-    // Redirect to a dashboard or home page upon successful login
   };
 
   return (

@@ -2,17 +2,16 @@ name: Surrogate Companion CI
 
 on:
   push:
-    branches: [ master, main, develop ]
+    branches: [master, main, develop]
   pull_request:
-    branches: [ master, main ]
+    branches: [master, main]
 
 env:
   NODE_VERSION: '22'
 
 jobs:
-  # Job 1: Install dependencies
   install:
-    name: Install Dependencies
+    name: INSTALL
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
@@ -22,7 +21,7 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: ${{ env.NODE_VERSION }}
-          cache: 'npm'
+          cache: npm
 
       - name: Install dependencies
         run: npm ci
@@ -33,9 +32,8 @@ jobs:
           path: node_modules
           key: ${{ runner.os }}-node-modules-${{ hashFiles('package-lock.json') }}
 
-  # Job 2: Type checking
   typecheck:
-    name: Type Check
+    name: TYPECHECK
     runs-on: ubuntu-latest
     needs: install
     steps:
@@ -46,7 +44,7 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: ${{ env.NODE_VERSION }}
-          cache: 'npm'
+          cache: npm
 
       - name: Restore node modules from cache
         uses: actions/cache@v4
@@ -60,9 +58,8 @@ jobs:
       - name: Run TypeScript type check
         run: npm run typecheck
 
-  # Job 3: Lint
   lint:
-    name: Lint Code
+    name: LINT
     runs-on: ubuntu-latest
     needs: install
     steps:
@@ -73,7 +70,7 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: ${{ env.NODE_VERSION }}
-          cache: 'npm'
+          cache: npm
 
       - name: Restore node modules from cache
         uses: actions/cache@v4
@@ -87,9 +84,8 @@ jobs:
       - name: Run ESLint
         run: npm run lint
 
-  # Job 4: Unit tests
   test-unit:
-    name: Unit Tests
+    name: UNIT
     runs-on: ubuntu-latest
     needs: install
     steps:
@@ -100,7 +96,7 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: ${{ env.NODE_VERSION }}
-          cache: 'npm'
+          cache: npm
 
       - name: Restore node modules from cache
         uses: actions/cache@v4
@@ -116,17 +112,8 @@ jobs:
         env:
           CI: true
 
-      - name: Upload coverage reports
-        uses: codecov/codecov-action@v4
-        if: always()
-        with:
-          files: ./coverage/lcov.info
-          flags: unittests
-          fail_ci_if_error: false
-
-  # Job 5: Component tests
   test-component:
-    name: Component Tests
+    name: COMPONENT
     runs-on: ubuntu-latest
     needs: install
     steps:
@@ -137,7 +124,7 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: ${{ env.NODE_VERSION }}
-          cache: 'npm'
+          cache: npm
 
       - name: Restore node modules from cache
         uses: actions/cache@v4
@@ -153,19 +140,10 @@ jobs:
         env:
           CI: true
 
-      - name: Upload component test coverage
-        uses: codecov/codecov-action@v4
-        if: always()
-        with:
-          files: ./coverage/lcov.info
-          flags: component
-          fail_ci_if_error: false
-
-  # Job 6: Build
-  build:
-    name: Build Production
+  test-security:
+    name: SECURITY
     runs-on: ubuntu-latest
-    needs: [typecheck, lint]
+    needs: install
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -174,7 +152,80 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: ${{ env.NODE_VERSION }}
-          cache: 'npm'
+          cache: npm
+
+      - name: Restore node modules from cache
+        uses: actions/cache@v4
+        with:
+          path: node_modules
+          key: ${{ runner.os }}-node-modules-${{ hashFiles('package-lock.json') }}
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Install Supabase CLI
+        run: npm install -g supabase
+
+      - name: Start Supabase
+        run: |
+          supabase start
+          sleep 15
+        env:
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+
+      - name: Apply migrations
+        run: supabase db reset --no-seed
+        continue-on-error: true
+
+      - name: Run security regression tests
+        run: npm run test:security
+        env:
+          CI: true
+          NEXT_PUBLIC_SUPABASE_URL: http://localhost:54321
+          NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+
+  test-navigation:
+    name: NAVIGATION
+    runs-on: ubuntu-latest
+    needs: install
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+
+      - name: Restore node modules from cache
+        uses: actions/cache@v4
+        with:
+          path: node_modules
+          key: ${{ runner.os }}-node-modules-${{ hashFiles('package-lock.json') }}
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run navigation and shell ownership tests
+        run: npm run test:navigation
+        env:
+          CI: true
+
+  build:
+    name: BUILD
+    runs-on: ubuntu-latest
+    needs: [typecheck, lint, test-unit, test-component, test-security, test-navigation]
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
 
       - name: Restore node modules from cache
         uses: actions/cache@v4
@@ -187,8 +238,11 @@ jobs:
 
       - name: Create .env.local
         run: |
-          echo "NEXT_PUBLIC_DEMO_MODE=false" > .env.local
+          echo "NEXT_PUBLIC_DEMO_MODE=true" > .env.local
           echo "NEXT_PUBLIC_APP_URL=https://surrogate-companion.com" >> .env.local
+          echo "NEXT_PUBLIC_SUPABASE_URL=https://example.supabase.co" >> .env.local
+          echo "NEXT_PUBLIC_SUPABASE_ANON_KEY=demo-anon-key" >> .env.local
+          echo "SUPABASE_SERVICE_ROLE_KEY=demo-service-role-key" >> .env.local
 
       - name: Build application
         run: npm run build
@@ -202,9 +256,8 @@ jobs:
           path: .next
           retention-days: 7
 
-  # Job 7: E2E Tests (Smoke Tests)
   test-e2e:
-    name: E2E Smoke Tests
+    name: E2E SMOKE
     runs-on: ubuntu-latest
     needs: build
     steps:
@@ -215,7 +268,7 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: ${{ env.NODE_VERSION }}
-          cache: 'npm'
+          cache: npm
 
       - name: Restore node modules from cache
         uses: actions/cache@v4
@@ -226,13 +279,21 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
+      - name: Create .env.local
+        run: |
+          echo "NEXT_PUBLIC_DEMO_MODE=true" > .env.local
+          echo "NEXT_PUBLIC_APP_URL=https://surrogate-companion.com" >> .env.local
+          echo "NEXT_PUBLIC_SUPABASE_URL=https://example.supabase.co" >> .env.local
+          echo "NEXT_PUBLIC_SUPABASE_ANON_KEY=demo-anon-key" >> .env.local
+          echo "SUPABASE_SERVICE_ROLE_KEY=demo-service-role-key" >> .env.local
+
       - name: Download build artifacts
         uses: actions/download-artifact@v4
         with:
           name: build-output
           path: .next
 
-      - name: Install Playwright
+      - name: Install Playwright browsers
         run: npx playwright install --with-deps
 
       - name: Run E2E smoke tests
@@ -240,7 +301,7 @@ jobs:
         env:
           CI: true
 
-      - name: Upload test results
+      - name: Upload E2E results
         uses: actions/upload-artifact@v4
         if: always()
         with:
@@ -248,9 +309,8 @@ jobs:
           path: playwright-report/
           retention-days: 7
 
-  # Job 8: Accessibility Audit
   accessibility:
-    name: Accessibility Audit
+    name: A11Y
     runs-on: ubuntu-latest
     needs: build
     steps:
@@ -261,7 +321,7 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: ${{ env.NODE_VERSION }}
-          cache: 'npm'
+          cache: npm
 
       - name: Restore node modules from cache
         uses: actions/cache@v4
@@ -272,11 +332,22 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
+      - name: Create .env.local
+        run: |
+          echo "NEXT_PUBLIC_DEMO_MODE=true" > .env.local
+          echo "NEXT_PUBLIC_APP_URL=https://surrogate-companion.com" >> .env.local
+          echo "NEXT_PUBLIC_SUPABASE_URL=https://example.supabase.co" >> .env.local
+          echo "NEXT_PUBLIC_SUPABASE_ANON_KEY=demo-anon-key" >> .env.local
+          echo "SUPABASE_SERVICE_ROLE_KEY=demo-service-role-key" >> .env.local
+
       - name: Download build artifacts
         uses: actions/download-artifact@v4
         with:
           name: build-output
           path: .next
+
+      - name: Install Playwright browsers
+        run: npx playwright install --with-deps
 
       - name: Run accessibility audit
         run: npm run test:a11y
@@ -288,65 +359,73 @@ jobs:
         if: always()
         with:
           name: accessibility-report
-          path: accessibility-report/
+          path: playwright-report/
           retention-days: 7
 
-  # Job 9: Quality Gate - Final Approval
   quality-gate:
-    name: Quality Gate Approval
+    name: QUALITY GATE
     runs-on: ubuntu-latest
-    needs: [typecheck, lint, test-unit, test-component, build, test-e2e, accessibility]
+    needs: [typecheck, lint, test-unit, test-component, test-security, test-navigation, build, test-e2e, accessibility]
     if: always()
     steps:
       - name: Check all jobs passed
         run: |
           if [ "${{ needs.typecheck.result }}" != "success" ]; then
-            echo "❌ Type check failed"
+            echo "Type check failed"
             exit 1
           fi
-          
+
           if [ "${{ needs.lint.result }}" != "success" ]; then
-            echo "❌ Lint failed"
+            echo "Lint failed"
             exit 1
           fi
-          
-          if [ "${{ needs.build.result }}" != "success" ]; then
-            echo "❌ Build failed"
-            exit 1
-          fi
-          
+
           if [ "${{ needs.test-unit.result }}" != "success" ]; then
-            echo "❌ Unit tests failed"
+            echo "Unit tests failed"
             exit 1
           fi
-          
+
           if [ "${{ needs.test-component.result }}" != "success" ]; then
-            echo "❌ Component tests failed"
+            echo "Component tests failed"
             exit 1
           fi
-          
+
+          if [ "${{ needs.test-security.result }}" != "success" ]; then
+            echo "Security tests failed"
+            exit 1
+          fi
+
+          if [ "${{ needs.test-navigation.result }}" != "success" ]; then
+            echo "Navigation tests failed"
+            exit 1
+          fi
+
+          if [ "${{ needs.build.result }}" != "success" ]; then
+            echo "Build failed"
+            exit 1
+          fi
+
           if [ "${{ needs.test-e2e.result }}" != "success" ]; then
-            echo "❌ E2E tests failed"
+            echo "E2E tests failed"
             exit 1
           fi
-          
+
           if [ "${{ needs.accessibility.result }}" != "success" ]; then
-            echo "❌ Accessibility tests failed"
+            echo "Accessibility tests failed"
             exit 1
           fi
-          
-          echo "✅ All quality gates passed - ready for merge"
+
+          echo "All quality gates passed."
 
       - name: Quality Gate Summary
         if: success()
         run: |
-          echo "Quality Gate Status:"
           echo "Type check: ${{ needs.typecheck.result }}"
           echo "Lint: ${{ needs.lint.result }}"
-          echo "Build: ${{ needs.build.result }}"
           echo "Unit tests: ${{ needs.test-unit.result }}"
           echo "Component tests: ${{ needs.test-component.result }}"
+          echo "Security tests: ${{ needs.test-security.result }}"
+          echo "Navigation tests: ${{ needs.test-navigation.result }}"
+          echo "Build: ${{ needs.build.result }}"
           echo "E2E tests: ${{ needs.test-e2e.result }}"
           echo "Accessibility: ${{ needs.accessibility.result }}"
-          echo ""
-          echo "🎉 All quality gates passed! Ready for merge."

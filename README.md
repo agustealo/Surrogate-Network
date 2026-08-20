@@ -22,12 +22,27 @@ Need -> Discovery -> Proposal -> Agreement -> Surrogacy -> Moment -> Exchange ->
 
 ## Current Product Surface
 
-- Public, member, and admin application shells.
-- Profile, needs, offers, discovery, messaging, settings, and admin routes.
-- Navigation registry with surface-specific public, member, and admin navigation.
+- Public, member, and admin route groups with surface-specific layouts.
+- Centralized navigation registry for public, member, and admin shells.
+- Working member experiences for home, discover, messages, rewards, settings, feedback submission, and create flows for profiles and needs.
+- Placeholder route surfaces for some public/member lifecycle pages that are present for IA and navigation ownership, but not fully implemented yet.
 - Supabase-backed repositories for profiles, needs, offers, and capability data.
-- Demo fixtures and development helpers for local iteration.
-- Jest, Playwright, lint, and TypeScript validation scripts.
+- Explicit demo-mode fixtures for local iteration and CI smoke coverage.
+- Jest, Playwright, lint, typecheck, build, security, and navigation validation scripts.
+
+### Route Ownership
+
+- `src/app/layout.tsx` provides global HTML and providers only.
+- `src/app/(public)/layout.tsx` owns public navigation and footer.
+- `src/app/(member)/layout.tsx` owns the authenticated member shell and mobile navigation.
+- `src/app/admin/layout.tsx` owns the admin shell.
+
+### Placeholder Surfaces
+
+These routes currently render placeholder content while preserving the correct layout and navigation boundaries:
+
+- Public: `/explore`, `/how-it-works`, `/principles`, `/safety`
+- Member: `/needs`, `/offers`, `/profile`, `/surrogacies`
 
 ## Roadmap
 
@@ -107,16 +122,36 @@ npm test
 
 The development server runs at `http://localhost:9002`.
 
+### Demo Mode
+
+Set `NEXT_PUBLIC_DEMO_MODE=true` to enable explicit browser-safe demo fixtures for local development, smoke tests, and accessibility checks.
+
 ### Test Commands
 
 ```bash
 npm run test:unit
 npm run test:component
 npm run test:security
+npm run test:navigation
 npm run test:e2e
 npm run test:e2e:smoke
 npm run test:a11y
 ```
+
+### CI Quality Gate
+
+GitHub Actions runs the following certification gates on the same HEAD:
+
+- `TYPECHECK`
+- `LINT`
+- `UNIT`
+- `COMPONENT`
+- `SECURITY`
+- `NAVIGATION`
+- `BUILD`
+- `E2E SMOKE`
+- `A11Y`
+- `QUALITY GATE`
 
 ### Production Build
 

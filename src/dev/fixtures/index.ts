@@ -3,6 +3,7 @@
 
 import type { Profile, Proposal } from '@/domain/types';
 import type { Need as DomainNeed, Offer as DomainOffer } from '@/domain/types';
+import { canUseBrowserDemoData } from '@/lib/runtime-mode';
 
 // Aliases for legacy compatibility
 type Need = DomainNeed;
@@ -232,9 +233,7 @@ export const mockSurrogacies: any[] = [
 
 // Use these fixtures only in development, tests, or explicit demo mode
 export const isDemoMode = (): boolean => {
-  if (typeof window === 'undefined') return false;
-  return process.env.NEXT_PUBLIC_DEMO_MODE === 'true' || 
-         window.location.hostname === 'localhost';
+  return canUseBrowserDemoData();
 };
 
 export const getDemoData = <T>(key: keyof typeof mockFixtures, fallback?: T): T => {
