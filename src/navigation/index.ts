@@ -76,7 +76,7 @@ export const publicNavigation: (NavigationItem | NavigationAction)[] = [
   {
     id: 'join',
     label: 'Join',
-    href: routes.public.join,
+    href: routes.public.signup,
     surfaces: ['public'],
     modes: ['all'],
   },
