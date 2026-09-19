@@ -24,6 +24,7 @@ export interface Database {
           token_balance?: number
           verification_status: VerificationStatus
           is_suspended?: boolean
+          is_admin?: boolean
           created_at: string
           updated_at: string
         }
@@ -41,6 +42,7 @@ export interface Database {
           token_balance?: number
           verification_status?: VerificationStatus
           is_suspended?: boolean
+          is_admin?: boolean
           created_at?: string
           updated_at?: string
         }
@@ -58,6 +60,7 @@ export interface Database {
           token_balance?: number
           verification_status?: VerificationStatus
           is_suspended?: boolean
+          is_admin?: boolean
           created_at?: string
           updated_at?: string
         }
