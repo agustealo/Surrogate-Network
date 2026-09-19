@@ -64,6 +64,7 @@ export type Database = {
           created_at?: string
           updated_at?: string
         }
+        Relationships: []
       }
       needs: {
         Row: {
@@ -117,6 +118,7 @@ export type Database = {
           created_at?: string
           expires_at?: string
         }
+        Relationships: []
       }
       offers: {
         Row: {
@@ -173,6 +175,7 @@ export type Database = {
           review_count?: number
           created_at?: string
         }
+        Relationships: []
       }
       proposals: {
         Row: {
@@ -220,6 +223,7 @@ export type Database = {
           created_at?: string
           updated_at?: string
         }
+        Relationships: []
       }
       surrogacies: {
         Row: {
@@ -252,6 +256,7 @@ export type Database = {
           ended_at?: string
           agreement?: Json
         }
+        Relationships: []
       }
       moments: {
         Row: {
@@ -284,6 +289,7 @@ export type Database = {
           notes?: string
           created_at?: string
         }
+        Relationships: []
       }
       exchanges: {
         Row: {
@@ -307,6 +313,7 @@ export type Database = {
           completed_at?: string
           status?: ExchangeStatus
         }
+        Relationships: []
       }
       feedback: {
         Row: {
@@ -345,6 +352,7 @@ export type Database = {
           skill_endorsements?: string[]
           created_at?: string
         }
+        Relationships: []
       }
       media_assets: {
         Row: {
@@ -374,6 +382,7 @@ export type Database = {
           alt_text?: string
           created_at?: string
         }
+        Relationships: []
       }
       media_access_requests: {
         Row: {
@@ -406,6 +415,7 @@ export type Database = {
           responded_at?: string
           expires_at?: string
         }
+        Relationships: []
       }
       media_access_grants: {
         Row: {
@@ -435,6 +445,7 @@ export type Database = {
           granted_at?: string
           expires_at?: string
         }
+        Relationships: []
       }
       token_transactions: {
         Row: {
@@ -467,6 +478,7 @@ export type Database = {
           reference_type?: ReferenceType
           created_at?: string
         }
+        Relationships: []
       }
       xp_transactions: {
         Row: {
@@ -493,6 +505,7 @@ export type Database = {
           description?: string
           created_at?: string
         }
+        Relationships: []
       }
       member_progression: {
         Row: {
@@ -525,6 +538,7 @@ export type Database = {
           created_at?: string
           updated_at?: string
         }
+        Relationships: []
       }
       notifications: {
         Row: {
@@ -557,6 +571,7 @@ export type Database = {
           read?: boolean
           created_at?: string
         }
+        Relationships: []
       }
       reports: {
         Row: {
@@ -595,6 +610,7 @@ export type Database = {
           resolved_at?: string
           action_taken?: string
         }
+        Relationships: []
       }
       restrictions: {
         Row: {
@@ -624,6 +640,7 @@ export type Database = {
           active?: boolean
           created_at?: string
         }
+        Relationships: []
       }
       audit_events: {
         Row: {
@@ -665,6 +682,7 @@ export type Database = {
           ip_address?: string
           user_agent?: string
         }
+        Relationships: []
       }
     }
     Views: { [key: string]: never }
