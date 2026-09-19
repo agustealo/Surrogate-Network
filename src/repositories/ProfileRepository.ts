@@ -8,9 +8,8 @@ export interface ProfileRepository {
   delete(id: string): Promise<void>;
 }
 
-// Domain Types
-export type Boundary = 'platonic' | 'romantic' | 'physical' | 'virtual' | 'one-off' | 'recurring';
-export type VerificationStatus = 'unverified' | 'email_verified' | 'phone_verified' | 'photo_verified' | 'identity_verified' | 'fully_verified';
+import type { Boundary, VerificationStatus } from '@/domain/types';
+export type { Boundary, VerificationStatus } from '@/domain/types';
 
 export interface Profile {
   id: string;
