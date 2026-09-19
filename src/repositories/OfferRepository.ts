@@ -3,7 +3,7 @@ export interface OfferRepository {
   findById(id: string): Promise<Offer | null>;
   findAll(limit?: number): Promise<Offer[]>;
   findByUserId(userId: string, limit?: number): Promise<Offer[]>;
-  findByCategory(category: string, limit?: number): Promise<Offer[]>;
+  findByCategory(category: SurrogateCategory, limit?: number): Promise<Offer[]>;
   create(offer: CreateOfferDto): Promise<Offer>;
   update(id: string, offer: UpdateOfferDto): Promise<Offer>;
   delete(id: string): Promise<void>;
