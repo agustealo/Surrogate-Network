@@ -16,9 +16,7 @@ import {
 import { useState } from 'react';
 import {
   memberNavigation,
-  memberActions,
   filterNavigationItems,
-  filterNavigationActions,
   groupNavigationBySection,
   isRouteActive,
 } from '@/navigation';
@@ -27,11 +25,11 @@ import type { NavigationItem } from '@/navigation';
 export function MemberNavigation() {
   const pathname = usePathname();
   const router = useRouter();
-  const [myActivityOpen, setMyActivityOpen] = useState(() => {
+  const [myActivityOpen] = useState(() => {
     return filterNavigationItems(memberNavigation, 'member', 'desktop')
       .some(item => isRouteActive(pathname, item.href));
   });
-  const [accountOpen, setAccountOpen] = useState(() => {
+  const [accountOpen] = useState(() => {
     return filterNavigationItems(memberNavigation, 'member', 'desktop')
       .some(item => isRouteActive(pathname, item.href));
   });
