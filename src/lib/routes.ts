@@ -29,35 +29,9 @@ export const routes = {
     settings: '/settings',
   },
 
-  // Dynamic member routes
-  memberDynamic: {
-    profile: (id: string) => `/profile/${id}`,
-    need: (id: string) => `/needs/${id}`,
-    offer: (id: string) => `/offers/${id}`,
-    surrogacy: (id: string) => `/surrogacies/${id}`,
-    messages: (id: string) => `/messages/${id}`,
-  },
-
   // Admin routes
   admin: {
     dashboard: '/admin',
-    members: '/admin/members',
-    needs: '/admin/needs',
-    offers: '/admin/offers',
-    proposals: '/admin/proposals',
-    surrogacies: '/admin/surrogacies',
-    moments: '/admin/moments',
-    exchanges: '/admin/exchanges',
-    feedback: '/admin/feedback',
-    reports: '/admin/reports',
-    moderation: '/admin/moderation',
-    media: '/admin/media',
-    tokens: '/admin/tokens',
-    ledger: '/admin/ledger',
-    ranks: '/admin/ranks',
-    xp: '/admin/xp',
-    audit: '/admin/audit',
-    settings: '/admin/settings',
   },
 } as const;
 
