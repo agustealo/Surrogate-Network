@@ -9,9 +9,8 @@ export interface OfferRepository {
   delete(id: string): Promise<void>;
 }
 
-// Domain Types
-export type SurrogateCategory = 'personal' | 'utilitarian_business' | 'casual';
-export type Boundary = 'platonic' | 'romantic' | 'physical' | 'virtual' | 'one-off' | 'recurring';
+import type { SurrogateCategory, Boundary } from '@/domain/types';
+export type { SurrogateCategory, Boundary } from '@/domain/types';
 export type LocationMode = 'remote' | 'local' | 'either';
 export type OfferStatus = 'active' | 'paused' | 'full';
 
