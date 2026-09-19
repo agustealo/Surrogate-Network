@@ -54,7 +54,7 @@ export class SupabaseNeedRepository implements NeedRepository {
     return data.map((need) => this.mapToNeed(need))
   }
 
-  async findByCategory(category: string, limit: number = 20): Promise<Need[]> {
+  async findByCategory(category: Need['category'], limit: number = 20): Promise<Need[]> {
     const supabase = await createSupabaseClient()
     const { data, error } = await supabase
       .from('needs')
