@@ -29,6 +29,13 @@ export const routes = {
     settings: '/settings',
   },
 
+  memberDynamic: {
+    profile: (id: string) => `/profile/${id}`,
+    need: (id: string) => `/needs/${id}`,
+    offer: (id: string) => `/offers/${id}`,
+    surrogacy: (id: string) => `/surrogacies/${id}`,
+  },
+
   // Admin routes
   admin: {
     dashboard: '/admin',
