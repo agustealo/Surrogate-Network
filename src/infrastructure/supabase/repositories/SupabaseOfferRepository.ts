@@ -54,7 +54,7 @@ export class SupabaseOfferRepository implements OfferRepository {
     return data.map((offer) => this.mapToOffer(offer))
   }
 
-  async findByCategory(category: Need['category'], limit: number = 20): Promise<Offer[]> {
+  async findByCategory(category: Offer['category'], limit: number = 20): Promise<Offer[]> {
     const supabase = await createSupabaseClient()
     const { data, error } = await supabase
       .from('offers')
