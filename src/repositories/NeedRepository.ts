@@ -3,7 +3,7 @@ export interface NeedRepository {
   findById(id: string): Promise<Need | null>;
   findAll(limit?: number): Promise<Need[]>;
   findByUserId(userId: string, limit?: number): Promise<Need[]>;
-  findByCategory(category: string, limit?: number): Promise<Need[]>;
+  findByCategory(category: SurrogateCategory, limit?: number): Promise<Need[]>;
   create(need: CreateNeedDto): Promise<Need>;
   update(id: string, need: UpdateNeedDto): Promise<Need>;
   delete(id: string): Promise<void>;
