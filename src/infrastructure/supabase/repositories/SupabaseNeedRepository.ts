@@ -1,4 +1,5 @@
 import { createClient as createSupabaseClient } from '@/infrastructure/supabase/server'
+import type { Database } from '@/infrastructure/supabase/database.types'
 import type { 
   NeedRepository, 
   Need, 
@@ -11,7 +12,7 @@ export class SupabaseNeedRepository implements NeedRepository {
     const supabase = await createSupabaseClient()
     const { data, error } = await supabase
       .from('needs')
-      .select('*')
+      .select('id,title,description,category,tags,location_mode,timing,boundaries,urgency,status,user_id,user_name,user_avatar,created_at,expires_at')
       .eq('id', id)
       .single()
 
@@ -26,7 +27,7 @@ export class SupabaseNeedRepository implements NeedRepository {
     const supabase = await createSupabaseClient()
     const { data, error } = await supabase
       .from('needs')
-      .select('*')
+      .select('id,title,description,category,tags,location_mode,timing,boundaries,urgency,status,user_id,user_name,user_avatar,created_at,expires_at')
       .order('created_at', { ascending: false })
       .limit(limit)
 
@@ -34,14 +35,14 @@ export class SupabaseNeedRepository implements NeedRepository {
       return []
     }
 
-    return data.map((need: any) => this.mapToNeed(need))
+    return data.map((need) => this.mapToNeed(need))
   }
 
   async findByUserId(userId: string, limit: number = 20): Promise<Need[]> {
     const supabase = await createSupabaseClient()
     const { data, error } = await supabase
       .from('needs')
-      .select('*')
+      .select('id,title,description,category,tags,location_mode,timing,boundaries,urgency,status,user_id,user_name,user_avatar,created_at,expires_at')
       .eq('user_id', userId)
       .order('created_at', { ascending: false })
       .limit(limit)
@@ -50,14 +51,14 @@ export class SupabaseNeedRepository implements NeedRepository {
       return []
     }
 
-    return data.map((need: any) => this.mapToNeed(need))
+    return data.map((need) => this.mapToNeed(need))
   }
 
   async findByCategory(category: string, limit: number = 20): Promise<Need[]> {
     const supabase = await createSupabaseClient()
     const { data, error } = await supabase
       .from('needs')
-      .select('*')
+      .select('id,title,description,category,tags,location_mode,timing,boundaries,urgency,status,user_id,user_name,user_avatar,created_at,expires_at')
       .eq('category', category)
       .order('created_at', { ascending: false })
       .limit(limit)
@@ -66,7 +67,7 @@ export class SupabaseNeedRepository implements NeedRepository {
       return []
     }
 
-    return data.map((need: any) => this.mapToNeed(need))
+    return data.map((need) => this.mapToNeed(need))
   }
 
   async create(need: CreateNeedDto): Promise<Need> {
@@ -137,7 +138,7 @@ export class SupabaseNeedRepository implements NeedRepository {
     }
   }
 
-  private mapToNeed(data: any): Need {
+  private mapToNeed(data: Database['public']['Tables']['needs']['Row']): Need {
     return {
       id: data.id,
       title: data.title,
