@@ -47,7 +47,7 @@ describe('Navigation Registry', () => {
     for (const item of [...memberNavigation, ...adminNavigation, ...publicNavigation]) {
       forbidden.forEach(word => {
         expect(item.label.toLowerCase()).not.toContain(word);
-        if ('href' in item) expect(item.href.toLowerCase()).not.toContain(word);
+        if ('href' in item && typeof item.href === 'string') expect(item.href.toLowerCase()).not.toContain(word);
       });
     }
   });
