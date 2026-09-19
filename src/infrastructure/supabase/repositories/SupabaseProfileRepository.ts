@@ -1,4 +1,5 @@
 import { createClient as createSupabaseClient } from '@/infrastructure/supabase/server'
+import type { Database } from '@/infrastructure/supabase/database.types'
 import type { 
   ProfileRepository, 
   Profile, 
@@ -11,7 +12,7 @@ export class SupabaseProfileRepository implements ProfileRepository {
     const supabase = await createSupabaseClient()
     const { data, error } = await supabase
       .from('profiles')
-      .select('*')
+      .select('id, name, email, avatar_url, bio, location, availability, boundaries, rank, xp, token_balance, verification_status, is_suspended, created_at, updated_at')
       .eq('id', id)
       .single()
 
@@ -26,7 +27,7 @@ export class SupabaseProfileRepository implements ProfileRepository {
     const supabase = await createSupabaseClient()
     const { data, error } = await supabase
       .from('profiles')
-      .select('*')
+      .select('id, name, email, avatar_url, bio, location, availability, boundaries, rank, xp, token_balance, verification_status, is_suspended, created_at, updated_at')
       .order('created_at', { ascending: false })
       .limit(limit)
 
@@ -41,7 +42,7 @@ export class SupabaseProfileRepository implements ProfileRepository {
     const supabase = await createSupabaseClient()
     const { data, error } = await supabase
       .from('profiles')
-      .select('*')
+      .select('id, name, email, avatar_url, bio, location, availability, boundaries, rank, xp, token_balance, verification_status, is_suspended, created_at, updated_at')
       .eq('email', email)
       .single()
 
@@ -120,7 +121,7 @@ export class SupabaseProfileRepository implements ProfileRepository {
     }
   }
 
-  private mapToProfile(data: any): Profile {
+  private mapToProfile(data: Database['public']['Tables']['profiles']['Row']): Profile {
     return {
       id: data.id,
       name: data.name,
