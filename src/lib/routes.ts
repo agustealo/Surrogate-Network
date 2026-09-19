@@ -12,7 +12,6 @@ export const routes = {
     login: '/login',
     signup: '/signup',
     forgotPassword: '/forgot-password',
-    join: '/signup',
   },
 
   // Member routes
