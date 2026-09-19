@@ -20,8 +20,11 @@ describe('Route registry integration', () => {
     expect(routes.admin).toEqual({ dashboard: '/admin' })
   })
 
-  it('does not retain compatibility route registries', () => {
-    expect('memberDynamic' in routes).toBe(false)
+  it('keeps canonical dynamic route builders without compatibility aliases', () => {
+    expect(routes.memberDynamic.profile('user-1')).toBe('/profile/user-1')
+    expect(routes.memberDynamic.need('need-1')).toBe('/needs/need-1')
+    expect(routes.memberDynamic.offer('offer-1')).toBe('/offers/offer-1')
+    expect(routes.memberDynamic.surrogacy('surrogacy-1')).toBe('/surrogacies/surrogacy-1')
     expect('join' in routes.public).toBe(false)
     expect('members' in routes.admin).toBe(false)
   })
