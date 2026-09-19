@@ -1,4 +1,5 @@
 import { createClient as createSupabaseClient } from '@/infrastructure/supabase/server'
+import type { Database } from '@/infrastructure/supabase/database.types'
 import type { 
   OfferRepository, 
   Offer, 
@@ -11,7 +12,7 @@ export class SupabaseOfferRepository implements OfferRepository {
     const supabase = await createSupabaseClient()
     const { data, error } = await supabase
       .from('offers')
-      .select('*')
+      .select('id,title,description,category,location_mode,timing,boundaries,capacity,current_capacity,status,user_id,user_name,user_avatar,rating,review_count,created_at')
       .eq('id', id)
       .single()
 
@@ -26,7 +27,7 @@ export class SupabaseOfferRepository implements OfferRepository {
     const supabase = await createSupabaseClient()
     const { data, error } = await supabase
       .from('offers')
-      .select('*')
+      .select('id,title,description,category,location_mode,timing,boundaries,capacity,current_capacity,status,user_id,user_name,user_avatar,rating,review_count,created_at')
       .order('created_at', { ascending: false })
       .limit(limit)
 
@@ -34,14 +35,14 @@ export class SupabaseOfferRepository implements OfferRepository {
       return []
     }
 
-    return data.map((offer: any) => this.mapToOffer(offer))
+    return data.map((offer) => this.mapToOffer(offer))
   }
 
   async findByUserId(userId: string, limit: number = 20): Promise<Offer[]> {
     const supabase = await createSupabaseClient()
     const { data, error } = await supabase
       .from('offers')
-      .select('*')
+      .select('id,title,description,category,location_mode,timing,boundaries,capacity,current_capacity,status,user_id,user_name,user_avatar,rating,review_count,created_at')
       .eq('user_id', userId)
       .order('created_at', { ascending: false })
       .limit(limit)
@@ -50,14 +51,14 @@ export class SupabaseOfferRepository implements OfferRepository {
       return []
     }
 
-    return data.map((offer: any) => this.mapToOffer(offer))
+    return data.map((offer) => this.mapToOffer(offer))
   }
 
   async findByCategory(category: string, limit: number = 20): Promise<Offer[]> {
     const supabase = await createSupabaseClient()
     const { data, error } = await supabase
       .from('offers')
-      .select('*')
+      .select('id,title,description,category,location_mode,timing,boundaries,capacity,current_capacity,status,user_id,user_name,user_avatar,rating,review_count,created_at')
       .eq('category', category)
       .order('created_at', { ascending: false })
       .limit(limit)
@@ -66,7 +67,7 @@ export class SupabaseOfferRepository implements OfferRepository {
       return []
     }
 
-    return data.map((offer: any) => this.mapToOffer(offer))
+    return data.map((offer) => this.mapToOffer(offer))
   }
 
   async create(offer: CreateOfferDto): Promise<Offer> {
@@ -139,7 +140,7 @@ export class SupabaseOfferRepository implements OfferRepository {
     }
   }
 
-  private mapToOffer(data: any): Offer {
+  private mapToOffer(data: Database['public']['Tables']['offers']['Row']): Offer {
     return {
       id: data.id,
       title: data.title,
