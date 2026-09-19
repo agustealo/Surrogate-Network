@@ -10,7 +10,9 @@ export const routes = {
     principles: '/principles',
     safety: '/safety',
     login: '/login',
-    join: '/join',
+    signup: '/signup',
+    forgotPassword: '/forgot-password',
+    join: '/signup',
   },
 
   // Member routes
