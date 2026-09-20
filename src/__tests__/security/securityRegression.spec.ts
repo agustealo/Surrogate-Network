@@ -370,7 +370,7 @@ describe('Consumer-trial security regression', () => {
 
       const { error: mutateError } = await clientA
         .from('reports')
-        .update({ status: 'dismissed', resolution: 'self dismissed' })
+        .update({ status: 'dismissed', action_taken: 'self dismissed' })
         .eq('id', report!.id)
       expect(mutateError).toBeTruthy()
     })
@@ -382,7 +382,7 @@ describe('Consumer-trial security regression', () => {
           user_id: userA.user.id,
           type: 'system',
           title: 'Original title',
-          message: 'Original message',
+          body: 'Original message',
           read: false,
         })
         .select('id')
