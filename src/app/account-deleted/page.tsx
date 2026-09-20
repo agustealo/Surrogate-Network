@@ -1,7 +1,7 @@
 import Link from 'next/link'
 import { UserX } from 'lucide-react'
 import { Button } from '@/components/ui/button'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
+import { Card, CardContent, CardDescription, CardHeader } from '@/components/ui/card'
 import { routes } from '@/lib/routes'
 
 export default async function AccountDeletedPage({
@@ -19,7 +19,7 @@ export default async function AccountDeletedPage({
           <div className="mb-2 flex h-12 w-12 items-center justify-center rounded-full bg-muted">
             <UserX className="h-6 w-6" />
           </div>
-          <CardTitle>Account deleted</CardTitle>
+          <h1 className="text-2xl font-semibold leading-none tracking-tight">Account deleted</h1>
           <CardDescription>
             Your Surrogate Network member access is permanently disabled and direct profile/listing content has been redacted.
           </CardDescription>
