@@ -19,33 +19,24 @@ jobs:
           ref: audit/consumer-trial-readiness-20260919
           fetch-depth: 0
 
-      - name: Setup Node.js
-        uses: actions/setup-node@v7
-        with:
-          node-version: 22
-          cache: npm
-
-      - name: Install dependencies
-        run: npm ci
-
-      - name: Install Supabase CLI
-        run: npm install -g supabase
-
-      - name: Start local Supabase
-        run: supabase start
-
-      - name: Rebuild schema from migrations
-        run: supabase db reset --no-seed
-
-      - name: Generate canonical database types
-        run: supabase gen types typescript --local > src/infrastructure/supabase/database.types.ts
-
-      - name: Commit exact generated contract
+      - name: Apply verified generated-contract delta
         run: |
-          if git diff --quiet -- src/infrastructure/supabase/database.types.ts; then
-            echo "Generated database types are already canonical."
-            exit 0
-          fi
+          python - <<'PY'
+          from pathlib import Path
+
+          path = Path('src/infrastructure/supabase/database.types.ts')
+          text = path.read_text()
+          old = 'DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["CompositeTypes"]'
+          new = 'DatabaseWithoutInternals[PublicCompositeTypeNameOrOptions["schema"]]["CompositeTypes"]'
+          count = text.count(old)
+          if count != 1:
+              raise SystemExit(f'Expected exactly one verified generated-type mismatch, found {count}')
+          path.write_text(text.replace(old, new).rstrip('\n') + '\n')
+          PY
+
+      - name: Commit verified canonical contract delta
+        run: |
+          git diff --check
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add src/infrastructure/supabase/database.types.ts
