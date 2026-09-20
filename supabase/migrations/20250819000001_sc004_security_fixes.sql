@@ -45,6 +45,8 @@ ALTER TABLE audit_events
 
 -- Fix profile email privacy by removing broad access to profiles table
 DROP POLICY IF EXISTS "Public profiles are readable by all authenticated users" ON profiles;
+DROP POLICY IF EXISTS "Profiles are viewable by everyone" ON profiles;
+DROP POLICY IF EXISTS "Profiles are publicly readable" ON profiles;
 
 -- Replace with restricted access
 CREATE POLICY "Users can view their own full profile" ON profiles
@@ -111,6 +113,7 @@ SECURITY DEFINER
 SET search_path = public
 AS $$
 DECLARE
+  result profiles%ROWTYPE;
   v_admin_id UUID := auth.uid();
   v_is_admin BOOLEAN := verify_admin_role(v_admin_id);
 BEGIN
@@ -133,9 +136,10 @@ BEGIN
     verification_status = COALESCE(p_verification_status, verification_status),
     is_suspended = COALESCE(p_is_suspended, is_suspended)
   WHERE id = p_id
-  RETURNING *;
+  RETURNING * INTO STRICT result;
+  RETURN result;
 END;
-$$;
+$;
 
 -- Add security comment
 COMMENT ON FUNCTION verify_admin_role IS 'Security function to verify admin role - used by security-definer functions';
