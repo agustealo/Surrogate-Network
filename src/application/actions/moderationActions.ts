@@ -12,13 +12,6 @@ const moderationSchema = z.object({
   suspendReportedUser: z.boolean().default(false),
 })
 
-type ModerationRpcClient = {
-  rpc<T>(name: string, args: Record<string, unknown>): PromiseLike<{
-    data: T | null
-    error: { message: string } | null
-  }>
-}
-
 export async function moderateReportAction(input: unknown): Promise<ActionResult> {
   try {
     const admin = await requireAdmin()
@@ -27,11 +20,10 @@ export async function moderateReportAction(input: unknown): Promise<ActionResult
       throw new Error('Record the moderation outcome before closing a report.')
     }
 
-    const rpc = admin.supabase as unknown as ModerationRpcClient
-    const { error } = await rpc.rpc<void>('moderate_report_for_trial', {
+    const { error } = await admin.supabase.rpc('moderate_report_for_trial', {
       p_report_id: values.reportId,
       p_status: values.status,
-      p_action_taken: values.actionTaken ?? null,
+      p_action_taken: values.actionTaken,
       p_suspend_reported_user: values.suspendReportedUser,
     })
     if (error) throw new Error(`Unable to moderate report: ${error.message}`)
