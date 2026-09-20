@@ -1,7 +1,6 @@
 'use client'
 
 import { useState } from 'react'
-import { useRouter } from 'next/navigation'
 import { Loader2, Trash2 } from 'lucide-react'
 import { deleteAccountAction } from '@/application/actions/accountLifecycleActions'
 import { Button } from '@/components/ui/button'
@@ -10,7 +9,6 @@ import { Label } from '@/components/ui/label'
 import { routes } from '@/lib/routes'
 
 export function AccountDeletionControls() {
-  const router = useRouter()
   const [confirming, setConfirming] = useState(false)
   const [password, setPassword] = useState('')
   const [confirmation, setConfirmation] = useState('')
@@ -24,16 +22,17 @@ export function AccountDeletionControls() {
       currentPassword: password,
       confirmation,
     })
-    setBusy(false)
 
     if (!result.ok) {
+      setBusy(false)
       setError(result.error)
       return
     }
 
     const suffix = result.data.authRemoved ? '' : '?auth=pending'
-    router.replace(`${routes.public.accountDeleted}${suffix}`)
-    router.refresh()
+    // Terminal deletion invalidates the authenticated app tree. Use a full
+    // document navigation instead of refreshing the stale member router state.
+    window.location.replace(`${routes.public.accountDeleted}${suffix}`)
   }
 
   if (!confirming) {
