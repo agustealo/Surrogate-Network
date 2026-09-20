@@ -4,6 +4,10 @@ import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { createClient } from '@/infrastructure/supabase/server'
 
+function formatDate(value: string | null): string {
+  return value ? new Date(value).toLocaleDateString() : 'date unavailable'
+}
+
 export default async function MemberSurrogaciesPage() {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
@@ -26,7 +30,7 @@ export default async function MemberSurrogaciesPage() {
           {surrogacies.map((item) => (
             <Card key={item.id}>
               <CardHeader><div className="flex items-center gap-2"><CardTitle>Connection</CardTitle><Badge>{item.status}</Badge></div></CardHeader>
-              <CardContent className="flex flex-wrap items-center justify-between gap-3"><p className="text-sm text-muted-foreground">Started {new Date(item.started_at).toLocaleDateString()}</p><Button asChild><Link href={`/surrogacies/${item.id}`}>Open</Link></Button></CardContent>
+              <CardContent className="flex flex-wrap items-center justify-between gap-3"><p className="text-sm text-muted-foreground">Started {formatDate(item.started_at)}</p><Button asChild><Link href={`/surrogacies/${item.id}`}>Open</Link></Button></CardContent>
             </Card>
           ))}
         </div>
