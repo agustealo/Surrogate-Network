@@ -1,5 +1,6 @@
 import Link from 'next/link'
 import type { Metadata } from 'next'
+import { redirect } from 'next/navigation'
 import { AccountDataActions } from '@/components/account/AccountDataActions'
 import { AccountParticipationControls } from '@/components/account/AccountParticipationControls'
 import { PageWrapper } from '@/components/layout/PageWrapper'
@@ -16,12 +17,14 @@ export const metadata: Metadata = {
 export default async function SettingsPage() {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
+  if (!user) redirect(routes.public.login)
+
   const { data: profile, error } = await supabase
     .from('profiles')
     .select('name,email,location,availability,verification_status')
-    .eq('id', user!.id)
+    .eq('id', user.id)
     .single()
-  if (error) throw new Error('Unable to load account settings.')
+  if (error || !profile) throw new Error('Unable to load account settings.')
 
   return (
     <PageWrapper title="Account Settings" className="mx-auto max-w-4xl">
