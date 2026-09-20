@@ -1,10 +1,9 @@
 import { createClient as createSupabaseClient } from '@/infrastructure/supabase/server'
 import type { Database } from '@/infrastructure/supabase/database.types'
-import type { 
-  ProfileRepository, 
-  Profile, 
-  CreateProfileDto, 
-  UpdateProfileDto 
+import type {
+  ProfileRepository,
+  Profile,
+  UpdateProfileDto,
 } from '@/repositories/ProfileRepository'
 
 export class SupabaseProfileRepository implements ProfileRepository {
@@ -16,67 +15,7 @@ export class SupabaseProfileRepository implements ProfileRepository {
       .eq('id', id)
       .single()
 
-    if (error || !data) {
-      return null
-    }
-
-    return this.mapToProfile(data)
-  }
-
-  async findAll(limit: number = 20): Promise<Profile[]> {
-    const supabase = await createSupabaseClient()
-    const { data, error } = await supabase
-      .from('profiles')
-      .select('id, name, email, avatar_url, bio, location, availability, boundaries, rank, xp, token_balance, verification_status, is_suspended, created_at, updated_at')
-      .order('created_at', { ascending: false })
-      .limit(limit)
-
-    if (error || !data) {
-      return []
-    }
-
-    return data.map(profile => this.mapToProfile(profile))
-  }
-
-  async findByEmail(email: string): Promise<Profile | null> {
-    const supabase = await createSupabaseClient()
-    const { data, error } = await supabase
-      .from('profiles')
-      .select('id, name, email, avatar_url, bio, location, availability, boundaries, rank, xp, token_balance, verification_status, is_suspended, created_at, updated_at')
-      .eq('email', email)
-      .single()
-
-    if (error || !data) {
-      return null
-    }
-
-    return this.mapToProfile(data)
-  }
-
-  async create(profile: CreateProfileDto): Promise<Profile> {
-    const supabase = await createSupabaseClient()
-    const { data, error } = await supabase
-      .from('profiles')
-      .insert({
-        name: profile.name,
-        email: profile.email,
-        avatar_url: profile.avatarUrl,
-        bio: profile.bio,
-        location: profile.location,
-        availability: profile.availability,
-        boundaries: profile.boundaries,
-        rank: profile.rank || 1,
-        xp: profile.xp || 0,
-        token_balance: profile.tokenBalance || 0,
-        verification_status: profile.verificationStatus || 'unverified'
-      })
-      .select()
-      .single()
-
-    if (error) {
-      throw new Error(`Failed to create profile: ${error.message}`)
-    }
-
+    if (error || !data) return null
     return this.mapToProfile(data)
   }
 
@@ -86,39 +25,18 @@ export class SupabaseProfileRepository implements ProfileRepository {
       .from('profiles')
       .update({
         name: profile.name,
-        email: profile.email,
         avatar_url: profile.avatarUrl,
         bio: profile.bio,
         location: profile.location,
         availability: profile.availability,
         boundaries: profile.boundaries,
-        rank: profile.rank,
-        xp: profile.xp,
-        token_balance: profile.tokenBalance,
-        verification_status: profile.verificationStatus,
-        is_suspended: profile.isSuspended
       })
       .eq('id', id)
       .select()
       .single()
 
-    if (error) {
-      throw new Error(`Failed to update profile: ${error.message}`)
-    }
-
+    if (error) throw new Error(`Failed to update profile: ${error.message}`)
     return this.mapToProfile(data)
-  }
-
-  async delete(id: string): Promise<void> {
-    const supabase = await createSupabaseClient()
-    const { error } = await supabase
-      .from('profiles')
-      .delete()
-      .eq('id', id)
-
-    if (error) {
-      throw new Error(`Failed to delete profile: ${error.message}`)
-    }
   }
 
   private mapToProfile(data: Database['public']['Tables']['profiles']['Row']): Profile {
@@ -137,7 +55,7 @@ export class SupabaseProfileRepository implements ProfileRepository {
       verificationStatus: data.verification_status,
       isSuspended: data.is_suspended,
       createdAt: data.created_at,
-      updatedAt: data.updated_at
+      updatedAt: data.updated_at,
     }
   }
 }
