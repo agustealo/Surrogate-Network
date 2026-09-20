@@ -4,7 +4,6 @@ import { revalidatePath } from 'next/cache'
 import { z } from 'zod'
 import { actionFailure, type ActionResult } from '@/application/actions/memberContext'
 import { requireAdmin } from '@/application/actions/adminContext'
-import { createServiceClient } from '@/infrastructure/supabase/server'
 
 const moderationSchema = z.object({
   reportId: z.string().uuid(),
@@ -28,10 +27,9 @@ export async function moderateReportAction(input: unknown): Promise<ActionResult
       throw new Error('Record the moderation outcome before closing a report.')
     }
 
-    const rpc = createServiceClient() as unknown as ModerationRpcClient
+    const rpc = admin.supabase as unknown as ModerationRpcClient
     const { error } = await rpc.rpc<void>('moderate_report_for_trial', {
       p_report_id: values.reportId,
-      p_admin_id: admin.id,
       p_status: values.status,
       p_action_taken: values.actionTaken ?? null,
       p_suspend_reported_user: values.suspendReportedUser,
