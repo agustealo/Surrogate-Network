@@ -6,6 +6,9 @@ describe('Route registry integration', () => {
     expect(routes.public.login).toBe('/login')
     expect(routes.public.signup).toBe('/signup')
     expect(routes.public.forgotPassword).toBe('/forgot-password')
+    expect(routes.public.resetPassword).toBe('/reset-password')
+    expect(routes.public.authRecovery).toBe('/auth/recovery')
+    expect(routes.public.accountDeleted).toBe('/account-deleted')
   })
 
   it('contains the implemented member routes', () => {
@@ -14,6 +17,7 @@ describe('Route registry integration', () => {
     expect(routes.member.messages).toBe('/messages')
     expect(routes.member.needsCreate).toBe('/needs/create')
     expect(routes.member.offersCreate).toBe('/offers/create')
+    expect(routes.member.accountExport).toBe('/account/export')
   })
 
   it('contains the implemented admin routes', () => {

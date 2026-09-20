@@ -129,6 +129,25 @@ describe('Terminal account deletion authority', () => {
     expect(redactedNeed).toMatchObject({ id: need.id, title: 'Deleted member need', description: '', user_name: 'Deleted member', status: 'paused' })
     expect(redactedOffer).toMatchObject({ id: offer.id, title: 'Deleted member offer', description: '', user_name: 'Deleted member', status: 'paused' })
 
+    // The member can still possess a valid JWT until Auth cleanup finishes. The
+    // database must reject direct Data API resurrection attempts during that gap.
+    const rewriteProfile = await client
+      .from('profiles')
+      .update({ bio: 'resurrected through stale JWT' })
+      .eq('id', member.id)
+    expect(rewriteProfile.error).toBeTruthy()
+
+    const recreateNeed = await client.from('needs').insert({
+      title: 'Stale JWT resurrection attempt',
+      description: 'This row must never be created after deletion preparation.',
+      category: 'personal',
+      user_id: member.id,
+      user_name: 'Resurrected member',
+      boundaries: ['platonic'],
+      location_mode: 'remote',
+    })
+    expect(recreateNeed.error).toBeTruthy()
+
     const reactivate = await client.rpc('set_trial_account_participation', { p_active: true })
     expect(reactivate.error).toBeTruthy()
 
@@ -138,6 +157,9 @@ describe('Terminal account deletion authority', () => {
       p_error: null,
     })
     expect(directSystemAttempt.error).toBeTruthy()
+
+    const destructiveServiceDelete = await service.from('profiles').delete().eq('id', member.id)
+    expect(destructiveServiceDelete.error).toBeTruthy()
 
     const { data: job, error: jobError } = await service
       .from('account_deletion_jobs')

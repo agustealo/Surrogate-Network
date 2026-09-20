@@ -1,4 +1,4 @@
-import { expect, test, type BrowserContext, type Page } from '@playwright/test'
+import { expect, test, type BrowserContext, type Download, type Page } from '@playwright/test'
 
 type TrialMember = {
   name: string
@@ -15,6 +15,13 @@ async function signUp(page: Page, member: TrialMember) {
   await page.getByRole('checkbox').check()
   await page.getByRole('button', { name: 'Create Account' }).click()
   await page.waitForURL(/\/profile\//, { timeout: 20_000 })
+}
+
+async function signIn(page: Page, member: TrialMember) {
+  await page.goto('/login')
+  await page.getByLabel('Email Address').fill(member.email)
+  await page.getByLabel('Password').fill(member.password)
+  await page.getByRole('button', { name: 'Sign in' }).click()
 }
 
 async function createNeed(page: Page, title: string): Promise<string> {
@@ -44,6 +51,37 @@ async function dispose(contexts: BrowserContext[]) {
   await Promise.all(contexts.map((context) => context.close()))
 }
 
+function normalizeMailText(value: string): string {
+  return value
+    .replace(/=\r?\n/g, '')
+    .replace(/=3D/gi, '=')
+    .replace(/&amp;/g, '&')
+}
+
+async function recoveryLinkFor(email: string): Promise<string> {
+  const mailpitUrl = process.env.MAILPIT_URL
+  if (!mailpitUrl) throw new Error('MAILPIT_URL is required for password recovery proof')
+
+  let link = ''
+  await expect.poll(async () => {
+    const response = await fetch(`${mailpitUrl}/view/latest.txt?query=${encodeURIComponent(`to:${email}`)}`)
+    if (!response.ok) return ''
+    const text = normalizeMailText(await response.text())
+    const candidates = text.match(/https?:\/\/[^\s<>"']+/g) ?? []
+    link = candidates.find((candidate) => candidate.includes('/auth/v1/verify?')) ?? ''
+    return link
+  }, { timeout: 20_000, intervals: [250, 500, 1000] }).not.toBe('')
+
+  return link
+}
+
+async function downloadText(download: Download): Promise<string> {
+  const stream = await download.createReadStream()
+  let text = ''
+  for await (const chunk of stream) text += chunk.toString()
+  return text
+}
+
 test.describe('Consumer trial smoke @smoke', () => {
   test('public entry surface is usable', async ({ page }) => {
     await page.goto('/')
@@ -53,7 +91,45 @@ test.describe('Consumer trial smoke @smoke', () => {
     await expect(page.getByRole('link', { name: 'Join', exact: true })).toBeVisible()
   })
 
-  test('two real members can complete the canonical marketplace lifecycle', async ({ browser }) => {
+  test('password recovery exchanges a real PKCE email link and changes the credential', async ({ browser }) => {
+    const runId = `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`
+    const member: TrialMember = {
+      name: `Recovery Member ${runId}`,
+      email: `recovery-${runId}@test.local`,
+      password: 'Recovery-Original-123!',
+    }
+    const newPassword = 'Recovery-Changed-456!'
+    const setupContext = await browser.newContext()
+    const recoveryContext = await browser.newContext()
+    const loginContext = await browser.newContext()
+    const contexts = [setupContext, recoveryContext, loginContext]
+
+    try {
+      await signUp(await setupContext.newPage(), member)
+
+      const recovery = await recoveryContext.newPage()
+      await recovery.goto('/forgot-password')
+      await recovery.getByLabel('Email address').fill(member.email)
+      await recovery.getByRole('button', { name: 'Send reset link' }).click()
+      await expect(recovery.getByRole('status')).toContainText('If an account exists')
+
+      const recoveryLink = await recoveryLinkFor(member.email)
+      await recovery.goto(recoveryLink)
+      await recovery.waitForURL(/\/reset-password$/, { timeout: 20_000 })
+      await recovery.getByLabel('New password').fill(newPassword)
+      await recovery.getByLabel('Confirm password').fill(newPassword)
+      await recovery.getByRole('button', { name: 'Update password' }).click()
+      await recovery.waitForURL(/\/home$/, { timeout: 20_000 })
+
+      const login = await loginContext.newPage()
+      await signIn(login, { ...member, password: newPassword })
+      await login.waitForURL(/\/home$/, { timeout: 20_000 })
+    } finally {
+      await dispose(contexts)
+    }
+  })
+
+  test('two real members can complete the canonical marketplace lifecycle, export data, and preserve shared history after deletion', async ({ browser }) => {
     const runId = `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`
     const memberA: TrialMember = {
       name: `Trial Provider ${runId}`,
@@ -97,6 +173,7 @@ test.describe('Consumer trial smoke @smoke', () => {
       await expect(incomingProposal.getByText('Incoming', { exact: true })).toBeVisible()
       await incomingProposal.getByRole('button', { name: 'Accept' }).click()
       await requester.waitForURL(/\/surrogacies\/[0-9a-f-]{36}$/i, { timeout: 20_000 })
+      const surrogacyUrl = requester.url()
       await expect(requester.getByText(`${needTitle} ↔ ${offerTitle}`, { exact: true })).toBeVisible()
 
       const scheduler = requester.getByText('Schedule a Moment', { exact: true }).locator('..').locator('..')
@@ -122,6 +199,35 @@ test.describe('Consumer trial smoke @smoke', () => {
 
       await provider.goto('/surrogacies')
       await expect(provider.getByText(`${needTitle} ↔ ${offerTitle}`, { exact: true })).toBeVisible()
+
+      await provider.goto('/settings')
+      const downloadPromise = provider.waitForEvent('download')
+      await provider.getByRole('link', { name: 'Download my data' }).click()
+      const download = await downloadPromise
+      expect(download.suggestedFilename()).toMatch(/^surrogate-network-export-\d{4}-\d{2}-\d{2}\.json$/)
+      const exported = JSON.parse(await downloadText(download)) as {
+        account: { email: string | null }
+        surrogacies: Array<{ id: string }>
+        offers: Array<{ title: string }>
+      }
+      expect(exported.account.email).toBe(memberA.email)
+      expect(exported.surrogacies.length).toBeGreaterThan(0)
+      expect(exported.offers.some((offer) => offer.title === offerTitle)).toBe(true)
+
+      await provider.getByRole('button', { name: 'Delete account' }).click()
+      await provider.getByLabel('Current password').fill(memberA.password)
+      await provider.getByLabel('Type DELETE to confirm').fill('DELETE')
+      await provider.getByRole('button', { name: 'Permanently delete account' }).click()
+      await provider.waitForURL(/\/account-deleted(?:\?auth=pending)?$/, { timeout: 20_000 })
+      await expect(provider.getByRole('heading', { name: 'Account deleted' })).toBeVisible()
+
+      await signIn(provider, memberA)
+      await expect(provider.getByRole('alert')).toBeVisible({ timeout: 20_000 })
+      await expect(provider).toHaveURL(/\/login$/)
+
+      await requester.goto(surrogacyUrl)
+      await expect(requester.getByText(`${needTitle} ↔ Deleted member offer`, { exact: true })).toBeVisible()
+      await expect(requester.getByText('Exchange: completed', { exact: true })).toBeVisible()
     } finally {
       await dispose(contexts)
     }

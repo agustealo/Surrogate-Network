@@ -19,10 +19,11 @@ export async function acceptTrialPolicyAction(input: unknown): Promise<ActionRes
 
     const { data: profile, error: profileError } = await supabase
       .from('profiles')
-      .select('id,is_suspended')
+      .select('id,is_suspended,trial_deleted_at')
       .eq('id', user.id)
       .single()
     if (profileError || !profile) throw new Error('Your member profile is unavailable.')
+    if (profile.trial_deleted_at) throw new Error('A deleted account cannot re-enter the trial.')
     if (profile.is_suspended) throw new Error('A restricted account cannot re-enter the trial through policy acceptance.')
 
     const { error } = await supabase.rpc('accept_current_trial_policy', {
