@@ -20,12 +20,13 @@ export default async function MemberLayout({ children }: Readonly<{ children: Re
 
   const { data: profile, error } = await supabase
     .from('profiles')
-    .select('is_suspended,trial_terms_version,trial_terms_accepted_at,trial_privacy_version,trial_privacy_accepted_at,trial_age_confirmed_at')
+    .select('is_suspended,trial_deactivated_at,trial_terms_version,trial_terms_accepted_at,trial_privacy_version,trial_privacy_accepted_at,trial_age_confirmed_at')
     .eq('id', user.id)
     .single()
 
   if (error || !profile) redirect('/login')
   if (profile.is_suspended) redirect('/account-restricted')
+  if (profile.trial_deactivated_at) redirect('/account-deactivated')
 
   const hasCurrentConsent = profile.trial_terms_version === TRIAL_POLICY_VERSION
     && Boolean(profile.trial_terms_accepted_at)
