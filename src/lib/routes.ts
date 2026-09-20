@@ -12,6 +12,7 @@ export const routes = {
     terms: '/terms',
     trialConsent: '/trial-consent',
     accountRestricted: '/account-restricted',
+    accountDeactivated: '/account-deactivated',
     login: '/login',
     signup: '/signup',
     forgotPassword: '/forgot-password',
