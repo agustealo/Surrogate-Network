@@ -7,6 +7,11 @@ import type {
   UpdateNeedDto,
 } from '@/repositories/NeedRepository'
 
+function required<T>(value: T | null, field: string): T {
+  if (value === null) throw new Error(`Malformed Need row: ${field} is null`)
+  return value
+}
+
 export class SupabaseNeedRepository implements NeedRepository {
   async findById(id: string): Promise<Need | null> {
     const supabase = await createSupabaseClient()
@@ -114,17 +119,17 @@ export class SupabaseNeedRepository implements NeedRepository {
       title: data.title,
       description: data.description,
       category: data.category,
-      tags: data.tags || [],
+      tags: data.tags ?? [],
       locationMode: data.location_mode,
-      timing: data.timing,
-      boundaries: data.boundaries || [],
-      urgency: data.urgency,
-      status: data.status,
+      timing: data.timing ?? undefined,
+      boundaries: data.boundaries,
+      urgency: data.urgency ?? undefined,
+      status: required(data.status, 'status'),
       userId: data.user_id,
       userName: data.user_name,
-      userAvatar: data.user_avatar,
-      createdAt: data.created_at,
-      expiresAt: data.expires_at,
+      userAvatar: data.user_avatar ?? undefined,
+      createdAt: required(data.created_at, 'created_at'),
+      expiresAt: data.expires_at ?? undefined,
     }
   }
 }
