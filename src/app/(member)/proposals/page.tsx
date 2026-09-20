@@ -44,7 +44,7 @@ export default async function ProposalsPage() {
           const need = needs.get(proposal.needId)
           const offer = offers.get(proposal.offerId)
           const direction = proposal.proposingUserId === user.id ? 'Outgoing' : 'Incoming'
-          const isOpen = proposal.status === 'pending' || proposal.status === 'countered'
+          const openStatus = proposal.status === 'pending' || proposal.status === 'countered' ? proposal.status : null
 
           return (
             <Card key={proposal.id}>
@@ -62,10 +62,10 @@ export default async function ProposalsPage() {
                   {proposal.frequency && <div><dt className="font-medium">Frequency</dt><dd className="text-muted-foreground">{proposal.frequency}</dd></div>}
                   {proposal.locationMethod && <div><dt className="font-medium">Location / method</dt><dd className="text-muted-foreground">{proposal.locationMethod}</dd></div>}
                 </dl>
-                {isOpen && (
+                {openStatus && (
                   <ProposalActions
                     proposalId={proposal.id}
-                    status={proposal.status}
+                    status={openStatus}
                     currentUserId={user.id}
                     proposingUserId={proposal.proposingUserId}
                     receivingUserId={proposal.receivingUserId}
