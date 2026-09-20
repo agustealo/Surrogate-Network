@@ -10,6 +10,7 @@ export type ActiveMemberContext = {
   id: string
   name: string
   avatarUrl?: string
+  supabase: Awaited<ReturnType<typeof createClient>>
 }
 
 export async function requireActiveMember(): Promise<ActiveMemberContext> {
@@ -31,6 +32,7 @@ export async function requireActiveMember(): Promise<ActiveMemberContext> {
     id: profile.id,
     name: profile.name,
     avatarUrl: profile.avatar_url ?? undefined,
+    supabase,
   }
 }
 
