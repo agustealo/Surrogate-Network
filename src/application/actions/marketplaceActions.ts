@@ -144,9 +144,9 @@ export async function createProposalAction(input: unknown): Promise<MarketplaceA
 
 export async function acceptProposalAction(proposalId: string): Promise<MarketplaceActionResult<{ surrogacyId: string }>> {
   try {
-    const actor = await requireActiveMember()
+    await requireActiveMember()
     const id = z.string().uuid().parse(proposalId)
-    const surrogacyId = await new SupabaseProposalRepository().accept(id, actor.id)
+    const surrogacyId = await new SupabaseProposalRepository().accept(id)
     revalidatePath('/proposals')
     revalidatePath('/surrogacies')
     revalidatePath('/discover')
@@ -158,9 +158,9 @@ export async function acceptProposalAction(proposalId: string): Promise<Marketpl
 
 export async function declineProposalAction(proposalId: string): Promise<MarketplaceActionResult> {
   try {
-    const actor = await requireActiveMember()
+    await requireActiveMember()
     const id = z.string().uuid().parse(proposalId)
-    await new SupabaseProposalRepository().decline(id, actor.id)
+    await new SupabaseProposalRepository().decline(id)
     revalidatePath('/proposals')
     return { ok: true, data: undefined }
   } catch (error) {
@@ -170,9 +170,9 @@ export async function declineProposalAction(proposalId: string): Promise<Marketp
 
 export async function withdrawProposalAction(proposalId: string): Promise<MarketplaceActionResult> {
   try {
-    const actor = await requireActiveMember()
+    await requireActiveMember()
     const id = z.string().uuid().parse(proposalId)
-    await new SupabaseProposalRepository().withdraw(id, actor.id)
+    await new SupabaseProposalRepository().withdraw(id)
     revalidatePath('/proposals')
     return { ok: true, data: undefined }
   } catch (error) {
@@ -182,9 +182,9 @@ export async function withdrawProposalAction(proposalId: string): Promise<Market
 
 export async function counterProposalAction(input: unknown): Promise<MarketplaceActionResult> {
   try {
-    const actor = await requireActiveMember()
+    await requireActiveMember()
     const values = counterSchema.parse(input)
-    await new SupabaseProposalRepository().counter(values.proposalId, actor.id, {
+    await new SupabaseProposalRepository().counter(values.proposalId, {
       message: values.message || undefined,
       proposedDate: values.proposedDate || undefined,
       duration: values.duration || undefined,
