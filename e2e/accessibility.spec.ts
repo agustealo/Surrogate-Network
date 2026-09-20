@@ -4,18 +4,18 @@ test.describe('Consumer accessibility smoke @a11y', () => {
   test('public navigation exposes semantic landmarks and heading order', async ({ page }) => {
     await page.goto('/')
 
-    const navigation = page.getByRole('navigation').first()
+    const navigation = page.getByRole('navigation', { name: 'Primary navigation' })
     await expect(navigation).toBeVisible()
     await expect(navigation.getByRole('link').first()).toBeVisible()
 
     const firstHeading = page.locator('h1, h2, h3').first()
-    await expect(firstHeading).toHaveTag('h1')
+    expect(await firstHeading.evaluate((element) => element.tagName)).toBe('H1')
   })
 
   test('public navigation remains keyboard reachable with visible focus', async ({ page }) => {
     await page.goto('/')
 
-    const firstLink = page.getByRole('navigation').first().getByRole('link').first()
+    const firstLink = page.getByRole('navigation', { name: 'Primary navigation' }).getByRole('link').first()
     await firstLink.focus()
     await expect(firstLink).toBeFocused()
 
@@ -52,11 +52,13 @@ test.describe('Consumer accessibility smoke @a11y', () => {
     await expect(page.locator('[role="alert"]').first()).toBeVisible()
   })
 
-  test('responsive public surface preserves navigation and primary heading', async ({ page }) => {
+  test('responsive public surface preserves semantic mobile navigation and primary heading', async ({ page }) => {
     await page.setViewportSize({ width: 375, height: 667 })
     await page.goto('/')
 
     await expect(page.locator('h1').first()).toBeVisible()
-    await expect(page.getByRole('navigation').first()).toBeVisible()
+    const mobileNavigation = page.getByRole('navigation', { name: 'Mobile primary navigation' })
+    await expect(mobileNavigation).toBeVisible()
+    await expect(mobileNavigation.getByRole('link', { name: 'Home', exact: true })).toBeVisible()
   })
 })
