@@ -41,6 +41,7 @@ export const routes = {
 
   admin: {
     dashboard: '/admin',
+    reports: '/admin/reports',
   },
 } as const
 
