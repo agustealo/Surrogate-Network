@@ -89,6 +89,9 @@ $$;
 REVOKE EXECUTE ON FUNCTION public.handle_new_user() FROM PUBLIC, anon, authenticated;
 GRANT EXECUTE ON FUNCTION public.handle_new_user() TO postgres;
 
+-- Security-active remains a suspension/identity property. Trial consent is a
+-- separate product-entry contract enforced by the member shell so trusted test,
+-- moderation, and recovery paths do not become entangled with legal state.
 CREATE OR REPLACE FUNCTION public.is_active_member(p_user_id uuid DEFAULT auth.uid())
 RETURNS boolean
 LANGUAGE sql
@@ -101,6 +104,22 @@ AS $$
     FROM public.profiles
     WHERE id = p_user_id
       AND is_suspended = false
+  );
+$$;
+REVOKE EXECUTE ON FUNCTION public.is_active_member(uuid) FROM PUBLIC, anon;
+GRANT EXECUTE ON FUNCTION public.is_active_member(uuid) TO authenticated, service_role, postgres;
+
+CREATE OR REPLACE FUNCTION public.has_current_trial_consent(p_user_id uuid DEFAULT auth.uid())
+RETURNS boolean
+LANGUAGE sql
+SECURITY DEFINER
+STABLE
+SET search_path = ''
+AS $$
+  SELECT EXISTS (
+    SELECT 1
+    FROM public.profiles
+    WHERE id = p_user_id
       AND trial_terms_version = '2026-09-20'
       AND trial_terms_accepted_at IS NOT NULL
       AND trial_privacy_version = '2026-09-20'
@@ -108,8 +127,8 @@ AS $$
       AND trial_age_confirmed_at IS NOT NULL
   );
 $$;
-REVOKE EXECUTE ON FUNCTION public.is_active_member(uuid) FROM PUBLIC, anon;
-GRANT EXECUTE ON FUNCTION public.is_active_member(uuid) TO authenticated, service_role, postgres;
+REVOKE EXECUTE ON FUNCTION public.has_current_trial_consent(uuid) FROM PUBLIC, anon;
+GRANT EXECUTE ON FUNCTION public.has_current_trial_consent(uuid) TO authenticated, service_role, postgres;
 
 CREATE OR REPLACE FUNCTION public.accept_current_trial_policy(
   p_user_id uuid,
