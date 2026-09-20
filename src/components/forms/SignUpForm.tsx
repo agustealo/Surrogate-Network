@@ -11,12 +11,16 @@ import { Button } from "@/components/ui/button";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
+import { TRIAL_MINIMUM_AGE, TRIAL_POLICY_VERSION } from "@/lib/trialPolicy";
 
 const signUpFormSchema = z.object({
   name: z.string().trim().min(2, "Name must be at least 2 characters.").max(80, "Name is too long."),
   email: z.string().email("Please enter a valid email address."),
   password: z.string().min(8, "Password must be at least 8 characters."),
   confirmPassword: z.string().min(8, "Password must be at least 8 characters."),
+  acceptTrialPolicy: z.boolean().refine((value) => value, {
+    message: `You must be at least ${TRIAL_MINIMUM_AGE} and accept the trial terms and privacy notice.`,
+  }),
 }).refine((data) => data.password === data.confirmPassword, { message: "Passwords don't match", path: ["confirmPassword"] });
 
 type SignUpFormValues = z.infer<typeof signUpFormSchema>;
@@ -26,7 +30,7 @@ export function SignUpForm() {
   const { toast } = useToast();
   const form = useForm<SignUpFormValues>({
     resolver: zodResolver(signUpFormSchema),
-    defaultValues: { name: "", email: "", password: "", confirmPassword: "" },
+    defaultValues: { name: "", email: "", password: "", confirmPassword: "", acceptTrialPolicy: false },
     mode: "onChange",
   });
 
@@ -35,7 +39,14 @@ export function SignUpForm() {
     const { data, error } = await supabase.auth.signUp({
       email,
       password,
-      options: { data: { name } },
+      options: {
+        data: {
+          name,
+          trial_terms_version: TRIAL_POLICY_VERSION,
+          trial_privacy_version: TRIAL_POLICY_VERSION,
+          trial_age_confirmed: true,
+        },
+      },
     });
 
     if (error) {
@@ -66,6 +77,27 @@ export function SignUpForm() {
         )} />
         <FormField control={form.control} name="confirmPassword" render={({ field }) => (
           <FormItem><FormLabel className="flex items-center gap-2"><Lock className="h-4 w-4" /> Confirm Password</FormLabel><FormControl><Input type="password" autoComplete="new-password" {...field} /></FormControl><FormMessage /></FormItem>
+        )} />
+        <FormField control={form.control} name="acceptTrialPolicy" render={({ field }) => (
+          <FormItem>
+            <label className="flex items-start gap-3 rounded-md border p-4 text-sm">
+              <FormControl>
+                <input
+                  type="checkbox"
+                  checked={field.value}
+                  onChange={field.onChange}
+                  onBlur={field.onBlur}
+                  name={field.name}
+                  ref={field.ref}
+                  className="mt-1 h-4 w-4"
+                />
+              </FormControl>
+              <span>
+                I confirm I am at least {TRIAL_MINIMUM_AGE} and agree to the <Link className="underline" href="/terms" target="_blank">Consumer Trial Terms</Link> and <Link className="underline" href="/privacy" target="_blank">Privacy Notice</Link>.
+              </span>
+            </label>
+            <FormMessage />
+          </FormItem>
         )} />
         {form.formState.errors.root?.message && <p role="alert" className="text-sm text-destructive">{form.formState.errors.root.message}</p>}
         <Button type="submit" className="w-full" size="lg" disabled={form.formState.isSubmitting}>
