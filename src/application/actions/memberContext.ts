@@ -19,12 +19,13 @@ export async function requireActiveMember(): Promise<ActiveMemberContext> {
 
   const { data: profile, error: profileError } = await supabase
     .from('profiles')
-    .select('id,name,avatar_url,is_suspended')
+    .select('id,name,avatar_url,is_suspended,trial_deactivated_at')
     .eq('id', user.id)
     .single()
 
   if (profileError || !profile) throw new Error('Your member profile is unavailable.')
   if (profile.is_suspended) throw new Error('This account is not permitted to perform member actions.')
+  if (profile.trial_deactivated_at) throw new Error('Reactivate your account before performing member actions.')
 
   return {
     id: profile.id,
