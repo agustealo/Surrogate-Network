@@ -11,6 +11,10 @@ type NeedDetailPageProps = {
   params: Promise<{ id: string }>
 }
 
+function formatDate(value: string | null): string {
+  return value ? new Date(value).toLocaleDateString() : 'date unavailable'
+}
+
 export default async function NeedDetailPage({ params }: NeedDetailPageProps) {
   const { id } = await params
   const supabase = await createClient()
@@ -48,7 +52,7 @@ export default async function NeedDetailPage({ params }: NeedDetailPageProps) {
         <CardHeader className="space-y-3">
           <div className="flex flex-wrap gap-2"><Badge variant="outline">{need.category}</Badge><Badge variant="outline">{need.location_mode}</Badge><Badge>{need.status}</Badge></div>
           <CardTitle className="text-3xl">{need.title}</CardTitle>
-          <p className="text-sm text-muted-foreground">Requested by <Link className="underline" href={routes.memberDynamic.profile(need.user_id)}>{need.user_name}</Link> · {new Date(need.created_at).toLocaleDateString()}</p>
+          <p className="text-sm text-muted-foreground">Requested by <Link className="underline" href={routes.memberDynamic.profile(need.user_id)}>{need.user_name}</Link> · {formatDate(need.created_at)}</p>
         </CardHeader>
         <CardContent className="space-y-5">
           <p className="whitespace-pre-wrap">{need.description}</p>
