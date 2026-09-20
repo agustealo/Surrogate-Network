@@ -1,5 +1,20 @@
 import type { Boundary, Database } from './database.types'
 
+type TrialConsentFields = {
+  trial_terms_version: string | null
+  trial_terms_accepted_at: string | null
+  trial_privacy_version: string | null
+  trial_privacy_accepted_at: string | null
+  trial_age_confirmed_at: string | null
+}
+
+type RuntimeProfilesTable = {
+  Row: Database['public']['Tables']['profiles']['Row'] & TrialConsentFields
+  Insert: Database['public']['Tables']['profiles']['Insert'] & Partial<TrialConsentFields>
+  Update: Database['public']['Tables']['profiles']['Update'] & Partial<TrialConsentFields>
+  Relationships: []
+}
+
 type BlocksTable = {
   Row: {
     id: string
@@ -47,6 +62,7 @@ type PublicProfilesView = {
 export type RuntimeDatabase = Omit<Database, 'public'> & {
   public: Omit<Database['public'], 'Tables' | 'Views'> & {
     Tables: Database['public']['Tables'] & {
+      profiles: RuntimeProfilesTable
       blocks: BlocksTable
     }
     Views: {
