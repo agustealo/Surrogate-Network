@@ -15,10 +15,6 @@ export default async function ProfilePage({ params }: Props) {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
 
-  // public_profiles is created by migration 20260919000500. Generated Supabase
-  // types are refreshed in the trial gate; keep this call explicit until that
-  // generated artifact lands with the migration batch.
-  // @ts-expect-error public_profiles exists in the database migration but not in the stale generated schema file yet.
   const { data: profile, error } = await supabase
     .from('public_profiles')
     .select('id,name,avatar_url,bio,location,availability,rank')
