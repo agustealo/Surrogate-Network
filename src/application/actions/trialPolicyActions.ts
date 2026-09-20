@@ -10,13 +10,6 @@ const consentSchema = z.object({
   confirmed: z.literal(true),
 })
 
-type ConsentRpcClient = {
-  rpc<T>(name: string, args: Record<string, unknown>): PromiseLike<{
-    data: T | null
-    error: { message: string } | null
-  }>
-}
-
 export async function acceptTrialPolicyAction(input: unknown): Promise<ActionResult> {
   try {
     consentSchema.parse(input)
@@ -32,8 +25,7 @@ export async function acceptTrialPolicyAction(input: unknown): Promise<ActionRes
     if (profileError || !profile) throw new Error('Your member profile is unavailable.')
     if (profile.is_suspended) throw new Error('A restricted account cannot re-enter the trial through policy acceptance.')
 
-    const rpc = supabase as unknown as ConsentRpcClient
-    const { error } = await rpc.rpc<void>('accept_current_trial_policy', {
+    const { error } = await supabase.rpc('accept_current_trial_policy', {
       p_terms_version: TRIAL_POLICY_VERSION,
       p_privacy_version: TRIAL_POLICY_VERSION,
       p_age_confirmed: true,
