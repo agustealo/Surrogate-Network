@@ -1,20 +1,20 @@
-// Route constants for the application
-// Centralized to prevent scattered literal paths and broken redirects
-
+// Canonical application routes. A route belongs here only when the surface is
+// implemented and intentionally exposed by the product.
 export const routes = {
-  // Public routes
   public: {
     home: '/',
     howItWorks: '/how-it-works',
     explore: '/explore',
     principles: '/principles',
     safety: '/safety',
+    privacy: '/privacy',
+    terms: '/terms',
     login: '/login',
     signup: '/signup',
     forgotPassword: '/forgot-password',
+    resetPassword: '/reset-password',
   },
 
-  // Member routes
   member: {
     home: '/home',
     discover: '/discover',
@@ -22,8 +22,8 @@ export const routes = {
     needsCreate: '/needs/create',
     offers: '/offers',
     offersCreate: '/offers/create',
+    proposals: '/proposals',
     surrogacies: '/surrogacies',
-    messages: '/messages',
     rewards: '/rewards',
     profile: '/profile',
     settings: '/settings',
@@ -36,12 +36,11 @@ export const routes = {
     surrogacy: (id: string) => `/surrogacies/${id}`,
   },
 
-  // Admin routes
   admin: {
     dashboard: '/admin',
   },
-} as const;
+} as const
 
-export type RoutePath = typeof routes.public[keyof typeof routes.public] 
+export type RoutePath = typeof routes.public[keyof typeof routes.public]
   | typeof routes.member[keyof typeof routes.member]
-  | typeof routes.admin[keyof typeof routes.admin];
+  | typeof routes.admin[keyof typeof routes.admin]
