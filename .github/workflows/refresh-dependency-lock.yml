@@ -5,15 +5,17 @@ on:
     branches: [master, main]
 
 permissions:
-  contents: read
+  contents: write
 
 jobs:
   refresh-lock:
     name: REFRESH LOCKFILE
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout candidate
+      - name: Checkout PR head
         uses: actions/checkout@v4
+        with:
+          ref: ${{ github.head_ref }}
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
@@ -22,10 +24,18 @@ jobs:
         run: npm install --package-lock-only --ignore-scripts
       - name: Apply available dependency security fixes to lockfile
         run: npm audit fix --package-lock-only --ignore-scripts
-        continue-on-error: true
-      - name: Upload regenerated lockfile
-        uses: actions/upload-artifact@v4
-        with:
-          name: regenerated-package-lock
-          path: package-lock.json
-          retention-days: 1
+      - name: Verify regenerated production dependency graph
+        run: npm audit --omit=dev --audit-level=high
+      - name: Commit regenerated lockfile to PR branch
+        env:
+          BRANCH: ${{ github.head_ref }}
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add package-lock.json
+          if git diff --cached --quiet; then
+            echo "Lockfile already canonical."
+            exit 0
+          fi
+          git commit -m "security: regenerate audited dependency lock"
+          git push origin HEAD:"$BRANCH"
