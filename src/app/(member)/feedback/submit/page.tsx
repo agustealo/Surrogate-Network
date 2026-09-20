@@ -36,7 +36,7 @@ export default async function SubmitFeedbackPage({ searchParams }: SubmitFeedbac
     .select('id,surrogacy_id,status')
     .eq('id', exchangeId)
     .maybeSingle()
-  if (exchangeError || !exchange || !['completed', 'partial'].includes(exchange.status)) {
+  if (exchangeError || !exchange || !exchange.status || !['completed', 'partial'].includes(exchange.status)) {
     return <PageWrapper title="Feedback unavailable" className="mx-auto max-w-xl"><p className="text-muted-foreground">That Exchange is not available for feedback.</p></PageWrapper>
   }
 
