@@ -4,13 +4,6 @@ import { revalidatePath } from 'next/cache'
 import { actionFailure, type ActionResult } from '@/application/actions/memberContext'
 import { createClient } from '@/infrastructure/supabase/server'
 
-type ParticipationRpcClient = {
-  rpc<T>(name: string, args: Record<string, unknown>): PromiseLike<{
-    data: T | null
-    error: { message: string } | null
-  }>
-}
-
 export async function setTrialParticipationAction(active: boolean): Promise<ActionResult> {
   try {
     if (typeof active !== 'boolean') throw new Error('Invalid participation state.')
@@ -27,8 +20,7 @@ export async function setTrialParticipationAction(active: boolean): Promise<Acti
     if (profileError || !profile) throw new Error('Your member profile is unavailable.')
     if (active && profile.is_suspended) throw new Error('A restricted account cannot reactivate itself.')
 
-    const rpc = supabase as unknown as ParticipationRpcClient
-    const { error } = await rpc.rpc<void>('set_trial_account_participation', {
+    const { error } = await supabase.rpc('set_trial_account_participation', {
       p_active: active,
     })
     if (error) throw new Error(`Unable to update trial participation: ${error.message}`)
