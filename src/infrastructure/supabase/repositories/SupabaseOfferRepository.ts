@@ -104,12 +104,6 @@ export class SupabaseOfferRepository implements OfferRepository {
     return this.mapToOffer(data)
   }
 
-  async delete(id: string): Promise<void> {
-    const supabase = await createSupabaseClient()
-    const { error } = await supabase.from('offers').delete().eq('id', id)
-    if (error) throw new Error(`Failed to delete offer: ${error.message}`)
-  }
-
   private mapToOffer(data: Database['public']['Tables']['offers']['Row']): Offer {
     return {
       id: data.id,
