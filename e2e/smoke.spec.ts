@@ -12,6 +12,7 @@ async function signUp(page: Page, member: TrialMember) {
   await page.getByLabel('Email Address').fill(member.email)
   await page.getByLabel('Password', { exact: true }).fill(member.password)
   await page.getByLabel('Confirm Password').fill(member.password)
+  await page.getByRole('checkbox').check()
   await page.getByRole('button', { name: 'Create Account' }).click()
   await page.waitForURL(/\/profile\//, { timeout: 20_000 })
 }
