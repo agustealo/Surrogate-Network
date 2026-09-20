@@ -81,11 +81,9 @@ export async function createOfferAction(input: unknown): Promise<MarketplaceActi
     const offer = await new SupabaseOfferRepository().create({
       ...values,
       timing: values.timing || undefined,
-      currentCapacity: 0,
       userId: actor.id,
       userName: actor.name,
       userAvatar: actor.avatarUrl,
-      status: 'active',
     })
     revalidatePath('/offers')
     revalidatePath('/discover')
