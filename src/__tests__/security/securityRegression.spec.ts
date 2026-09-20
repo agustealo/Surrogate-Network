@@ -249,11 +249,18 @@ describe('Security Regression Tests', () => {
     });
 
     it('should prevent unrelated user from mutating proposal', async () => {
-      // Sign in as user C (unrelated user)
-      const { data: userC } = await supabase.auth.signUp({
+      // Sign in as an unrelated user provisioned through the local admin API.
+      const admin = createClient(
+        process.env.NEXT_PUBLIC_SUPABASE_URL!,
+        process.env.SUPABASE_SERVICE_ROLE_KEY!,
+        { auth: { persistSession: false, autoRefreshToken: false } }
+      );
+      const { error: createUserCError } = await admin.auth.admin.createUser({
         email: 'security-test-c@test.com',
         password: 'test-password-abc',
+        email_confirm: true,
       });
+      if (createUserCError) throw createUserCError;
       await supabase.auth.signInWithPassword({
         email: 'security-test-c@test.com',
         password: 'test-password-abc',
