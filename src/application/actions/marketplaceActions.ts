@@ -2,6 +2,7 @@
 
 import { revalidatePath } from 'next/cache'
 import { z } from 'zod'
+import { actionFailure, requireActiveMember, type ActionResult } from '@/application/actions/memberContext'
 import { createClient } from '@/infrastructure/supabase/server'
 import { SupabaseNeedRepository } from '@/infrastructure/supabase/repositories/SupabaseNeedRepository'
 import { SupabaseOfferRepository } from '@/infrastructure/supabase/repositories/SupabaseOfferRepository'
@@ -51,47 +52,13 @@ const counterSchema = z.object({
   locationMethod: z.string().trim().max(200).optional(),
 })
 
-export type MarketplaceActionResult<T = undefined> =
-  | { ok: true; data: T }
-  | { ok: false; error: string }
-
-type ActiveActor = {
-  id: string
-  name: string
-  avatarUrl?: string
-}
-
-async function requireActiveActor(): Promise<ActiveActor> {
-  const supabase = await createClient()
-  const { data: { user }, error: authError } = await supabase.auth.getUser()
-  if (authError || !user) throw new Error('You must be signed in to continue.')
-
-  const { data: profile, error: profileError } = await supabase
-    .from('profiles')
-    .select('id,name,avatar_url,is_suspended')
-    .eq('id', user.id)
-    .single()
-
-  if (profileError || !profile) throw new Error('Your member profile is unavailable.')
-  if (profile.is_suspended) throw new Error('This account is not permitted to perform member actions.')
-
-  return {
-    id: profile.id,
-    name: profile.name,
-    avatarUrl: profile.avatar_url ?? undefined,
-  }
-}
-
-function failure(error: unknown): MarketplaceActionResult<never> {
-  return { ok: false, error: error instanceof Error ? error.message : 'The request could not be completed.' }
-}
+export type MarketplaceActionResult<T = undefined> = ActionResult<T>
 
 export async function createNeedAction(input: unknown): Promise<MarketplaceActionResult<{ id: string }>> {
   try {
-    const actor = await requireActiveActor()
+    const actor = await requireActiveMember()
     const values = needSchema.parse(input)
-    const repository = new SupabaseNeedRepository()
-    const need = await repository.create({
+    const need = await new SupabaseNeedRepository().create({
       ...values,
       timing: values.timing || undefined,
       userId: actor.id,
@@ -103,16 +70,15 @@ export async function createNeedAction(input: unknown): Promise<MarketplaceActio
     revalidatePath('/discover')
     return { ok: true, data: { id: need.id } }
   } catch (error) {
-    return failure(error)
+    return actionFailure(error)
   }
 }
 
 export async function createOfferAction(input: unknown): Promise<MarketplaceActionResult<{ id: string }>> {
   try {
-    const actor = await requireActiveActor()
+    const actor = await requireActiveMember()
     const values = offerSchema.parse(input)
-    const repository = new SupabaseOfferRepository()
-    const offer = await repository.create({
+    const offer = await new SupabaseOfferRepository().create({
       ...values,
       timing: values.timing || undefined,
       currentCapacity: 0,
@@ -125,13 +91,13 @@ export async function createOfferAction(input: unknown): Promise<MarketplaceActi
     revalidatePath('/discover')
     return { ok: true, data: { id: offer.id } }
   } catch (error) {
-    return failure(error)
+    return actionFailure(error)
   }
 }
 
 export async function createProposalAction(input: unknown): Promise<MarketplaceActionResult<{ id: string }>> {
   try {
-    const actor = await requireActiveActor()
+    const actor = await requireActiveMember()
     const values = proposalSchema.parse(input)
     const supabase = await createClient()
 
@@ -143,9 +109,7 @@ export async function createProposalAction(input: unknown): Promise<MarketplaceA
     if (needError || !need || need.status !== 'active') throw new Error('That Need is no longer available.')
     if (offerError || !offer || offer.status !== 'active') throw new Error('That Offer is no longer available.')
     if (need.user_id === offer.user_id) throw new Error('A Need and Offer must belong to different members.')
-    if (actor.id !== need.user_id && actor.id !== offer.user_id) {
-      throw new Error('You must own either the Need or the Offer in this proposal.')
-    }
+    if (actor.id !== need.user_id && actor.id !== offer.user_id) throw new Error('You must own either the Need or the Offer in this proposal.')
 
     const receivingUserId = actor.id === need.user_id ? offer.user_id : need.user_id
     const { data: existing, error: existingError } = await supabase
@@ -159,8 +123,7 @@ export async function createProposalAction(input: unknown): Promise<MarketplaceA
     if (existingError) throw new Error(`Unable to verify proposal state: ${existingError.message}`)
     if (existing) throw new Error('An open proposal already exists for this Need and Offer.')
 
-    const repository = new SupabaseProposalRepository()
-    const proposal = await repository.create({
+    const proposal = await new SupabaseProposalRepository().create({
       ...values,
       message: values.message || undefined,
       proposedDate: values.proposedDate || undefined,
@@ -175,52 +138,51 @@ export async function createProposalAction(input: unknown): Promise<MarketplaceA
     revalidatePath('/discover')
     return { ok: true, data: { id: proposal.id } }
   } catch (error) {
-    return failure(error)
+    return actionFailure(error)
   }
 }
 
 export async function acceptProposalAction(proposalId: string): Promise<MarketplaceActionResult<{ surrogacyId: string }>> {
   try {
-    const actor = await requireActiveActor()
+    const actor = await requireActiveMember()
     const id = z.string().uuid().parse(proposalId)
-    const repository = new SupabaseProposalRepository()
-    const surrogacyId = await repository.accept(id, actor.id)
+    const surrogacyId = await new SupabaseProposalRepository().accept(id, actor.id)
     revalidatePath('/proposals')
     revalidatePath('/surrogacies')
     revalidatePath('/discover')
     return { ok: true, data: { surrogacyId } }
   } catch (error) {
-    return failure(error)
+    return actionFailure(error)
   }
 }
 
 export async function declineProposalAction(proposalId: string): Promise<MarketplaceActionResult> {
   try {
-    const actor = await requireActiveActor()
+    const actor = await requireActiveMember()
     const id = z.string().uuid().parse(proposalId)
     await new SupabaseProposalRepository().decline(id, actor.id)
     revalidatePath('/proposals')
     return { ok: true, data: undefined }
   } catch (error) {
-    return failure(error)
+    return actionFailure(error)
   }
 }
 
 export async function withdrawProposalAction(proposalId: string): Promise<MarketplaceActionResult> {
   try {
-    const actor = await requireActiveActor()
+    const actor = await requireActiveMember()
     const id = z.string().uuid().parse(proposalId)
     await new SupabaseProposalRepository().withdraw(id, actor.id)
     revalidatePath('/proposals')
     return { ok: true, data: undefined }
   } catch (error) {
-    return failure(error)
+    return actionFailure(error)
   }
 }
 
 export async function counterProposalAction(input: unknown): Promise<MarketplaceActionResult> {
   try {
-    const actor = await requireActiveActor()
+    const actor = await requireActiveMember()
     const values = counterSchema.parse(input)
     await new SupabaseProposalRepository().counter(values.proposalId, actor.id, {
       message: values.message || undefined,
@@ -232,6 +194,6 @@ export async function counterProposalAction(input: unknown): Promise<Marketplace
     revalidatePath('/proposals')
     return { ok: true, data: undefined }
   } catch (error) {
-    return failure(error)
+    return actionFailure(error)
   }
 }
