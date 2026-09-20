@@ -11,7 +11,7 @@
     "lint": "eslint src --ext .ts,.tsx",
     "typecheck": "tsc --noEmit",
     "test": "jest --coverage --testPathIgnorePatterns=src/__tests__/security",
-    "test:security": "jest --config jest.security.config.js --runInBand src/__tests__/security/securityRegression.spec.ts",
+    "test:security": "jest --config jest.security.config.js --runInBand src/__tests__/security",
     "test:unit": "jest --testPathPattern=src/lib/__tests__",
     "test:component": "jest --runInBand src/components/member/__tests__/MobileNavigation.test.tsx",
     "test:e2e": "playwright test",
