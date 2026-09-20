@@ -61,6 +61,7 @@ const memberActionRoutes = {
 
 export const adminNavigation: (NavigationItem | NavigationAction)[] = [
   { id: 'dashboard', label: 'Dashboard', href: routes.admin.dashboard, surfaces: ['admin'], modes: ['desktop'], section: 'Overview' },
+  { id: 'reports', label: 'Reports', href: routes.admin.reports, surfaces: ['admin'], modes: ['desktop'], section: 'Safety' },
 ]
 
 export function filterNavigationBySurface<T extends NavigationItem | NavigationAction>(items: T[], surface: NavigationSurface): T[] {
