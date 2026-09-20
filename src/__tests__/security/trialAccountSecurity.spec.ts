@@ -72,7 +72,7 @@ describe('Trial consent and account lifecycle security', () => {
     expect(error).toBeTruthy()
   })
 
-  it('does not let an authenticated client invoke the consent authority RPC', async () => {
+  it('rejects the retired caller-supplied consent identity signature', async () => {
     const client = await memberClient()
     const { error } = await client.rpc('accept_current_trial_policy', {
       p_user_id: member.id,
@@ -94,14 +94,13 @@ describe('Trial consent and account lifecycle security', () => {
     expect(error).toBeTruthy()
   })
 
-  it('allows trusted deactivation and then blocks marketplace writes through RLS', async () => {
-    const { error: deactivateError } = await service.rpc('set_trial_account_participation', {
-      p_user_id: member.id,
+  it('allows authenticated self-deactivation and then blocks marketplace writes through RLS', async () => {
+    const client = await memberClient()
+    const { error: deactivateError } = await client.rpc('set_trial_account_participation', {
       p_active: false,
     })
     expect(deactivateError).toBeNull()
 
-    const client = await memberClient()
     const { error: writeError } = await client.from('needs').insert({
       title: 'Inactive account write',
       description: 'This operation must be rejected while trial participation is deactivated.',
@@ -114,9 +113,9 @@ describe('Trial consent and account lifecycle security', () => {
     expect(writeError).toBeTruthy()
   })
 
-  it('allows trusted reactivation when the account is not suspended', async () => {
-    const { error } = await service.rpc('set_trial_account_participation', {
-      p_user_id: member.id,
+  it('allows authenticated self-reactivation when the account is not suspended', async () => {
+    const client = await memberClient()
+    const { error } = await client.rpc('set_trial_account_participation', {
       p_active: true,
     })
     expect(error).toBeNull()
@@ -129,15 +128,15 @@ describe('Trial consent and account lifecycle security', () => {
     expect(profile?.trial_deactivated_at).toBeNull()
   })
 
-  it('prevents trusted self-reactivation while moderation suspension is active', async () => {
+  it('prevents authenticated self-reactivation while moderation suspension is active', async () => {
     await service.from('profiles').update({ is_suspended: true }).eq('id', member.id)
-    await service.rpc('set_trial_account_participation', { p_user_id: member.id, p_active: false })
 
-    const { error } = await service.rpc('set_trial_account_participation', {
-      p_user_id: member.id,
-      p_active: true,
-    })
-    expect(error).toBeTruthy()
+    const client = await memberClient()
+    const deactivate = await client.rpc('set_trial_account_participation', { p_active: false })
+    expect(deactivate.error).toBeNull()
+
+    const reactivate = await client.rpc('set_trial_account_participation', { p_active: true })
+    expect(reactivate.error).toBeTruthy()
 
     await service.from('profiles').update({ is_suspended: false, trial_deactivated_at: null }).eq('id', member.id)
   })
