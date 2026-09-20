@@ -10,6 +10,8 @@ export const routes = {
     safety: '/safety',
     privacy: '/privacy',
     terms: '/terms',
+    trialConsent: '/trial-consent',
+    accountRestricted: '/account-restricted',
     login: '/login',
     signup: '/signup',
     forgotPassword: '/forgot-password',
