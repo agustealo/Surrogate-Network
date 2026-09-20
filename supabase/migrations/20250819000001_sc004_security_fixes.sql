@@ -139,7 +139,7 @@ BEGIN
   RETURNING * INTO STRICT result;
   RETURN result;
 END;
-$;
+$$;
 
 -- Add security comment
 COMMENT ON FUNCTION verify_admin_role IS 'Security function to verify admin role - used by security-definer functions';
