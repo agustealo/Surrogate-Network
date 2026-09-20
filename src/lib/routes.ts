@@ -1,5 +1,6 @@
-// Canonical application routes. A route belongs here only when the surface is
-// implemented and intentionally exposed by the product.
+// Canonical application routes. A route belongs here when the surface exists.
+// Primary navigation is the separate authority for whether that route is
+// advertised during a consumer trial.
 export const routes = {
   public: {
     home: '/',
@@ -24,9 +25,11 @@ export const routes = {
     offersCreate: '/offers/create',
     proposals: '/proposals',
     surrogacies: '/surrogacies',
+    messages: '/messages',
     rewards: '/rewards',
     profile: '/profile',
     settings: '/settings',
+    blockedMembers: '/settings/blocked',
   },
 
   memberDynamic: {
