@@ -34,6 +34,51 @@ export type Database = {
   }
   public: {
     Tables: {
+      account_deletion_jobs: {
+        Row: {
+          attempt_count: number
+          auth_deleted_at: string | null
+          last_error: string | null
+          prepared_at: string
+          requested_at: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          attempt_count?: number
+          auth_deleted_at?: string | null
+          last_error?: string | null
+          prepared_at?: string
+          requested_at?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          attempt_count?: number
+          auth_deleted_at?: string | null
+          last_error?: string | null
+          prepared_at?: string
+          requested_at?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "account_deletion_jobs_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: true
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "account_deletion_jobs_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: true
+            referencedRelation: "public_profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       audit_events: {
         Row: {
           action: string
@@ -828,6 +873,7 @@ export type Database = {
           token_balance: number | null
           trial_age_confirmed_at: string | null
           trial_deactivated_at: string | null
+          trial_deleted_at: string | null
           trial_privacy_accepted_at: string | null
           trial_privacy_version: string | null
           trial_terms_accepted_at: string | null
@@ -854,6 +900,7 @@ export type Database = {
           token_balance?: number | null
           trial_age_confirmed_at?: string | null
           trial_deactivated_at?: string | null
+          trial_deleted_at?: string | null
           trial_privacy_accepted_at?: string | null
           trial_privacy_version?: string | null
           trial_terms_accepted_at?: string | null
@@ -880,6 +927,7 @@ export type Database = {
           token_balance?: number | null
           trial_age_confirmed_at?: string | null
           trial_deactivated_at?: string | null
+          trial_deleted_at?: string | null
           trial_privacy_accepted_at?: string | null
           trial_privacy_version?: string | null
           trial_terms_accepted_at?: string | null
@@ -1433,6 +1481,7 @@ export type Database = {
           token_balance: number | null
           trial_age_confirmed_at: string | null
           trial_deactivated_at: string | null
+          trial_deleted_at: string | null
           trial_privacy_accepted_at: string | null
           trial_privacy_version: string | null
           trial_terms_accepted_at: string | null
@@ -1531,6 +1580,15 @@ export type Database = {
           p_status: Database["public"]["Enums"]["report_status"]
           p_suspend_reported_user?: boolean
         }
+        Returns: undefined
+      }
+      prepare_trial_account_deletion: { Args: never; Returns: undefined }
+      prepare_trial_account_deletion_trusted: {
+        Args: { p_user_id: string }
+        Returns: undefined
+      }
+      record_trial_auth_deletion_attempt: {
+        Args: { p_auth_deleted: boolean; p_error?: string; p_user_id: string }
         Returns: undefined
       }
       set_trial_account_participation: {
