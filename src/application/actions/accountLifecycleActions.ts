@@ -79,9 +79,9 @@ export async function deleteAccountAction(input: unknown): Promise<ActionResult<
       authRemoved = false
     }
 
-    revalidatePath('/settings')
-    revalidatePath('/account-deactivated')
-    revalidatePath('/account-restricted')
+    // Do not revalidate authenticated routes after deliberately destroying the
+    // session. The client performs a hard navigation to the terminal public
+    // page so no stale member RSC tree is asked to render with a missing user.
     return { ok: true, data: { authRemoved } }
   } catch (error) {
     return actionFailure(error)
