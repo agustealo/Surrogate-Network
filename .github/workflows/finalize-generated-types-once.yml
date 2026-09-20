@@ -1,0 +1,41 @@
+name: One-shot generated type newline finalizer
+
+on:
+  push:
+    branches:
+      - audit/consumer-trial-readiness-20260919
+
+permissions:
+  contents: write
+
+jobs:
+  finalize-types:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Checkout exact branch head
+        uses: actions/checkout@v7
+        with:
+          ref: audit/consumer-trial-readiness-20260919
+          fetch-depth: 0
+
+      - name: Apply verified EOF delta
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+
+          path = Path('src/infrastructure/supabase/database.types.ts')
+          data = path.read_bytes()
+          if not data.endswith(b'} as const\n') or data.endswith(b'} as const\n\n'):
+              raise SystemExit('database.types.ts EOF did not match the single verified newline delta')
+          path.write_bytes(data + b'\n')
+          PY
+          git diff --check
+
+      - name: Commit exact generated EOF
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add src/infrastructure/supabase/database.types.ts
+          git commit -m "chore: finalize canonical Supabase type snapshot"
+          git push origin HEAD:audit/consumer-trial-readiness-20260919
