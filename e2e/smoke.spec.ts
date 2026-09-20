@@ -24,7 +24,7 @@ async function createNeed(page: Page, title: string): Promise<string> {
   await page.getByLabel('Tags').fill('conversation, planning, companion')
   await page.getByRole('button', { name: 'Publish Need' }).click()
   await page.waitForURL(/\/needs\/[0-9a-f-]{36}$/i, { timeout: 20_000 })
-  await expect(page.getByRole('heading', { name: title })).toBeVisible()
+  await expect(page.getByText(title, { exact: true })).toBeVisible()
   return page.url()
 }
 
@@ -35,7 +35,7 @@ async function createOffer(page: Page, title: string): Promise<string> {
   await page.getByLabel('Timing').fill('Flexible this week')
   await page.getByRole('button', { name: 'Publish Offer' }).click()
   await page.waitForURL(/\/offers\/[0-9a-f-]{36}$/i, { timeout: 20_000 })
-  await expect(page.getByRole('heading', { name: title })).toBeVisible()
+  await expect(page.getByText(title, { exact: true })).toBeVisible()
   return page.url()
 }
 
@@ -82,22 +82,23 @@ test.describe('Consumer trial smoke @smoke', () => {
       await createOffer(provider, offerTitle)
 
       await provider.goto(needUrl)
-      const composer = provider.getByRole('heading', { name: 'Make a proposal' }).locator('..').locator('..')
+      const composer = provider.getByText('Make a proposal', { exact: true }).locator('..').locator('..')
       await composer.getByRole('combobox').click()
       await provider.getByRole('option', { name: offerTitle }).click()
       await composer.getByPlaceholder('Add context for the other member').fill('Consumer trial proposal with explicit persisted terms.')
       await composer.getByRole('button', { name: 'Send proposal' }).click()
       await provider.waitForURL(/\/proposals$/, { timeout: 20_000 })
-      await expect(provider.getByText(`${needTitle} ↔ ${offerTitle}`)).toBeVisible()
+      await expect(provider.getByText(`${needTitle} ↔ ${offerTitle}`, { exact: true })).toBeVisible()
 
       await requester.goto('/proposals')
-      const incomingProposal = requester.getByText(`${needTitle} ↔ ${offerTitle}`).locator('..').locator('..').locator('..')
-      await expect(incomingProposal.getByText('Incoming')).toBeVisible()
+      const incomingProposalTitle = requester.getByText(`${needTitle} ↔ ${offerTitle}`, { exact: true })
+      const incomingProposal = incomingProposalTitle.locator('..').locator('..')
+      await expect(incomingProposal.getByText('Incoming', { exact: true })).toBeVisible()
       await incomingProposal.getByRole('button', { name: 'Accept' }).click()
       await requester.waitForURL(/\/surrogacies\/[0-9a-f-]{36}$/i, { timeout: 20_000 })
-      await expect(requester.getByText(`${needTitle} ↔ ${offerTitle}`)).toBeVisible()
+      await expect(requester.getByText(`${needTitle} ↔ ${offerTitle}`, { exact: true })).toBeVisible()
 
-      const scheduler = requester.getByRole('heading', { name: 'Schedule a Moment' }).locator('..').locator('..')
+      const scheduler = requester.getByText('Schedule a Moment', { exact: true }).locator('..').locator('..')
       const momentTime = new Date(Date.now() - 5 * 60_000)
       const localDateTime = momentTime.toISOString().slice(0, 16)
       await scheduler.locator('input[type="datetime-local"]').fill(localDateTime)
@@ -105,21 +106,21 @@ test.describe('Consumer trial smoke @smoke', () => {
       await scheduler.getByPlaceholder('Video call, coffee shop, address, etc.').fill('Video call')
       await scheduler.getByPlaceholder('Shared notes or expectations').fill('Consumer trial exchange proof.')
       await scheduler.getByRole('button', { name: 'Schedule Moment' }).click()
-      await expect(requester.getByText('Moment: scheduled')).toBeVisible({ timeout: 20_000 })
+      await expect(requester.getByText('Moment: scheduled', { exact: true })).toBeVisible({ timeout: 20_000 })
 
-      const momentCard = requester.getByText('Moment: scheduled').locator('..').locator('..').locator('..')
+      const momentCard = requester.getByText('Moment: scheduled', { exact: true }).locator('..').locator('..').locator('..')
       await momentCard.getByRole('button', { name: 'Complete' }).click()
-      await expect(requester.getByText('Exchange: completed')).toBeVisible({ timeout: 20_000 })
+      await expect(requester.getByText('Exchange: completed', { exact: true })).toBeVisible({ timeout: 20_000 })
 
-      const feedbackHeading = requester.getByRole('heading', { name: new RegExp(`Feedback for ${memberA.name}`) })
-      const feedbackCard = feedbackHeading.locator('..').locator('..')
+      const feedbackTitle = requester.getByText(`Feedback for ${memberA.name}`, { exact: true })
+      const feedbackCard = feedbackTitle.locator('..').locator('..')
       await feedbackCard.getByPlaceholder('Optional comments').fill('Completed successfully during the consumer-trial E2E proof.')
       await feedbackCard.getByPlaceholder('Skill endorsements, comma-separated').fill('communication, reliability')
       await feedbackCard.getByRole('button', { name: 'Submit Feedback' }).click()
-      await expect(requester.getByText('You submitted feedback for this Exchange.')).toBeVisible({ timeout: 20_000 })
+      await expect(requester.getByText('You submitted feedback for this Exchange.', { exact: true })).toBeVisible({ timeout: 20_000 })
 
       await provider.goto('/surrogacies')
-      await expect(provider.getByText(`${needTitle} ↔ ${offerTitle}`)).toBeVisible()
+      await expect(provider.getByText(`${needTitle} ↔ ${offerTitle}`, { exact: true })).toBeVisible()
     } finally {
       await dispose(contexts)
     }
