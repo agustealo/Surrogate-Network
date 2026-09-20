@@ -1,342 +1,243 @@
-# Surrogate Companion - Architecture Documentation
+# Surrogate Network Architecture
 
-## Overview
+## Product model
 
-Surrogate Companion is a Next.js application that facilitates needs-based relationships between members. The platform connects people who have needs with those who can fulfill them through structured surrogacy relationships.
+Surrogate Network is a needs-based social companion platform. The canonical consumer lifecycle is:
 
-## Technology Stack
+```text
+Need + Offer -> Discovery -> Proposal -> Surrogacy -> Moment -> Exchange -> Feedback
+```
 
-**Frontend**:
-- Next.js 15
-- React
+The architecture is designed around that lifecycle. Progression, moderation, notifications, permissions, and administration support it; they are not separate product models.
+
+## Canonical stack
+
+- Next.js 16 App Router
+- React 19
 - TypeScript
-- TanStack Query
-- Radix UI / shadcn components
-- Tailwind CSS
+- Supabase Auth
+- PostgreSQL
+- Row Level Security
+- Supabase Storage/Realtime where used
+- Jest + Testing Library
+- Playwright
+- GitHub Actions
 
-**Backend Platform**:
-- Supabase (PostgreSQL, Auth, Storage, Realtime, Row Level Security)
+Firebase and Genkit are not part of the current runtime architecture.
 
-**Architecture**:
-- Domain-driven design
-- Repository pattern
-- Service layer orchestration
-- RLS-based security
+## Application surfaces
 
-## Core Application Model
+### Public
 
-The platform follows this lifecycle: **Need → Offer → Discovery → Proposal → Surrogacy → Moment → Exchange → Feedback**
+Primary public navigation owns:
 
-### Application Surfaces
+- Home
+- How It Works
+- Explore
+- Principles
+- Safety
+- Sign In
+- Join
 
-The application is divided into three distinct surfaces with separate routing and layouts:
+Public routes also include trial Terms/Privacy and public profile projection as required by the flow.
 
-### 1. Public Application `(public)/`
-**Purpose**: Explains the platform and converts visitors into members.
+### Member
 
-**Routes**:
-- `/` - Landing page with value proposition
-- `/how-it-works` - Platform explanation
-- `/explore` - Public browse (if enabled)
-- `/principles` - Core principles
-- `/safety` - Safety information
-- `/login` - Authentication
-- `/join` - Registration/onboarding
+Primary member navigation owns:
 
-**Navigation**: Public header with Sign In/Join actions only
+- Home
+- Discover
+- Proposals
+- Connections (`/surrogacies`)
+- Needs
+- Offers
+- Profile
+- Settings
 
-### 2. Member Application `(member)/`
-**Purpose**: Core member experience for finding connections and managing relationships.
+Mobile navigation exposes the same core member experience with explicit Need/Offer create actions.
 
-**Routes**:
-- `/home` - Personal relationship landscape (formerly `/dashboard`)
-- `/discover` - Intent-based discovery (formerly `/matches`)
-- `/needs` - View and manage your needs
-- `/needs/create` - Create a new need
-- `/offers` - View and manage your offers  
-- `/offers/create` - Create a new offer
-- `/surrogacies` - Active relationships
-- `/surrogacies/[id]` - Individual surrogacy workspace
-- `/messages` - Context-aware messaging (formerly `/chat`)
-- `/messages/[id]` - Individual conversation
-- `/rewards` - Rank progression and achievements
-- `/profile` - Your profile
-- `/profile/[id]` - View another member's profile
-- `/settings` - Account and preferences
+Messaging and Rewards are intentionally not in primary navigation while their production behavior is incomplete. Existing non-primary routes must render truthful unavailable/history states rather than fake data.
 
-**Navigation**: 
-- Desktop: Sidebar navigation with member sections
-- Mobile: Bottom navigation with center "Create" action
+### Admin
 
-### 3. Admin Application `admin/`
-**Purpose**: Administrative console for platform management.
+The admin console is a separate authorized surface. Its current primary navigation is intentionally narrow:
 
-**Routes**:
-- `/admin` - Dashboard overview
-- `/admin/members` - Member management
-- `/admin/needs` - Content moderation - needs
-- `/admin/offers` - Content moderation - offers
-- `/admin/surrogacies` - Active relationship oversight
-- `/admin/feedback` - Feedback review
-- `/admin/reports` - Safety reports management
-- `/admin/moderation` - Moderation queue
-- `/admin/media` - Media content review
-- `/admin/tokens` - Token economy management
-- `/admin/ledger` - Transaction ledger
-- `/admin/ranks` - Rank system management
-- `/admin/xp` - XP progression oversight
-- `/admin/audit` - Audit log
-- `/admin/settings` - Platform configuration
+- Dashboard
+- Reports
 
-**Navigation**: Collapsible sidebar with role-based access control
+Moderation operations run through authenticated admin verification plus trusted server/database authority. Member UI must not import or expose admin controls.
 
-## Component Architecture
+## Dependency direction
 
-### UI Components Hierarchy
-
-```
-src/components/
-├── ui/              # Primitive reusable components (Radix-based)
-├── shared/          # Cross-surface reusable components
-├── public/          # Public surface specific components
-├── member/          # Member surface specific components
-└── admin/           # Admin surface specific components
+```text
+app/components
+      |
+      v
+application
+      |
+      v
+domain + repository contracts
+      ^
+      |
+infrastructure (Supabase)
 ```
 
-### Domain Components
+### Presentation
 
-The platform uses domain-specific components that reflect the core vocabulary:
+`src/app` and `src/components` render the product and collect input. They must not own privileged business state or duplicate database rules.
 
-#### Need/Offer Components
-- `NeedCard` - Displays a need request
-- `OfferCard` - Displays an offer with compatibility
-- `BoundaryChip` - Shows boundary types
-- `AvailabilityChip` - Shows timing/location preferences
+### Application
 
-#### Profile Components  
-- `ProfileHeader` - Top section with media and identity
-- `ProfileMedia` - Profile images and blur states
-- `BlurredAvatar` - Avatar with permission-based blur
-- `RankBadge` - Display current rank
-- `TrustBadge` - Verification and trust indicators
-- `CompatibilityMeter` - Visual compatibility score
+`src/application` coordinates use cases, member/admin context checks, revalidation, and calls into repositories or trusted database functions.
 
-#### Feedback Components
-- `FeedbackSummary` - Compact feedback overview
-- `RatingBreakdown` - Detailed rating dimensions
-- `EmptyState` - Consistent empty state across surfaces
+### Domain
 
-#### Permission Components
-- `PermissionGate` - Capability-based content gating
-- `TokenAmount` - Token balance display
+`src/domain` defines product vocabulary and business-facing types. Domain code should not depend on Supabase or Next.js.
 
-## State Management Philosophy
+### Repository contracts
 
-**Pages render. Components present. Services orchestrate. Domains decide. Repositories persist.**
+`src/repositories` contains the current persistence interfaces:
 
-React pages do not become containers for substantial business logic. The architecture follows:
+- `ProfileRepository`
+- `NeedRepository`
+- `OfferRepository`
+- `ProposalRepository`
 
-```
-Page → Feature hook/controller → Application service → Repository → Supabase
-```
+### Infrastructure
 
-### Layer Responsibilities
+`src/infrastructure/supabase` owns:
 
-- **App/Components** - Render the product and handle user interaction
-- **Application** - Perform use cases and orchestrate domain operations  
-- **Domain** - Contain business logic and truth
-- **Repositories** - Define persistence contracts
-- **Infrastructure** - Implement repositories with Supabase
+- browser client;
+- request-scoped server client;
+- privileged service client;
+- middleware/session integration;
+- generated database types;
+- Supabase repository implementations.
 
-## Mobile-First Design
+## Supabase authority model
 
-Primary design breakpoint priority:
-1. Mobile
-2. Desktop  
-3. Tablet refinements
+### Request-scoped client
 
-Mobile navigation uses bottom navigation with center "Create" action that opens:
-- Create Need
-- Create Offer
-- Create Pod (disabled/coming soon)
-- Create Event (disabled/coming soon)
+The request-scoped server client preserves the authenticated member session. Use it for user-authorized data access so RLS remains authoritative.
 
-## Core Domain Vocabulary
+### Service-role client
 
-### Primary Entities
-- **Need** - Something the member wants fulfilled
-- **Offer** - Something the member is willing to provide
-- **Proposal** - A request to establish a Surrogacy around a Need and Offer
-- **Surrogacy** - The active relationship arrangement
-- **Moment** - A scheduled occurrence of the Surrogacy
-- **Exchange** - A completed Moment or recorded fulfillment
-- **Feedback** - Contextual evaluation of the completed Exchange
+The service-role client bypasses RLS and is therefore restricted to narrowly scoped trusted system/admin operations. It must never be used to infer who the current human user is.
 
-### Supporting Concepts
-- **Grant** - Permission to access private information or media
-- **Token** - Spendable network resource
-- **XP** - Permanent progression resource
-- **Rank** - Earned capability level
+### Database functions
 
-## Permission System
+Complex privileged transitions are implemented as migration-managed PostgreSQL functions so multi-row state changes remain atomic and auditable.
 
-The platform uses capability-based access control rather than simple role checks. Capabilities include:
+Examples include:
 
-- `SEND_MEDIA`, `REQUEST_MEDIA_ACCESS`, `CREATE_OFFER`, `HOST_POD`
-- `VIEW_PRIVATE_MEDIA`, `FEATURE_PROFILE`, `ADMIN_VIEW_MEMBERS`, etc.
+- proposal transition/acceptance;
+- Moment/Exchange/Feedback lifecycle operations;
+- report moderation;
+- trial-policy acceptance;
+- account participation/deactivation.
 
-UI components check capabilities through a canonical interface rather than scattered conditional logic.
+Function execution grants are part of the security model. Sensitive functions must not inherit broad PUBLIC/authenticated execution by accident.
 
-## Route Migration
+## Marketplace lifecycle authority
 
-| Old Route | New Route | Status |
-|-----------|-----------|--------|
-| `/dashboard` | `/home` | Completed |
-| `/matches` | `/discover` | Completed |
-| `/chat` | `/messages` | Completed |
-| `/profile/[id]` | `/profile/[id]` | Preserved |
-| `/profile/create` | Onboarding flow | Planned |
-| `/needs/create` | `/needs/create` | Preserved |
-| `/feedback/submit` | Contextual flow | Planned |
+### Need and Offer
 
-## Accessibility Standards
+Members create and manage their own marketplace records through authenticated actions/repositories under RLS.
 
-The platform targets WCAG 2.2 AA compliance including:
-- Keyboard navigation
-- Focus-visible styles
-- Correct semantic headings
-- Accessible dialog focus management
-- Form labels and error summaries
-- ARIA where necessary
-- Sufficient contrast ratios
-- Touch target sizing
-- Reduced-motion support
-- Screen reader descriptions for media states
+### Proposal
 
-## Loading/Error/Empty States
+Proposal creation validates that the Need/Offer pair and participants are legitimate. Clients do not own authoritative status transitions.
 
-All async screens support:
-- `loading` - Active loading state
-- `success` - Successful completion
-- `empty` - No data available
-- `error` - Error occurred
-- `permission_denied` - Access restricted
-- `not_found` - Resource missing
-- `offline/degraded` - Connectivity issues
+### Acceptance
 
-## Performance Considerations
+Proposal acceptance is transactional. The trusted database path updates the proposal and related capacity/fulfillment state, creates the Surrogacy and participants, and records audit/outbox evidence as one authority boundary.
 
-- Preserve Server Components where practical
-- Lazy-load heavy charts and dialogs
-- Optimize images and media
-- Introduce pagination for large collections
-- Use Supabase indexes for efficient queries
-- Leverage Supabase Realtime for collaborative features
+### Surrogacy, Moment, Exchange, Feedback
 
-## Security Principles
+Downstream relationship operations use trusted lifecycle functions/actions rather than scattered direct table writes. Feedback is bound to completed Exchange context.
 
-1. **UI is not authorization** - Hiding buttons is not access control
-2. **Data-layer protection** - All sensitive operations protected server-side
-3. **Privacy-aware rendering** - Private data never exposed in HTML/JSON then hidden visually
-4. **Consent-based media** - Blur states represent actual visibility permissions
-5. **Audit trail** - Admin actions logged with actor, target, before/after states
+## Safety and privacy
 
-## Development Workflow
+### Public profiles
 
-1. **Feature Development** - Work within appropriate route group
-2. **Component Creation** - Place in appropriate component directory
-3. **Type Safety** - Use domain types from `src/domain/types.ts`
-4. **Testing** - Unit, component, integration, and E2E tests
-5. **Documentation** - Update relevant architecture docs
-6. **Code Review** - Focus on type safety, accessibility, and consistency
+Public member discovery reads a restricted projection rather than the full `profiles` row. Private and authority fields such as email, XP/tokens, admin flags, consent state, and suspension state must not leak cross-user.
 
-## File Organization
+### Blocking
 
-```
-src/
-├── app/                    # Next.js App Router
-│   ├── (public)/          # Public routes
-│   ├── (member)/          # Member routes  
-│   ├── admin/             # Admin routes
-│   └── layout.tsx         # Root layout
-├── components/
-│   ├── ui/               # Primitive UI components
-│   ├── shared/           # Cross-surface components
-│   ├── public/           # Public-specific components
-│   ├── member/           # Member-specific components
-│   ├── admin/            # Admin-specific components
-│   └── layout/           # Layout components
-├── domain/               # Domain types and business logic
-├── application/          # Use case orchestration
-│   ├── commands/         # Write operations
-│   ├── queries/          # Read operations
-│   ├── services/         # Business services
-│   └── events/           # Event handling
-├── repositories/         # Persistence interfaces
-├── infrastructure/       # Supabase implementation
-│   ├── supabase/         # Supabase clients and config
-│   ├── storage/          # Storage implementation
-│   └── realtime/         # Realtime implementation
-├── lib/                  # Utilities and helpers
-└── hooks/                # React hooks
-```
+Blocking is persisted and enforced at the data boundary. It affects discoverability and relationship initiation, not merely UI presentation.
 
-## Design Tokens
+### Reports and moderation
 
-Centralized design system includes:
-- Spacing scale
-- Border radius
-- Typography scale
-- Elevation levels
-- Semantic colors (surface, muted, accent, success, warning, danger, need, offer, surrogacy, trust, premium, token)
-- Animation durations
-- Layout widths
+Members can create safety reports. Admin moderation is isolated to the admin surface and performs trusted atomic state changes with audit evidence.
 
-## Analytics Convention
+### Suspension and self-deactivation
 
-Events follow snake_case naming:
-- `need_created`, `offer_created`, `discover_viewed`
-- `proposal_started`, `proposal_sent`, `proposal_accepted`
-- `surrogacy_viewed`, `profile_viewed`, `media_access_requested`
-- `feedback_viewed`
+Moderation suspension and voluntary trial deactivation are separate states. Database checks enforce both. Historical relationship records remain available where appropriate, while new participation is blocked.
 
-Sensitive content (like messages) is never stored in analytics.
+### Trial consent
 
-## Deferred Systems
+Current trial Terms/Privacy/age confirmation is explicit and stored through trusted authority. It is distinct from suspension/identity validity.
 
-The following systems are architecturally anticipated but not implemented in this sprint:
-- Community governance, Treasury, DAO mechanics
-- Advanced Pods, full Battle Pass, leaderboards, seasonal events
-- Premium dominance mechanics, advanced AI matching
-- Complex fraud detection, recommendation learning
-- VR/AR support, hybrid AI Surrogates
-- Full Trust & Safety automation, large analytics suite
-- Advanced admin configuration, deep relationship intelligence
-- Token inflation controls, full economy management
-- **Supabase advanced features** (Realtime collaborative features, advanced RLS policies)
+## Navigation ownership
 
-## Backend Infrastructure
+`src/navigation/index.ts` is the canonical navigation registry. Route existence does not automatically make a route a primary shipped feature.
 
-### Supabase Configuration
-- **Database**: PostgreSQL with proper indexing and constraints
-- **Auth**: Built-in authentication with email/password providers
-- **Storage**: File storage for media assets with access controls
-- **Realtime**: WebSocket connections for real-time features
-- **RLS**: Row-level security for all user-controlled tables
+Navigation tests protect:
 
-### Database Schema
-All tables follow the naming convention `snake_case` and include:
-- `id` (UUID primary key)
-- `created_at` and `updated_at` timestamps
-- Proper foreign key relationships
-- Indexes for frequently queried columns
+- public/member/admin ownership;
+- primary route integrity;
+- shell isolation;
+- mobile member navigation.
 
-### Security
-- All member-controlled tables have RLS policies
-- Service role key for admin operations
-- API key separation between anon and service roles
-- Audit trail for all administrative actions
+Do not hardcode a second menu registry in another component.
 
----
+## Database/schema ownership
 
-This architecture provides a scalable foundation for the core relationship runtime while maintaining clear separation between public, member, and admin experiences. The mobile-first design, capability-based permissions, and domain-driven component structure support both current needs and future feature development.
+`supabase/migrations` is the canonical schema and security history.
+
+`src/infrastructure/supabase/database.types.ts` is generated from the migrated local database. CI regenerates this file and rejects drift.
+
+A schema change is incomplete until:
+
+1. the migration exists;
+2. a clean database can replay all migrations;
+3. security regression tests pass;
+4. generated database types match the schema.
+
+## Browser security
+
+`next.config.ts` owns response security headers, including the current CSP and anti-framing/content-sniffing/referrer/permissions controls.
+
+Browser security is part of the product boundary. Do not loosen headers solely to silence a failing integration without understanding the required source.
+
+## CI architecture
+
+The release rail is intentionally layered:
+
+1. INSTALL
+2. DEPENDENCY AUDIT / TYPECHECK / LINT / UNIT / COMPONENT / SECURITY / NAVIGATION
+3. BUILD
+4. E2E TRIAL + A11Y
+5. QUALITY GATE
+
+SECURITY starts a fresh Supabase runtime, replays migrations, runs security tests, regenerates database types, and rejects schema drift.
+
+E2E TRIAL rebuilds a fresh runtime and proves the canonical two-member lifecycle in Chromium.
+
+Any commit change invalidates earlier exact-head evidence.
+
+## Deferred/non-primary systems
+
+The following should remain outside primary product claims until production behavior is complete:
+
+- Messaging
+- Rewards/economic UX
+- broader community/governance systems
+- advanced automated trust/fraud systems
+- additional admin modules beyond the current operational console
+
+Deferred systems must not be simulated with consumer-facing fake data.
+
+## Architecture change rule
+
+When architecture changes, update this document, `docs/PROJECT_MANIFEST.md`, and any affected development/data/API docs in the same change. Remove obsolete guidance rather than preserving contradictory active documentation.
