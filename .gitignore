@@ -40,12 +40,9 @@ yarn-error.log*
 *.tsbuildinfo
 next-env.d.ts
 
-.genkit/*
+# environment
 .env*
-
-# firebase
-firebase-debug.log
-firestore-debug.log
+!.env.example
 
 # supabase
 supabase/.temp/

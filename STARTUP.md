@@ -1,85 +1,140 @@
-# Application Started Successfully ✅
+# Local Startup
 
-## Services Running
+This project does not use a demo runtime or fake Supabase credentials. Local development should run against a real local Supabase stack or an explicitly configured hosted Supabase project.
 
-### Next.js Development Server
-- **URL:** http://localhost:9002
-- **Network:** http://10.128.95.133:9002
-- **Status:** ✅ Ready
-- **Environment:** Development
+## Prerequisites
 
-### Database Configuration
-- **Supabase:** Demo mode (no local database running)
-- **Environment:** .env.local created with demo credentials
+- Node.js 22 or newer
+- npm
+- Docker
+- Supabase CLI
 
-## Access the Application
+## 1. Install dependencies
 
-**Main Application:** http://localhost:9002
-
-### Available Routes:
-- `/` - Landing page
-- `/login` - Login page
-- `/register` - Registration page
-- `/profile/[id]` - Profile pages
-- `/(member)` - Member area (protected)
-- `/admin` - Admin dashboard (protected)
-
-## Database Setup Notes
-
-The application is currently running in **demo mode** with placeholder Supabase credentials. For full functionality with a real database:
-
-### Option 1: Use Remote Supabase
-1. Create a Supabase project at https://supabase.com
-2. Update `.env.local` with your credentials:
-   ```
-   NEXT_PUBLIC_SUPABASE_URL=your_project_url
-   NEXT_PUBLIC_SUPABASE_ANON_KEY=your_anon_key
-   SUPABASE_SERVICE_ROLE_KEY=your_service_role_key
-   ```
-3. Run migrations: Apply the migrations in `supabase/migrations/`
-
-### Option 2: Local Supabase (Advanced)
-The Supabase CLI had some configuration issues on Windows. To set up local Supabase:
-1. Install Docker Desktop
-2. Fix the Supabase config in `supabase/config.toml`
-3. Run: `supabase start`
-
-## Environment Configuration
-
-Current `.env.local` settings:
-```
-NEXT_PUBLIC_SUPABASE_URL=http://localhost:9002
-NEXT_PUBLIC_SUPABASE_ANON_KEY=demo-key-for-development
-NEXT_PUBLIC_DEMO_MODE=true
-NEXT_PUBLIC_APP_URL=http://localhost:9002
-```
-
-## Running Commands
-
-### Development
 ```bash
-npm run dev          # Start development server (port 9002)
-npm run build        # Build for production
-npm run start        # Start production server
+npm ci
 ```
 
-### Testing
+## 2. Start local Supabase
+
 ```bash
-npm run test         # Run all tests
-npm run typecheck    # Check TypeScript types
-npm run lint         # Check linting
+supabase start
 ```
 
-## Project Status
+Use the values reported by the Supabase CLI for the local API URL, anon key, and service-role key.
 
-**SC-00.4 COMPLETED** ✅
-- Security hardening complete
-- Type system stable
-- Command architecture ready
-- Production-ready foundation
+## 3. Create local environment configuration
 
-**Next:** SC-01 Core Relationship Runtime
+```bash
+cp .env.example .env.local
+```
 
----
+Populate `.env.local` with real values from the Supabase runtime:
 
-**Application is ready for development!**
+```env
+NEXT_PUBLIC_SUPABASE_URL=...
+NEXT_PUBLIC_SUPABASE_ANON_KEY=...
+SUPABASE_SERVICE_ROLE_KEY=...
+```
+
+`SUPABASE_SERVICE_ROLE_KEY` is privileged server-only material. Never expose it in client components, browser code, screenshots, logs, or committed files.
+
+## 4. Rebuild the database from canonical migrations
+
+```bash
+supabase db reset --no-seed
+```
+
+The source of truth for schema and authority changes is `supabase/migrations/`. Do not rely on dashboard-only schema edits.
+
+## 5. Start Next.js
+
+```bash
+npm run dev
+```
+
+Development URL:
+
+```text
+http://localhost:9002
+```
+
+## Validate the local runtime
+
+Before treating a local checkout as healthy, run:
+
+```bash
+npm run typecheck
+npm run lint
+npm run test:unit
+npm run test:component
+npm run test:security
+npm run test:navigation
+npm run build
+```
+
+For browser proof:
+
+```bash
+npm run test:e2e:smoke
+npm run test:a11y
+```
+
+The CI pipeline performs the stronger release proof by starting fresh Supabase runtimes for SECURITY, E2E TRIAL, and A11Y.
+
+## Hosted Supabase development
+
+A hosted project may be used instead of local Supabase when intentionally configured. Use the hosted project URL and keys in `.env.local`, keep the service-role key server-only, and apply schema changes through the repository migration process.
+
+Do not substitute placeholder URLs, dummy keys, in-memory fixtures, or browser demo data when the backend is unavailable. A broken backend should fail visibly.
+
+## Common failures
+
+### Missing required environment variable
+
+The server deliberately throws when one of the required Supabase variables is absent. Verify `.env.local` contains:
+
+- `NEXT_PUBLIC_SUPABASE_URL`
+- `NEXT_PUBLIC_SUPABASE_ANON_KEY`
+- `SUPABASE_SERVICE_ROLE_KEY`
+
+Then restart the Next.js process.
+
+### Local database schema is stale
+
+Rebuild from migrations:
+
+```bash
+supabase db reset --no-seed
+```
+
+### Local Supabase is not running
+
+Check Docker, then restart Supabase:
+
+```bash
+supabase stop
+supabase start
+```
+
+### Consumer workflow behaves differently from CI
+
+Recreate the same clean-database assumption used by CI:
+
+```bash
+supabase db reset --no-seed
+npm run build
+npm run test:e2e:smoke
+```
+
+## Release evidence
+
+The consumer-trial baseline merged on September 20, 2026 at:
+
+```text
+c68fe8af3ace66622ce4e0f24f672807dadf984e
+```
+
+Post-merge CI run #235 passed the full quality rail, including SECURITY, BUILD, A11Y, E2E TRIAL, and QUALITY GATE.
+
+That evidence belongs only to that exact commit. Any newer branch or commit must pass its own exact-head CI before being described as release-ready.

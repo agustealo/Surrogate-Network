@@ -1,236 +1,187 @@
 # Surrogate Network
 
-A needs-based social companion platform for meaningful exchanges of support, companionship, and capability.
+Surrogate Network is a needs-based social companion platform for meaningful exchanges of support, companionship, and capability.
 
-## About
-
-Surrogate Network is a social co-op where members articulate their Needs and Offers so the product can model fulfillment instead of simple connection counts. Members can publish what they need, describe what they can provide, discover compatible matches, and move from proposal to ongoing relationship.
-
-## Core Model
-
-- **Needs**: Something a member wants fulfilled.
-- **Offers**: Something a member is willing and able to provide.
-- **Surrogacies**: Established relationships around one or more Needs and Offers.
-- **Moments**: Scheduled or completed occurrences inside a Surrogacy.
-- **Exchanges**: Records of agreed interactions, feedback, trust, XP, and token effects.
-
-The intended loop is:
+The canonical relationship loop is:
 
 ```text
-Need -> Discovery -> Proposal -> Agreement -> Surrogacy -> Moment -> Exchange -> Feedback -> Trust/XP/Tokens -> Better Discovery
+Need + Offer -> Discovery -> Proposal -> Surrogacy -> Moment -> Exchange -> Feedback
 ```
 
-## Current Product Surface
+The product is currently hardened for controlled consumer trials. Trial readiness means the shipped surfaces use real persistence and real authority boundaries. It does **not** mean every roadmap feature is complete or that the repository is certified for unrestricted public-market launch.
 
-- Public, member, and admin route groups with surface-specific layouts.
-- Centralized navigation registry for public, member, and admin shells.
-- Working member experiences for home, discover, messages, rewards, settings, feedback submission, and create flows for profiles and needs.
-- Placeholder route surfaces for some public/member lifecycle pages that are present for IA and navigation ownership, but not fully implemented yet.
-- Supabase-backed repositories for profiles, needs, offers, and capability data.
-- Explicit demo-mode fixtures for local iteration and CI smoke coverage.
-- Jest, Playwright, lint, typecheck, build, security, and navigation validation scripts.
+## Trial-ready product surface
 
-### Route Ownership
+### Public
 
-- `src/app/layout.tsx` provides global HTML and providers only.
-- `src/app/(public)/layout.tsx` owns public navigation and footer.
-- `src/app/(member)/layout.tsx` owns the authenticated member shell and mobile navigation.
-- `src/app/admin/layout.tsx` owns the admin shell.
+- Landing, How It Works, Explore, Principles, and Safety surfaces.
+- Sign up and sign in through Supabase Auth.
+- Trial Terms and Privacy Notice.
+- Public profile projection that excludes private/account-authority fields.
 
-### Placeholder Surfaces
+### Member
 
-These routes currently render placeholder content while preserving the correct layout and navigation boundaries:
+- Explicit trial age/Terms/Privacy consent.
+- Needs and Offers creation and management.
+- Discovery across active marketplace records.
+- Proposal creation and proposal state transitions.
+- Surrogacy/Connection creation after accepted proposals.
+- Moment scheduling and completion.
+- Exchange recording.
+- Exchange-bound Feedback.
+- Member blocking and safety reporting.
+- Account settings, trial participation, and self-deactivation.
 
-- Public: `/explore`, `/how-it-works`, `/principles`, `/safety`
-- Member: `/needs`, `/offers`, `/profile`, `/surrogacies`
+Messaging and Rewards are intentionally absent from primary member navigation until their production behavior is complete. Existing non-primary routes must remain truthful about their availability rather than simulate data.
 
-## Roadmap
+### Admin
 
-### Phase 0: Foundation
+- Separate authorized admin console.
+- Global operational counts through trusted server authority.
+- Report moderation queue.
+- Atomic moderation outcomes, restrictions/suspensions, and audit events.
 
-- Basic profile system.
-- Simple needs/offers discovery.
-- Mock proposal flow.
-- Need tagging and form helpers.
-- Initial UI component system.
+## Canonical architecture
 
-### Phase 1: Relationship Loop
+- **Framework:** Next.js 16, React 19, TypeScript.
+- **Data/Auth:** Supabase Auth + PostgreSQL + Row Level Security.
+- **Storage/Realtime:** Supabase platform services where used by the product.
+- **Domain:** `src/domain`.
+- **Application orchestration:** `src/application`.
+- **Repository contracts:** `src/repositories`.
+- **Supabase adapters:** `src/infrastructure/supabase`.
+- **UI surfaces:** `src/app` and `src/components`.
+- **Navigation authority:** `src/navigation`.
+- **Database history:** `supabase/migrations`.
+- **Tests:** Jest, Testing Library, Playwright.
+- **Release gate:** GitHub Actions.
 
-Goal: make the central Surrogate lifecycle real end to end.
+Firebase is not part of the current architecture. Production runtime must not fall back to mock, demo, sample, or invented consumer data.
 
-Key deliverables:
-
-- Complete social objects: Need, Offer, Surrogacy, Moment, and Exchange.
-- Full proposal lifecycle: counter, accept, decline, and agreement.
-- Compatibility matrix with clear matching breakdowns.
-- Boundary system across global, Surrogacy, and Moment contexts.
-- Consent and permission infrastructure.
-- Scheduling and availability primitives.
-- Trust matrix, XP, rank progression, and token ledger.
-- Media visibility controls.
-- Operational admin console and audit logging.
-
-### Phase 2: Community Systems
-
-- Advanced pods.
-- Community governance and treasury.
-- Advanced media permissions.
-- Relationship analytics.
-- Social landscape intelligence.
-- Fraud and abuse detection.
-
-## Getting Started
+## Local development
 
 ### Prerequisites
 
 - Node.js 22 or newer.
 - npm.
-- A Supabase project for database/auth/storage features.
-- An OpenAI API key if AI-backed features are enabled.
+- Docker.
+- Supabase CLI for the local database/auth stack.
 
-### Installation
+### Start the app with a real local Supabase runtime
 
 ```bash
-git clone https://github.com/yourusername/surrogate-network.git
-cd surrogate-network
-npm install
+npm ci
+supabase start
 cp .env.example .env.local
 ```
 
-Edit `.env.local` with your local or hosted Supabase values:
+Populate `.env.local` with the real values reported by your Supabase runtime:
 
 ```env
-NEXT_PUBLIC_SUPABASE_URL=your_supabase_project_url
-NEXT_PUBLIC_SUPABASE_ANON_KEY=your_supabase_anon_key
-SUPABASE_SERVICE_ROLE_KEY=your_supabase_service_role_key
-
-NEXT_PUBLIC_DEMO_MODE=false
-NEXT_PUBLIC_APP_URL=http://localhost:9002
-
-OPENAI_API_KEY=your_openai_api_key
-NODE_ENV=development
+NEXT_PUBLIC_SUPABASE_URL=...
+NEXT_PUBLIC_SUPABASE_ANON_KEY=...
+SUPABASE_SERVICE_ROLE_KEY=...
 ```
 
-### Development
+Then rebuild the local database from the canonical migrations and start Next.js:
 
 ```bash
+supabase db reset --no-seed
 npm run dev
-npm run lint
-npm run typecheck
-npm test
 ```
 
-The development server runs at `http://localhost:9002`.
+The application listens on `http://localhost:9002` in development.
 
-### Demo Mode
+`SUPABASE_SERVICE_ROLE_KEY` is server-only. Never expose it to client components, browser bundles, public logs, screenshots, or committed files.
 
-Set `NEXT_PUBLIC_DEMO_MODE=true` to enable explicit browser-safe demo fixtures for local development, smoke tests, and accessibility checks.
+See [`STARTUP.md`](STARTUP.md) for the full startup sequence and failure checks.
 
-### Test Commands
+## Test and quality commands
 
 ```bash
+npm run typecheck
+npm run lint
 npm run test:unit
 npm run test:component
 npm run test:security
 npm run test:navigation
-npm run test:e2e
+npm run build
 npm run test:e2e:smoke
 npm run test:a11y
 ```
 
-### CI Quality Gate
+The CI quality rail includes:
 
-GitHub Actions runs the following certification gates on the same HEAD:
+- INSTALL
+- DEPENDENCY AUDIT
+- TYPECHECK
+- LINT
+- UNIT
+- COMPONENT
+- SECURITY
+- NAVIGATION
+- BUILD
+- E2E TRIAL
+- A11Y
+- QUALITY GATE
 
-- `TYPECHECK`
-- `LINT`
-- `UNIT`
-- `COMPONENT`
-- `SECURITY`
-- `NAVIGATION`
-- `BUILD`
-- `E2E SMOKE`
-- `A11Y`
-- `QUALITY GATE`
+SECURITY starts a fresh Supabase runtime, replays all migrations, runs the security regression suite, regenerates the canonical database types, and rejects schema/type drift.
 
-### Production Build
+E2E TRIAL proves the canonical two-member journey against a freshly migrated database: sign up, create Need and Offer, send/accept Proposal, create Surrogacy, schedule/complete Moment, record Exchange, submit Feedback, and verify the counterpart sees the resulting Connection.
 
-```bash
-npm run build
-npm start
-```
+## Current exact-head evidence
 
-## Tech Stack
-
-- **Framework**: Next.js 16, React 19, TypeScript.
-- **Styling**: Tailwind CSS and Radix UI primitives.
-- **Data**: Supabase PostgreSQL, Auth, Storage, Realtime, and Row Level Security.
-- **State and forms**: TanStack Query, React Hook Form, and Zod.
-- **Testing**: Jest, Testing Library, Playwright, and accessibility smoke tests.
-- **Charts and UI utilities**: Recharts, Lucide React, date-fns, and class-variance-authority.
-
-## Project Structure
+On September 20, 2026, merged `master` commit:
 
 ```text
-surrogate-network/
-|-- src/
-|   |-- app/                    # Next.js app directory and route groups
-|   |-- application/            # Application services and use-case orchestration
-|   |-- components/             # Shared UI, forms, layout, and feature components
-|   |-- dev/                    # Fixtures and local development helpers
-|   |-- domain/                 # Domain entities, interfaces, and business rules
-|   |-- hooks/                  # Shared React hooks
-|   |-- infrastructure/         # Supabase clients, repositories, and adapters
-|   |-- intelligence/           # Matching and intelligence helpers
-|   |-- lib/                    # Shared utilities and types
-|   |-- navigation/             # Navigation registry and surface-specific navigation
-|   |-- repositories/           # Repository interfaces and supporting code
-|   |-- services/               # Legacy and cross-cutting services
-|   `-- __tests__/              # Security and regression tests
-|-- docs/                       # Architecture, development, API, and model docs
-|-- e2e/                        # Playwright test suites
-|-- supabase/                   # Supabase config, migrations, and seed data
-`-- package.json
+c68fe8af3ace66622ce4e0f24f672807dadf984e
 ```
 
-## Development Guidelines
+passed post-merge CI run **#235**, including SECURITY, BUILD, A11Y, E2E TRIAL, and QUALITY GATE.
 
-- Keep business logic in application/domain/services layers, not React components.
-- Use shared design-system primitives from `src/components/ui/`.
-- Prefer repository interfaces and Supabase infrastructure adapters for data access.
-- Keep navigation changes registered through `src/navigation/`.
-- Add focused tests for user-facing behavior, domain rules, and shared contracts.
-- Update documentation when setup, architecture, or workflows change.
+That evidence certifies that exact merged baseline for the controlled consumer-trial bar defined in [`docs/PROJECT_MANIFEST.md`](docs/PROJECT_MANIFEST.md). Any later commit must earn its own green exact-head evidence.
+
+## Readiness boundary
+
+Consumer-trial readiness is not the same as unrestricted market readiness. Broader release work still includes governance hardening such as protected default-branch rules, production observability/error reporting, validated account recovery and deletion/export policy, backup/recovery operations, production media lifecycle, and operational/support runbooks.
+
+## Repository structure
+
+```text
+src/
+  app/                 public, member, and admin route surfaces
+  application/         use-case orchestration and server actions
+  components/          UI and feature components
+  domain/              canonical business definitions
+  infrastructure/      Supabase and external adapters
+  navigation/          canonical navigation registry
+  repositories/        persistence interfaces
+  __tests__/           security and regression coverage
+supabase/
+  migrations/          canonical database history
+e2e/                   Playwright trial and accessibility coverage
+docs/                  architecture, development, API, data, and manifest docs
+```
+
+## Project rules
+
+- Real runtime logic only. No silent demo fallback.
+- One canonical implementation per responsibility.
+- Privileged state is server/database authoritative.
+- RLS is enforced, not decorative.
+- Schema changes are migrations.
+- Public, member, and admin concerns remain separated.
+- Exact-head CI evidence is required before merge/release claims.
+- Documentation must describe the repository that actually exists.
+
+Read [`docs/PROJECT_MANIFEST.md`](docs/PROJECT_MANIFEST.md) for the full methodology and release definitions.
 
 ## Documentation
 
-- [Architecture Documentation](docs/ARCHITECTURE.md)
+- [Project Manifest](docs/PROJECT_MANIFEST.md)
+- [Architecture](docs/ARCHITECTURE.md)
 - [Development Guide](docs/DEVELOPMENT.md)
 - [API Reference](docs/API.md)
 - [Data Models](docs/DATA_MODELS.md)
-- [Contributing Guide](docs/CONTRIBUTING.md)
-
-## Design Principles
-
-- **Human-first**: people are the product, not the algorithm.
-- **Fulfillment over connection**: meaningful support matters more than passive graph growth.
-- **Consent-centric**: permissions should be specific, reversible, and understandable.
-- **Multi-dimensional**: needs, boundaries, compatibility, and trust all need nuance.
-- **Community-driven**: the co-op model should support participation and accountability.
-
-## Safety and Privacy
-
-- Granular boundary systems.
-- Media access controls and blur states.
-- Block, mute, and restrict functionality.
-- Audit logging for accountability.
-- Permission-based capabilities.
-- Reputation signals separated from popularity.
-
-## License
-
-License information has not been added yet.
-
----
-
-Built for meaningful human connections.
+- [Contributing](docs/CONTRIBUTING.md)
+- [Current Sprint Status](SPRINT_PROGRESS.md)
