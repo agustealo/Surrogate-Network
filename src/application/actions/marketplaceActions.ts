@@ -64,7 +64,6 @@ export async function createNeedAction(input: unknown): Promise<MarketplaceActio
       userId: actor.id,
       userName: actor.name,
       userAvatar: actor.avatarUrl,
-      status: 'active',
     })
     revalidatePath('/needs')
     revalidatePath('/discover')
