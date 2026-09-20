@@ -6,7 +6,7 @@ import Link from 'next/link';
 import { routes } from '@/lib/routes';
 
 export const metadata: Metadata = {
-  title: 'Surrogate Companion - Meaningful Connections',
+  title: 'Surrogate Network - Meaningful Connections',
   description: 'Find meaningful connections through needs-based relationships. Discover what you need, offer what you can give.',
 };
 
