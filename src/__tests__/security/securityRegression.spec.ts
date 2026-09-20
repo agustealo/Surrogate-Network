@@ -1,434 +1,451 @@
-// Security Regression Tests for SC-00.4
-// These tests ensure critical security properties are maintained across the codebase
+import { beforeAll, describe, expect, it } from '@jest/globals'
+import { createClient, type SupabaseClient, type User } from '@supabase/supabase-js'
 
-import { describe, it, expect, beforeAll } from '@jest/globals';
-import { createClient } from '@supabase/supabase-js';
+type Principal = {
+  user: User
+  email: string
+  password: string
+}
 
-describe('Security Regression Tests', () => {
-  let supabase: any;
-  let testUserA: any;
-  let testUserB: any;
-  let adminUser: any;
+type PairFixture = {
+  needId: string
+  offerId: string
+}
+
+describe('Consumer-trial security regression', () => {
+  let url: string
+  let anonKey: string
+  let serviceRoleKey: string
+  let service: SupabaseClient
+  let userA: Principal
+  let userB: Principal
+  let userC: Principal
+  let adminUser: Principal
+
+  const createPrincipal = async (email: string, password: string): Promise<Principal> => {
+    const { data, error } = await service.auth.admin.createUser({
+      email,
+      password,
+      email_confirm: true,
+    })
+    if (error || !data.user) throw error ?? new Error(`Failed to create ${email}`)
+    return { user: data.user, email, password }
+  }
+
+  const clientFor = async (principal: Principal): Promise<SupabaseClient> => {
+    const client = createClient(url, anonKey, {
+      auth: { persistSession: false, autoRefreshToken: false },
+    })
+    const { error } = await client.auth.signInWithPassword({
+      email: principal.email,
+      password: principal.password,
+    })
+    if (error) throw error
+    return client
+  }
+
+  const seedPair = async (label: string): Promise<PairFixture> => {
+    const { data: need, error: needError } = await service
+      .from('needs')
+      .insert({
+        title: `Need ${label}`,
+        description: `Security regression need ${label}`,
+        category: 'personal',
+        user_id: userB.user.id,
+        user_name: 'Security User B',
+        boundaries: ['platonic'],
+        location_mode: 'remote',
+        status: 'active',
+      })
+      .select('id')
+      .single()
+    if (needError || !need) throw needError ?? new Error('Failed to seed Need')
+
+    const { data: offer, error: offerError } = await service
+      .from('offers')
+      .insert({
+        title: `Offer ${label}`,
+        description: `Security regression offer ${label}`,
+        category: 'personal',
+        user_id: userA.user.id,
+        user_name: 'Security User A',
+        boundaries: ['platonic'],
+        location_mode: 'remote',
+        status: 'active',
+        capacity: 5,
+        current_capacity: 0,
+      })
+      .select('id')
+      .single()
+    if (offerError || !offer) throw offerError ?? new Error('Failed to seed Offer')
+
+    return { needId: need.id, offerId: offer.id }
+  }
+
+  const createProposalAsA = async (pair: PairFixture): Promise<string> => {
+    const clientA = await clientFor(userA)
+    const { data, error } = await clientA
+      .from('proposals')
+      .insert({
+        need_id: pair.needId,
+        offer_id: pair.offerId,
+        proposing_user_id: userA.user.id,
+        receiving_user_id: userB.user.id,
+        status: 'pending',
+      })
+      .select('id')
+      .single()
+    if (error || !data) throw error ?? new Error('Failed to create proposal as User A')
+    return data.id
+  }
 
   beforeAll(async () => {
-    const url = process.env.NEXT_PUBLIC_SUPABASE_URL
-    const anonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
-    const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY
-    if (!url || !anonKey || !serviceRoleKey) throw new Error('Security tests require the local Supabase runtime credentials')
-
-    supabase = createClient(url, anonKey, { auth: { persistSession: false, autoRefreshToken: false } })
-    const admin = createClient(url, serviceRoleKey, { auth: { persistSession: false, autoRefreshToken: false } })
-
-    const createUser = async (email: string, password: string) => {
-      const { data, error } = await admin.auth.admin.createUser({ email, password, email_confirm: true })
-      if (error || !data.user) throw error ?? new Error(`Failed to create security principal ${email}`)
-      return data.user
+    url = process.env.NEXT_PUBLIC_SUPABASE_URL ?? ''
+    anonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ?? ''
+    serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY ?? ''
+    if (!url || !anonKey || !serviceRoleKey) {
+      throw new Error('Security tests require the local Supabase runtime credentials')
     }
 
-    testUserA = await createUser('security-test-a@test.com', 'test-password-123')
-    testUserB = await createUser('security-test-b@test.com', 'test-password-456')
-    adminUser = await createUser('security-admin@test.com', 'admin-password-789')
+    service = createClient(url, serviceRoleKey, {
+      auth: { persistSession: false, autoRefreshToken: false },
+    })
 
-    const { error: adminProfileError } = await admin.from('profiles').update({ is_admin: true }).eq('id', adminUser.id)
-    if (adminProfileError) throw adminProfileError
-  });
+    userA = await createPrincipal('security-a@test.local', 'Trial-Security-A-123!')
+    userB = await createPrincipal('security-b@test.local', 'Trial-Security-B-456!')
+    userC = await createPrincipal('security-c@test.local', 'Trial-Security-C-789!')
+    adminUser = await createPrincipal('security-admin@test.local', 'Trial-Security-Admin-123!')
 
-  describe('Token/XP Security (P0-2)', () => {
-    it('should prevent User A from modifying User B tokens', async () => {
-      // Sign in as user A
-      await supabase.auth.signInWithPassword({
-        email: 'security-test-a@test.com',
-        password: 'test-password-123',
-      });
+    const { error: profileError } = await service
+      .from('profiles')
+      .update({
+        name: 'Security Admin',
+        is_admin: true,
+        is_suspended: false,
+      })
+      .eq('id', adminUser.user.id)
+    if (profileError) throw profileError
+  })
 
-      // Attempt to modify user B's tokens - should fail
-      const { error } = await supabase.rpc('update_token_balance', {
-        p_user_id: testUserB.id,
+  describe('privileged function boundary', () => {
+    it('denies authenticated callers from token and XP mutation RPCs', async () => {
+      const clientA = await clientFor(userA)
+      const tokenAttempt = await clientA.rpc('update_token_balance', {
+        p_user_id: userA.user.id,
         p_amount: 100000,
-        p_reason: 'malicious attempt',
+        p_reason: 'unauthorized self grant',
         p_transaction_type: 'earned',
-      });
+      })
+      const xpAttempt = await clientA.rpc('update_user_xp', {
+        p_user_id: userA.user.id,
+        p_amount: 100000,
+        p_source: 'login',
+        p_description: 'unauthorized self grant',
+      })
 
-      // This should fail because regular users can't call this function
-      expect(error).toBeDefined();
-      expect(error.code).not.toBeNull();
-    });
+      expect(tokenAttempt.error).toBeTruthy()
+      expect(xpAttempt.error).toBeTruthy()
+    })
 
-    it('should prevent User A from modifying their own arbitrary XP', async () => {
-      // Sign in as user A
-      await supabase.auth.signInWithPassword({
-        email: 'security-test-a@test.com',
-        password: 'test-password-123',
-      });
+    it('denies anonymous execution inherited through PUBLIC', async () => {
+      const anonymous = createClient(url, anonKey, {
+        auth: { persistSession: false, autoRefreshToken: false },
+      })
+      const { error } = await anonymous.rpc('update_token_balance', {
+        p_user_id: userA.user.id,
+        p_amount: 1,
+        p_reason: 'anonymous attempt',
+        p_transaction_type: 'earned',
+      })
+      expect(error).toBeTruthy()
+    })
+  })
 
-      // Attempt to grant themselves massive XP - should fail
-      const { error } = await supabase.rpc('update_user_xp', {
-        p_user_id: testUserA.id,
-        p_amount: 1000000,
-        p_source: 'login', // legitimate source but malicious amount
-        p_description: 'self-grant',
-      });
-
-      // This should fail because regular users can't call this function
-      expect(error).toBeDefined();
-    });
-
-    it('should prevent User A from modifying their own rank', async () => {
-      // Sign in as user A
-      await supabase.auth.signInWithPassword({
-        email: 'security-test-a@test.com',
-        password: 'test-password-123',
-      });
-
-      // Attempt to directly update rank - should fail due to RLS
-      const { error } = await supabase
+  describe('profile privacy and authoritative fields', () => {
+    it('does not expose another member profile row or email', async () => {
+      const clientA = await clientFor(userA)
+      const { data, error } = await clientA
         .from('profiles')
-        .update({ rank: 999 })
-        .eq('id', testUserA.id);
+        .select('id,email,name')
+        .eq('id', userB.user.id)
+        .maybeSingle()
 
-      // This should fail due to hardened RLS policies
-      expect(error).toBeDefined();
-    });
+      expect(error).toBeNull()
+      expect(data).toBeNull()
+    })
 
-    it('should prevent User A from modifying verification status', async () => {
-      // Sign in as user A
-      await supabase.auth.signInWithPassword({
-        email: 'security-test-a@test.com',
-        password: 'test-password-123',
-      });
-
-      // Attempt to self-verify - should fail due to RLS
-      const { error } = await supabase
+    it('allows a member to read their own private profile row', async () => {
+      const clientA = await clientFor(userA)
+      const { data, error } = await clientA
         .from('profiles')
-        .update({ verification_status: 'fully_verified' })
-        .eq('id', testUserA.id);
+        .select('id,email')
+        .eq('id', userA.user.id)
+        .single()
 
-      // This should fail due to hardened RLS policies
-      expect(error).toBeDefined();
-    });
+      expect(error).toBeNull()
+      expect(data?.email).toBe(userA.email)
+    })
 
-    it('should prevent User A from modifying suspension status', async () => {
-      // Sign in as user A
-      await supabase.auth.signInWithPassword({
-        email: 'security-test-a@test.com',
-        password: 'test-password-123',
-      });
+    it('exposes only the safe cross-member public projection', async () => {
+      const clientA = await clientFor(userA)
+      const { data, error } = await clientA
+        .from('public_profiles')
+        .select('*')
+        .eq('id', userB.user.id)
+        .single()
 
-      // Attempt to unsuspend themselves - should fail due to RLS
-      const { error } = await supabase
-        .from('profiles')
-        .update({ is_suspended: false })
-        .eq('id', testUserA.id);
+      expect(error).toBeNull()
+      expect(data?.id).toBe(userB.user.id)
+      expect(data).not.toHaveProperty('email')
+      expect(data).not.toHaveProperty('token_balance')
+      expect(data).not.toHaveProperty('xp')
+      expect(data).not.toHaveProperty('is_admin')
+      expect(data).not.toHaveProperty('is_suspended')
+    })
 
-      // This should fail due to hardened RLS policies
-      expect(error).toBeDefined();
-    });
-  });
-
-  describe('Email Privacy (P0-4)', () => {
-    it('should prevent User A from reading User B email', async () => {
-      // Sign in as user A
-      await supabase.auth.signInWithPassword({
-        email: 'security-test-a@test.com',
-        password: 'test-password-123',
-      });
-
-      // Attempt to read user B's profile - should not include email
-      const { data, error } = await supabase
-        .from('profiles')
-        .select('email')
-        .eq('id', testUserB.id)
-        .single();
-
-      // Email should not be accessible due to privacy policies
-      expect(error).toBeDefined();
-      // OR data should be null/email field should be null/undefined
-      if (data) {
-        expect(data.email).toBeNull();
+    it('blocks self-mutation of authoritative profile fields', async () => {
+      const clientA = await clientFor(userA)
+      for (const mutation of [
+        { rank: 999 },
+        { xp: 999999 },
+        { token_balance: 999999 },
+        { verification_status: 'fully_verified' },
+        { is_suspended: false },
+      ]) {
+        const { error } = await clientA.from('profiles').update(mutation).eq('id', userA.user.id)
+        expect(error).toBeTruthy()
       }
-    });
+    })
 
-    it('should allow User A to read their own email', async () => {
-      // Sign in as user A
-      await supabase.auth.signInWithPassword({
-        email: 'security-test-a@test.com',
-        password: 'test-password-123',
-      });
-
-      // Should be able to read own email
-      const { data, error } = await supabase
-        .from('profiles')
-        .select('email')
-        .eq('id', testUserA.id)
-        .single();
-
-      expect(error).toBeNull();
-      expect(data.email).toBe('security-test-a@test.com');
-    });
-
-    it('should provide safe public profile view', async () => {
-      // Sign in as user A
-      await supabase.auth.signInWithPassword({
-        email: 'security-test-a@test.com',
-        password: 'test-password-123',
-      });
-
-      // Use public_profiles view - should work and not include private fields
-      const { data, error } = await supabase
-        .from('public_profiles')
-        .select('*')
-        .eq('id', testUserB.id)
-        .single();
-
-      expect(error).toBeNull();
-      // Email should not be in public_profiles
-      expect(data.email).toBeUndefined();
-      // Token balance should not be in public_profiles
-      expect(data.token_balance).toBeUndefined();
-    });
-  });
-
-  describe('Proposal Authority (P0-3)', () => {
-    it('should prevent User A from accepting their own outbound proposal', async () => {
-      // Sign in as user A
-      await supabase.auth.signInWithPassword({
-        email: 'security-test-a@test.com',
-        password: 'test-password-123',
-      });
-
-      // Create test need and offer
-      const { data: need } = await supabase
-        .from('needs')
-        .insert({
-          title: 'Test Need',
-          description: 'Test',
-          category: 'personal',
-          user_id: testUserB.id,
-          user_name: 'User B',
-          boundaries: ['platonic'],
-          location_mode: 'remote',
-        })
-        .select()
-        .single();
-
-      const { data: offer } = await supabase
+    it('blocks owners from mutating Offer capacity and reputation counters', async () => {
+      const pair = await seedPair('offer-authority')
+      const clientA = await clientFor(userA)
+      const { error } = await clientA
         .from('offers')
-        .insert({
-          title: 'Test Offer',
-          description: 'Test',
-          category: 'personal',
-          user_id: testUserA.id,
-          user_name: 'User A',
-          boundaries: ['platonic'],
-          location_mode: 'remote',
-        })
-        .select()
-        .single();
+        .update({ current_capacity: 4, rating: 5, review_count: 999 })
+        .eq('id', pair.offerId)
 
-      // Create proposal from A to B
-      const { data: proposal } = await supabase
-        .from('proposals')
-        .insert({
-          need_id: need.id,
-          offer_id: offer.id,
-          proposing_user_id: testUserA.id,
-          receiving_user_id: testUserB.id,
-          status: 'pending',
-        })
-        .select()
-        .single();
+      expect(error).toBeTruthy()
+    })
+  })
 
-      // Attempt to accept own proposal - should fail
-      const { error } = await supabase
-        .from('proposals')
-        .update({ status: 'accepted' })
-        .eq('id', proposal.id)
-        .eq('proposing_user_id', testUserA.id);
+  describe('proposal authority', () => {
+    it('allows a valid proposer to create a pending proposal', async () => {
+      const pair = await seedPair('proposal-create')
+      const proposalId = await createProposalAsA(pair)
+      expect(proposalId).toEqual(expect.any(String))
+    })
 
-      expect(error).toBeDefined();
-    });
+    it('denies direct client status updates for both participants', async () => {
+      const pair = await seedPair('proposal-direct-update')
+      const proposalId = await createProposalAsA(pair)
 
-    it('should prevent unrelated user from mutating proposal', async () => {
-      // Sign in as an unrelated user provisioned through the local admin API.
-      const admin = createClient(
-        process.env.NEXT_PUBLIC_SUPABASE_URL!,
-        process.env.SUPABASE_SERVICE_ROLE_KEY!,
-        { auth: { persistSession: false, autoRefreshToken: false } }
-      );
-      const { error: createUserCError } = await admin.auth.admin.createUser({
-        email: 'security-test-c@test.com',
-        password: 'test-password-abc',
-        email_confirm: true,
-      });
-      if (createUserCError) throw createUserCError;
-      await supabase.auth.signInWithPassword({
-        email: 'security-test-c@test.com',
-        password: 'test-password-abc',
-      });
+      const clientA = await clientFor(userA)
+      const clientB = await clientFor(userB)
+      const proposerAttempt = await clientA.from('proposals').update({ status: 'accepted' }).eq('id', proposalId)
+      const recipientAttempt = await clientB.from('proposals').update({ status: 'accepted' }).eq('id', proposalId)
 
-      // Create proposal between A and B
-      const { data: proposal } = await supabase
-        .from('proposals')
-        .insert({
-          need_id: 'test-need-id',
-          offer_id: 'test-offer-id',
-          proposing_user_id: testUserA.id,
-          receiving_user_id: testUserB.id,
-          status: 'pending',
-        })
-        .select()
-        .single();
+      expect(proposerAttempt.error).toBeTruthy()
+      expect(recipientAttempt.error).toBeTruthy()
+    })
 
-      // Attempt to modify proposal as unrelated user - should fail
-      const { error } = await supabase
-        .from('proposals')
-        .update({ status: 'accepted' })
-        .eq('id', proposal.id);
+    it('denies authenticated clients from invoking the server-only acceptance RPC', async () => {
+      const pair = await seedPair('proposal-rpc-client')
+      const proposalId = await createProposalAsA(pair)
+      const clientB = await clientFor(userB)
+      const { error } = await clientB.rpc('accept_proposal_for_trial', {
+        p_proposal_id: proposalId,
+        p_actor_id: userB.user.id,
+      })
 
-      expect(error).toBeDefined();
-    });
+      expect(error).toBeTruthy()
+    })
 
-    it('should allow recipient to accept proposal with correct state transition', async () => {
-      // Sign in as user B (recipient)
-      await supabase.auth.signInWithPassword({
-        email: 'security-test-b@test.com',
-        password: 'test-password-456',
-      });
+    it('rejects proposer and unrelated actors even through trusted server execution', async () => {
+      const pair = await seedPair('proposal-actor-check')
+      const proposalId = await createProposalAsA(pair)
 
-      // Create pending proposal
-      const { data: proposal } = await supabase
-        .from('proposals')
-        .insert({
-          need_id: 'test-need-id',
-          offer_id: 'test-offer-id',
-          proposing_user_id: testUserA.id,
-          receiving_user_id: testUserB.id,
-          status: 'pending',
-        })
-        .select()
-        .single();
+      const proposerAttempt = await service.rpc('accept_proposal_for_trial', {
+        p_proposal_id: proposalId,
+        p_actor_id: userA.user.id,
+      })
+      const unrelatedAttempt = await service.rpc('accept_proposal_for_trial', {
+        p_proposal_id: proposalId,
+        p_actor_id: userC.user.id,
+      })
 
-      // Accept proposal as recipient - should succeed
-      const { error } = await supabase
-        .from('proposals')
-        .update({ status: 'accepted' })
-        .eq('id', proposal.id)
-        .eq('receiving_user_id', testUserB.id);
+      expect(proposerAttempt.error).toBeTruthy()
+      expect(unrelatedAttempt.error).toBeTruthy()
+    })
 
-      expect(error).toBeNull();
-    });
-  });
+    it('atomically accepts as recipient and creates the relationship graph', async () => {
+      const pair = await seedPair('proposal-accept')
+      const proposalId = await createProposalAsA(pair)
+      const { data: surrogacyId, error } = await service.rpc('accept_proposal_for_trial', {
+        p_proposal_id: proposalId,
+        p_actor_id: userB.user.id,
+      })
 
-  describe('Admin Access (P1)', () => {
-    it('should prevent non-admin from accessing admin areas', async () => {
-      // Sign in as regular user
-      await supabase.auth.signInWithPassword({
-        email: 'security-test-a@test.com',
-        password: 'test-password-123',
-      });
+      expect(error).toBeNull()
+      expect(surrogacyId).toEqual(expect.any(String))
 
-      // Attempt admin action - should fail
-      const { error } = await supabase.rpc('admin_update_profile', {
-        p_id: testUserB.id,
-        p_name: 'Malicious Update',
-      });
+      const [proposal, relationship, participants, need, offer] = await Promise.all([
+        service.from('proposals').select('status').eq('id', proposalId).single(),
+        service.from('surrogacies').select('id,status,partner_ids').eq('id', surrogacyId).single(),
+        service.from('surrogacy_participants').select('user_id').eq('surrogacy_id', surrogacyId),
+        service.from('needs').select('status').eq('id', pair.needId).single(),
+        service.from('offers').select('current_capacity').eq('id', pair.offerId).single(),
+      ])
 
-      expect(error).toBeDefined();
-    });
+      expect(proposal.data?.status).toBe('accepted')
+      expect(relationship.data?.status).toBe('active')
+      expect(new Set(relationship.data?.partner_ids ?? [])).toEqual(new Set([userA.user.id, userB.user.id]))
+      expect(new Set((participants.data ?? []).map((row) => row.user_id))).toEqual(new Set([userA.user.id, userB.user.id]))
+      expect(need.data?.status).toBe('fulfilled')
+      expect(offer.data?.current_capacity).toBe(1)
+    })
 
-    it('should allow admin to update authoritative fields', async () => {
-      // Sign in as admin
-      await supabase.auth.signInWithPassword({
-        email: 'security-admin@test.com',
-        password: 'admin-password-789',
-      });
+    it('prevents a blocked pair from advancing an already-open proposal', async () => {
+      const pair = await seedPair('proposal-blocked')
+      const proposalId = await createProposalAsA(pair)
+      const { error: blockError } = await service.from('blocks').insert({
+        blocker_user_id: userB.user.id,
+        blocked_user_id: userA.user.id,
+      })
+      if (blockError) throw blockError
 
-      // Update user profile as admin - should succeed
-      const { error } = await supabase.rpc('admin_update_profile', {
-        p_id: testUserB.id,
-        p_name: 'Admin Update',
-        p_xp: 100,
-      });
+      const { error } = await service.rpc('accept_proposal_for_trial', {
+        p_proposal_id: proposalId,
+        p_actor_id: userB.user.id,
+      })
+      expect(error).toBeTruthy()
 
-      expect(error).toBeNull();
-    });
-  });
+      await service
+        .from('blocks')
+        .delete()
+        .eq('blocker_user_id', userB.user.id)
+        .eq('blocked_user_id', userA.user.id)
+    })
+  })
 
-  describe('Audit Preservation (P1)', () => {
-    it('should preserve audit history when account is deleted', async () => {
-      // Create audit event
-      const { data: auditEvent } = await supabase
-        .from('audit_events')
-        .insert({
-          actor_id: testUserA.id,
-          action: 'test_action',
-          target_id: 'test-target',
-          target_type: 'test',
-        })
-        .select()
-        .single();
-
-      // Delete user account
-      await supabase.auth.admin.deleteUser(testUserA.id);
-
-      // Audit event should still exist with null actor_id
-      const { data: preservedEvent } = await supabase
-        .from('audit_events')
-        .select('*')
-        .eq('id', auditEvent.id)
-        .single();
-
-      expect(preservedEvent).toBeDefined();
-      expect(preservedEvent.actor_id).toBeNull();
-    });
-
-    it('should allow querying audit events with deleted actors', async () => {
-      // This tests that audit_events.actor_id is properly nullable
-      const { data, error } = await supabase
-        .from('audit_events')
-        .select('*')
-        .is('actor_id', null);
-
-      expect(error).toBeNull();
-      expect(Array.isArray(data)).toBe(true);
-    });
-  });
-
-  describe('RLS Policy Effectiveness', () => {
-    it('should prevent direct profile table access for cross-user queries', async () => {
-      // Sign in as user A
-      await supabase.auth.signInWithPassword({
-        email: 'security-test-a@test.com',
-        password: 'test-password-123',
-      });
-
-      // Attempt to directly query profiles table for user B
-      const { error } = await supabase
+  describe('suspension, reports, and notifications', () => {
+    it('blocks suspended members at the database operation boundary', async () => {
+      const { error: suspendError } = await service
         .from('profiles')
-        .select('*')
-        .eq('id', testUserB.id)
-        .single();
+        .update({ is_suspended: true })
+        .eq('id', userC.user.id)
+      if (suspendError) throw suspendError
 
-      // Should fail or return incomplete data due to privacy policies
-      expect(error).toBeDefined();
-    });
+      const clientC = await clientFor(userC)
+      const { error } = await clientC.from('needs').insert({
+        title: 'Suspended Need',
+        description: 'This write must be denied by restrictive RLS.',
+        category: 'personal',
+        user_id: userC.user.id,
+        user_name: 'Security User C',
+        boundaries: ['platonic'],
+        location_mode: 'remote',
+      })
+      expect(error).toBeTruthy()
 
-    it('should allow access through public_profiles view', async () => {
-      // Sign in as user A
-      await supabase.auth.signInWithPassword({
-        email: 'security-test-a@test.com',
-        password: 'test-password-123',
-      });
+      await service.from('profiles').update({ is_suspended: false }).eq('id', userC.user.id)
+    })
 
-      // Query through public_profiles view
-      const { data, error } = await supabase
-        .from('public_profiles')
-        .select('*')
-        .eq('id', testUserB.id)
-        .single();
+    it('makes member-submitted report workflow fields immutable to the reporter', async () => {
+      const clientA = await clientFor(userA)
+      const { data: report, error: createError } = await clientA
+        .from('reports')
+        .insert({
+          reporter_user_id: userA.user.id,
+          reported_user_id: userC.user.id,
+          type: 'other',
+          severity: 'medium',
+          description: 'Security regression report with enough detail.',
+          status: 'pending',
+        })
+        .select('id')
+        .single()
+      expect(createError).toBeNull()
+      expect(report?.id).toEqual(expect.any(String))
 
-      expect(error).toBeNull();
-      expect(data).toBeDefined();
-    });
-  });
-});
+      const { error: mutateError } = await clientA
+        .from('reports')
+        .update({ status: 'dismissed', resolution: 'self dismissed' })
+        .eq('id', report!.id)
+      expect(mutateError).toBeTruthy()
+    })
+
+    it('allows only the read flag to be changed on a member notification', async () => {
+      const { data: notification, error: seedError } = await service
+        .from('notifications')
+        .insert({
+          user_id: userA.user.id,
+          type: 'system',
+          title: 'Original title',
+          message: 'Original message',
+          read: false,
+        })
+        .select('id')
+        .single()
+      if (seedError || !notification) throw seedError ?? new Error('Failed to seed notification')
+
+      const clientA = await clientFor(userA)
+      const markRead = await clientA.from('notifications').update({ read: true }).eq('id', notification.id)
+      const rewrite = await clientA.from('notifications').update({ title: 'Forged title' }).eq('id', notification.id)
+
+      expect(markRead.error).toBeNull()
+      expect(rewrite.error).toBeTruthy()
+    })
+  })
+
+  describe('admin authority', () => {
+    it('rejects non-admin authoritative profile mutation', async () => {
+      const clientA = await clientFor(userA)
+      const { error } = await clientA.rpc('admin_update_profile', {
+        p_id: userB.user.id,
+        p_name: 'Unauthorized admin change',
+      })
+      expect(error).toBeTruthy()
+    })
+
+    it('allows an authenticated unsuspended admin through the verified RPC', async () => {
+      const adminClient = await clientFor(adminUser)
+      const { error } = await adminClient.rpc('admin_update_profile', {
+        p_id: userB.user.id,
+        p_name: 'Security User B',
+        p_xp: 100,
+      })
+      expect(error).toBeNull()
+    })
+  })
+
+  describe('audit preservation', () => {
+    it('preserves audit evidence when its actor account is deleted', async () => {
+      const disposable = await createPrincipal('security-audit@test.local', 'Trial-Security-Audit-123!')
+      const { data: auditEvent, error: insertError } = await service
+        .from('audit_events')
+        .insert({
+          actor_id: disposable.user.id,
+          action: 'security_test_action',
+          target_id: 'security-test-target',
+          target_type: 'security-test',
+        })
+        .select('id')
+        .single()
+      if (insertError || !auditEvent) throw insertError ?? new Error('Failed to seed audit event')
+
+      const { error: deleteError } = await service.auth.admin.deleteUser(disposable.user.id)
+      if (deleteError) throw deleteError
+
+      const { data: preserved, error: readError } = await service
+        .from('audit_events')
+        .select('id,actor_id,action')
+        .eq('id', auditEvent.id)
+        .single()
+
+      expect(readError).toBeNull()
+      expect(preserved?.actor_id).toBeNull()
+      expect(preserved?.action).toBe('security_test_action')
+    })
+  })
+})
