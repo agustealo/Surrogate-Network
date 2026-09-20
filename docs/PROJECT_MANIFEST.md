@@ -23,9 +23,9 @@ The project follows these non-negotiable rules:
 5. **RLS is mandatory, not decorative.** User-scoped data access is performed with the request-scoped Supabase client so Row Level Security evaluates the authenticated user. The service-role client is reserved for narrowly scoped trusted system/admin commands.
 6. **No silent demo fallback.** Tests may own fixtures. Production and development runtime must use real local/remote Supabase data. A backend failure renders a real error or empty state, never invented consumer data.
 7. **Schema changes are migrations.** The `supabase/migrations` directory is the database history. Dashboard-only schema edits are not accepted.
-8. **Exact-head certification.** A release candidate is the exact commit that passed typecheck, lint, unit/component/security/navigation tests, build, E2E smoke, and accessibility gates. Failed setup steps may not be marked continue-on-error.
+8. **Exact-head certification.** A release candidate is the exact commit that passed dependency audit, typecheck, lint, unit/component/security/navigation tests, production build, the fresh-database two-member E2E trial, accessibility smoke, and the aggregate quality gate. Evidence from an earlier SHA is historical only.
 9. **Small modules, explicit contracts.** Avoid `any`, god services, mega-pages, implicit globals, and cross-surface imports. Prefer typed repositories, use cases, pure domain functions, and focused components.
-10. **Docs are part of the product.** Architectural changes update this manifest and the relevant architecture/data/development documents in the same change.
+10. **Docs are part of the product.** Architectural changes update this manifest and the relevant architecture/data/development documents in the same change. Documentation must not certify a release before the exact-head gate has actually passed.
 
 ## Canonical stack
 
@@ -43,9 +43,9 @@ Firebase is not part of the architecture.
 
 ## Surface ownership
 
-- **Public:** marketing, principles, safety, authentication, public discovery.
-- **Member:** authenticated consumer experience only.
-- **Admin:** separate authorized operational console. Admin navigation, moderation, economy controls, audits, platform health, and administrative lifecycle management never leak into the member shell.
+- **Public:** marketing, principles, safety, authentication, public discovery, trial Terms and Privacy Notice.
+- **Member:** authenticated consumer experience only, including explicit trial consent and account lifecycle controls.
+- **Admin:** separate authorized operational console. Moderation and other privileged operations never leak into the member shell.
 
 ## Runtime boundaries
 
@@ -68,8 +68,14 @@ Forbidden dependencies include domain -> infrastructure, member -> admin UI, pub
 
 Production code must not contain consumer-facing mock/demo/sample records. Fixtures belong in test-only modules or database seed tooling. Placeholder routes must not be linked as shipped features. Placeholder image hosts are not production media storage.
 
-## Definition of production-ready
+## Consumer-trial readiness
 
-A market release requires real authentication and account recovery; implemented linked routes; real persistence for shipped workflows; authorization/RLS tests; honest empty/error/loading states; admin RBAC; auditability of privileged mutations; privacy/legal/safety surfaces; observability and error reporting; rate/abuse controls; backups/recovery procedures; accessibility; responsive UI; and exact-head CI certification.
+A consumer-trial candidate must have real authentication; explicit age/Terms/Privacy consent; real Need/Offer/Proposal/Surrogacy/Moment/Exchange/Feedback persistence; database-enforced member authority; blocking/reporting; an actionable admin moderation queue; suspension and self-deactivation boundaries; honest public/member navigation; privacy and safety surfaces; responsive/accessibility smoke coverage; and exact-head CI certification of the canonical two-member journey on a freshly migrated database.
 
-Anything below that bar is development-complete, not production-ready.
+Features that are not complete enough for the trial must be absent from primary navigation rather than simulated. Messaging and Rewards may retain truthful non-primary routes while their production behavior remains incomplete.
+
+## Definition of market-ready
+
+A broader market release requires everything in the consumer-trial bar plus hardened account recovery and deletion/export policy; production observability and error reporting; rate and abuse controls; backup/recovery procedures; production media/storage lifecycle; operational runbooks; and any additional compliance or support processes required by the deployed product.
+
+Anything below the relevant bar must be described by its actual state rather than labeled production-ready.
