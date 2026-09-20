@@ -22,25 +22,27 @@ export default async function ProfilePage({ params }: Props) {
     .maybeSingle()
 
   if (error) throw new Error(`Failed to load profile: ${error.message}`)
-  if (!profile) notFound()
+  if (!profile?.id || !profile.name) notFound()
 
+  const profileId = profile.id
+  const profileName = profile.name
   const [needsResult, offersResult] = await Promise.all([
-    supabase.from('needs').select('id,title,description,category').eq('user_id', id).eq('status', 'active').limit(12),
-    supabase.from('offers').select('id,title,description,category,rating,review_count').eq('user_id', id).eq('status', 'active').limit(12),
+    supabase.from('needs').select('id,title,description,category').eq('user_id', profileId).eq('status', 'active').limit(12),
+    supabase.from('offers').select('id,title,description,category,rating,review_count').eq('user_id', profileId).eq('status', 'active').limit(12),
   ])
   if (needsResult.error) throw new Error(`Failed to load profile needs: ${needsResult.error.message}`)
   if (offersResult.error) throw new Error(`Failed to load profile offers: ${offersResult.error.message}`)
 
-  const isSelf = user?.id === profile.id
+  const isSelf = user?.id === profileId
 
   return (
     <main className="container mx-auto max-w-5xl space-y-8 px-4 py-8">
       <Card>
         <CardContent className="flex flex-col gap-5 pt-6 sm:flex-row sm:items-start">
-          <Avatar className="h-24 w-24"><AvatarImage src={profile.avatar_url ?? undefined} alt={profile.name} /><AvatarFallback>{profile.name.slice(0, 2).toUpperCase()}</AvatarFallback></Avatar>
+          <Avatar className="h-24 w-24"><AvatarImage src={profile.avatar_url ?? undefined} alt={profileName} /><AvatarFallback>{profileName.slice(0, 2).toUpperCase()}</AvatarFallback></Avatar>
           <div className="space-y-2">
-            <h1 className="text-3xl font-bold">{profile.name}</h1>
-            <p className="max-w-2xl text-muted-foreground">{profile.bio}</p>
+            <h1 className="text-3xl font-bold">{profileName}</h1>
+            <p className="max-w-2xl text-muted-foreground">{profile.bio || 'No bio provided.'}</p>
             {profile.location && <p className="flex items-center gap-1 text-sm text-muted-foreground"><MapPin className="h-4 w-4" />{profile.location}</p>}
             <p className="text-sm">Rank {profile.rank ?? 1}{profile.availability ? ` · ${profile.availability}` : ''}</p>
             {isSelf && <Button asChild size="sm" variant="outline"><Link href="/settings">Manage account</Link></Button>}
@@ -48,7 +50,7 @@ export default async function ProfilePage({ params }: Props) {
         </CardContent>
       </Card>
 
-      {!isSelf && user && <ProfileSafetyControls targetUserId={profile.id} targetName={profile.name} />}
+      {!isSelf && user && <ProfileSafetyControls targetUserId={profileId} targetName={profileName} />}
 
       <section className="space-y-4">
         <h2 className="text-2xl font-semibold">Needs</h2>
