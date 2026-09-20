@@ -1,0 +1,53 @@
+name: One-shot canonical Supabase type sync
+
+on:
+  push:
+    branches:
+      - audit/consumer-trial-readiness-20260919
+
+permissions:
+  contents: write
+
+jobs:
+  sync-types:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Checkout exact branch head
+        uses: actions/checkout@v7
+        with:
+          ref: audit/consumer-trial-readiness-20260919
+          fetch-depth: 0
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v7
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Install Supabase CLI
+        run: npm install -g supabase
+
+      - name: Start local Supabase
+        run: supabase start
+
+      - name: Rebuild schema from migrations
+        run: supabase db reset --no-seed
+
+      - name: Generate canonical database types
+        run: supabase gen types typescript --local > src/infrastructure/supabase/database.types.ts
+
+      - name: Commit exact generated contract
+        run: |
+          if git diff --quiet -- src/infrastructure/supabase/database.types.ts; then
+            echo "Generated database types are already canonical."
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add src/infrastructure/supabase/database.types.ts
+          git commit -m "chore: sync canonical Supabase database types"
+          git push origin HEAD:audit/consumer-trial-readiness-20260919
