@@ -54,20 +54,31 @@ export function ProposalActions({
     setBusy(action)
     setError(null)
 
-    const result = action === 'accept'
-      ? await acceptProposalAction(proposalId)
-      : action === 'decline'
-        ? await declineProposalAction(proposalId)
-        : action === 'withdraw'
-          ? await withdrawProposalAction(proposalId)
-          : await counterProposalAction({
-              proposalId,
-              message: message || undefined,
-              proposedDate: proposedDate || undefined,
-              duration: duration || undefined,
-              frequency: frequency || undefined,
-              locationMethod: locationMethod || undefined,
-            })
+    if (action === 'accept') {
+      const result = await acceptProposalAction(proposalId)
+      setBusy(null)
+      if (!result.ok) {
+        setError(result.error)
+        return
+      }
+      toast({ title: 'Proposal accepted', description: 'The relationship is now active.' })
+      router.push(`/surrogacies/${result.data.surrogacyId}`)
+      router.refresh()
+      return
+    }
+
+    const result = action === 'decline'
+      ? await declineProposalAction(proposalId)
+      : action === 'withdraw'
+        ? await withdrawProposalAction(proposalId)
+        : await counterProposalAction({
+            proposalId,
+            message: message || undefined,
+            proposedDate: proposedDate || undefined,
+            duration: duration || undefined,
+            frequency: frequency || undefined,
+            locationMethod: locationMethod || undefined,
+          })
 
     setBusy(null)
     if (!result.ok) {
@@ -75,14 +86,12 @@ export function ProposalActions({
       return
     }
 
-    if (action === 'accept' && 'surrogacyId' in result.data) {
-      toast({ title: 'Proposal accepted', description: 'The relationship is now active.' })
-      router.push(`/surrogacies/${result.data.surrogacyId}`)
-      router.refresh()
-      return
-    }
-
-    toast({ title: `Proposal ${action === 'counter' ? 'countered' : action + 'd'}` })
+    const title = action === 'counter'
+      ? 'Proposal countered'
+      : action === 'decline'
+        ? 'Proposal declined'
+        : 'Proposal withdrawn'
+    toast({ title })
     setCounterOpen(false)
     router.refresh()
   }
