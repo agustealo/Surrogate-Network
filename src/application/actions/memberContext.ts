@@ -2,6 +2,10 @@ import 'server-only'
 
 import { createClient } from '@/infrastructure/supabase/server'
 
+export type ActionResult<T = undefined> =
+  | { ok: true; data: T }
+  | { ok: false; error: string }
+
 export type ActiveMemberContext = {
   id: string
   name: string
@@ -29,6 +33,6 @@ export async function requireActiveMember(): Promise<ActiveMemberContext> {
   }
 }
 
-export function actionFailure(error: unknown): { ok: false; error: string } {
+export function actionFailure(error: unknown): ActionResult<never> {
   return { ok: false, error: error instanceof Error ? error.message : 'The request could not be completed.' }
 }
