@@ -30,6 +30,7 @@ jwt_expiry = 3600
 
 [auth.email]
 enable_signup = true
+enable_confirmations = false
 double_confirm_changes = true
 max_frequency = "1m"
 
