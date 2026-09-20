@@ -1,8 +1,9 @@
 import type { Metadata } from 'next';
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { HeartHandshake, Shield, Star, MessageCircle, TrendingUp, Heart } from 'lucide-react';
 import Link from 'next/link';
+import { routes } from '@/lib/routes';
 
 export const metadata: Metadata = {
   title: 'Surrogate Companion - Meaningful Connections',
@@ -12,115 +13,95 @@ export const metadata: Metadata = {
 export default function PublicHomePage() {
   return (
     <div className="flex flex-col">
-      <section className="relative py-20 lg:py-32 bg-gradient-to-b from-primary/10 to-background">
-        <div className="container mx-auto px-4 sm:px-6 lg:px-8 text-center">
-          <div className="flex justify-center mb-6">
-            <div className="p-4 bg-primary/20 rounded-full">
+      <section className="relative bg-gradient-to-b from-primary/10 to-background py-20 lg:py-32">
+        <div className="container mx-auto px-4 text-center sm:px-6 lg:px-8">
+          <div className="mb-6 flex justify-center">
+            <div className="rounded-full bg-primary/20 p-4">
               <HeartHandshake className="h-12 w-12 text-primary" />
             </div>
           </div>
-          <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold text-foreground mb-6">
+          <h1 className="mb-6 text-4xl font-bold text-foreground sm:text-5xl lg:text-6xl">
             Meaningful Connections
             <br />
             <span className="text-primary">Through Needs-Based Relationships</span>
           </h1>
-          <p className="text-xl text-muted-foreground max-w-2xl mx-auto mb-10">
-            Discover what you need, offer what you can give, and build relationships 
+          <p className="mx-auto mb-10 max-w-2xl text-xl text-muted-foreground">
+            Discover what you need, offer what you can give, and build relationships
             that enrich both lives. Join a community focused on genuine connection and mutual growth.
           </p>
-          <div className="flex flex-col sm:flex-row gap-4 justify-center">
-            <Button size="lg" asChild className="text-lg px-8">
-              <Link href="/join">
-                Join Surrogate Companion
-              </Link>
+          <div className="flex flex-col justify-center gap-4 sm:flex-row">
+            <Button size="lg" asChild className="px-8 text-lg">
+              <Link href={routes.public.signup}>Join Surrogate Companion</Link>
             </Button>
-            <Button size="lg" variant="outline" asChild className="text-lg px-8">
-              <Link href="/how-it-works">
-                Learn How It Works
-              </Link>
+            <Button size="lg" variant="outline" asChild className="px-8 text-lg">
+              <Link href={routes.public.howItWorks}>Learn How It Works</Link>
             </Button>
           </div>
         </div>
       </section>
 
-      <section className="py-20 bg-background">
+      <section className="bg-background py-20">
         <div className="container mx-auto px-4 sm:px-6 lg:px-8">
-          <h2 className="text-3xl font-bold text-center mb-12">
-            How Surrogate Companion Works
-          </h2>
-          <div className="grid md:grid-cols-3 gap-8">
-            <Card className="text-center border-2 hover:border-primary/50 transition-colors">
+          <h2 className="mb-12 text-center text-3xl font-bold">How Surrogate Companion Works</h2>
+          <div className="grid gap-8 md:grid-cols-3">
+            <Card className="border-2 text-center transition-colors hover:border-primary/50">
               <CardHeader>
-                <div className="mx-auto w-12 h-12 bg-primary/20 rounded-full flex items-center justify-center mb-4">
+                <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-primary/20">
                   <Heart className="h-6 w-6 text-primary" />
                 </div>
                 <CardTitle>Share What You Need</CardTitle>
-                <CardDescription>
-                  Express your authentic needs - from conversation partners to skill sharing
-                </CardDescription>
+                <CardDescription>Express your authentic needs, from conversation partners to skill sharing.</CardDescription>
               </CardHeader>
             </Card>
 
-            <Card className="text-center border-2 hover:border-primary/50 transition-colors">
+            <Card className="border-2 text-center transition-colors hover:border-primary/50">
               <CardHeader>
-                <div className="mx-auto w-12 h-12 bg-primary/20 rounded-full flex items-center justify-center mb-4">
+                <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-primary/20">
                   <Star className="h-6 w-6 text-primary" />
                 </div>
                 <CardTitle>Offer What You Can Give</CardTitle>
-                <CardDescription>
-                  Share your strengths and gifts - what you genuinely enjoy providing to others
-                </CardDescription>
+                <CardDescription>Share your strengths and what you genuinely enjoy providing to others.</CardDescription>
               </CardHeader>
             </Card>
 
-            <Card className="text-center border-2 hover:border-primary/50 transition-colors">
+            <Card className="border-2 text-center transition-colors hover:border-primary/50">
               <CardHeader>
-                <div className="mx-auto w-12 h-12 bg-primary/20 rounded-full flex items-center justify-center mb-4">
+                <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-primary/20">
                   <HeartHandshake className="h-6 w-6 text-primary" />
                 </div>
                 <CardTitle>Build Meaningful Connections</CardTitle>
-                <CardDescription>
-                  Form surrogacy relationships based on genuine needs and mutual respect
-                </CardDescription>
+                <CardDescription>Form Surrogacy relationships based on explicit Needs, Offers, consent, and mutual respect.</CardDescription>
               </CardHeader>
             </Card>
           </div>
         </div>
       </section>
 
-      <section className="py-20 bg-muted/30">
+      <section className="bg-muted/30 py-20">
         <div className="container mx-auto px-4 sm:px-6 lg:px-8">
-          <h2 className="text-3xl font-bold text-center mb-12">
-            Why Choose Surrogate Companion?
-          </h2>
-          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+          <h2 className="mb-12 text-center text-3xl font-bold">Why Surrogate Companion?</h2>
+          <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
             <div className="flex items-start gap-4">
-              <Shield className="h-6 w-6 text-primary shrink-0 mt-1" />
+              <Shield className="mt-1 h-6 w-6 shrink-0 text-primary" />
               <div>
-                <h3 className="font-semibold mb-1">Safe & Respectful</h3>
-                <p className="text-sm text-muted-foreground">
-                  Built on clear boundaries, consent, and community safety standards
-                </p>
+                <h3 className="mb-1 font-semibold">Consent & boundaries</h3>
+                <p className="text-sm text-muted-foreground">Needs, Offers, proposals, blocking, and reporting are backed by explicit persisted controls.</p>
               </div>
             </div>
 
             <div className="flex items-start gap-4">
-              <MessageCircle className="h-6 w-6 text-primary shrink-0 mt-1" />
+              <MessageCircle className="mt-1 h-6 w-6 shrink-0 text-primary" />
               <div>
-                <h3 className="font-semibold mb-1">Authentic Communication</h3>
-                <p className="text-sm text-muted-foreground">
-                  Focus on real needs and genuine connection rather than superficial traits
-                </p>
+                <h3 className="mb-1 font-semibold">Explicit proposals</h3>
+                <p className="text-sm text-muted-foreground">A connection is created only after a real Need/Offer proposal is accepted by the other member.</p>
               </div>
             </div>
 
             <div className="flex items-start gap-4">
-              <TrendingUp className="h-6 w-6 text-primary shrink-0 mt-1" />
+              <TrendingUp className="mt-1 h-6 w-6 shrink-0 text-primary" />
               <div>
-                <h3 className="font-semibold mb-1">Growth-Oriented</h3>
-                <p className="text-sm text-muted-foreground">
-                  Relationships that help both parties learn, grow, and develop
-                </p>
+                <h3 className="mb-1 font-semibold">Exchange history</h3>
+                <p className="text-sm text-muted-foreground">Scheduled Moments, completed Exchanges, and feedback create a concrete relationship history.</p>
               </div>
             </div>
           </div>
@@ -128,23 +109,17 @@ export default function PublicHomePage() {
       </section>
 
       <section className="py-20">
-        <div className="container mx-auto px-4 sm:px-6 lg:px-8 text-center">
-          <h2 className="text-3xl font-bold mb-6">
-            Ready to Find Meaningful Connections?
-          </h2>
-          <p className="text-xl text-muted-foreground max-w-2xl mx-auto mb-10">
-            Join thousands building authentic relationships based on genuine needs and mutual respect.
+        <div className="container mx-auto px-4 text-center sm:px-6 lg:px-8">
+          <h2 className="mb-6 text-3xl font-bold">Ready to Try a Needs-Based Connection?</h2>
+          <p className="mx-auto mb-10 max-w-2xl text-xl text-muted-foreground">
+            Join the consumer trial to publish a Need or Offer, create explicit proposals, and help us validate the experience.
           </p>
-          <div className="flex flex-col sm:flex-row gap-4 justify-center">
-            <Button size="lg" asChild className="text-lg px-8">
-              <Link href="/join">
-                Create Your Free Profile
-              </Link>
+          <div className="flex flex-col justify-center gap-4 sm:flex-row">
+            <Button size="lg" asChild className="px-8 text-lg">
+              <Link href={routes.public.signup}>Create Your Trial Profile</Link>
             </Button>
-            <Button size="lg" variant="outline" asChild className="text-lg px-8">
-              <Link href="/explore">
-                Explore Without Signing Up
-              </Link>
+            <Button size="lg" variant="outline" asChild className="px-8 text-lg">
+              <Link href={routes.public.explore}>Explore Without Signing Up</Link>
             </Button>
           </div>
         </div>
