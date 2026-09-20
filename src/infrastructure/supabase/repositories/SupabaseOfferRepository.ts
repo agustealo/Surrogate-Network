@@ -1,11 +1,16 @@
 import { createClient as createSupabaseClient } from '@/infrastructure/supabase/server'
 import type { Database } from '@/infrastructure/supabase/database.types'
-import type { 
-  OfferRepository, 
-  Offer, 
-  CreateOfferDto, 
-  UpdateOfferDto 
+import type {
+  OfferRepository,
+  Offer,
+  CreateOfferDto,
+  UpdateOfferDto,
 } from '@/repositories/OfferRepository'
+
+function required<T>(value: T | null, field: string): T {
+  if (value === null) throw new Error(`Malformed Offer row: ${field} is null`)
+  return value
+}
 
 export class SupabaseOfferRepository implements OfferRepository {
   async findById(id: string): Promise<Offer | null> {
@@ -16,14 +21,11 @@ export class SupabaseOfferRepository implements OfferRepository {
       .eq('id', id)
       .single()
 
-    if (error || !data) {
-      return null
-    }
-
+    if (error || !data) return null
     return this.mapToOffer(data)
   }
 
-  async findAll(limit: number = 20): Promise<Offer[]> {
+  async findAll(limit = 20): Promise<Offer[]> {
     const supabase = await createSupabaseClient()
     const { data, error } = await supabase
       .from('offers')
@@ -31,14 +33,11 @@ export class SupabaseOfferRepository implements OfferRepository {
       .order('created_at', { ascending: false })
       .limit(limit)
 
-    if (error || !data) {
-      return []
-    }
-
+    if (error || !data) return []
     return data.map((offer) => this.mapToOffer(offer))
   }
 
-  async findByUserId(userId: string, limit: number = 20): Promise<Offer[]> {
+  async findByUserId(userId: string, limit = 20): Promise<Offer[]> {
     const supabase = await createSupabaseClient()
     const { data, error } = await supabase
       .from('offers')
@@ -47,14 +46,11 @@ export class SupabaseOfferRepository implements OfferRepository {
       .order('created_at', { ascending: false })
       .limit(limit)
 
-    if (error || !data) {
-      return []
-    }
-
+    if (error || !data) return []
     return data.map((offer) => this.mapToOffer(offer))
   }
 
-  async findByCategory(category: Offer['category'], limit: number = 20): Promise<Offer[]> {
+  async findByCategory(category: Offer['category'], limit = 20): Promise<Offer[]> {
     const supabase = await createSupabaseClient()
     const { data, error } = await supabase
       .from('offers')
@@ -63,10 +59,7 @@ export class SupabaseOfferRepository implements OfferRepository {
       .order('created_at', { ascending: false })
       .limit(limit)
 
-    if (error || !data) {
-      return []
-    }
-
+    if (error || !data) return []
     return data.map((offer) => this.mapToOffer(offer))
   }
 
@@ -82,21 +75,14 @@ export class SupabaseOfferRepository implements OfferRepository {
         timing: offer.timing,
         boundaries: offer.boundaries,
         capacity: offer.capacity,
-        current_capacity: offer.currentCapacity || 0,
-        status: offer.status || 'active',
         user_id: offer.userId,
         user_name: offer.userName,
         user_avatar: offer.userAvatar,
-        rating: offer.rating,
-        review_count: offer.reviewCount || 0
       })
       .select()
       .single()
 
-    if (error) {
-      throw new Error(`Failed to create offer: ${error.message}`)
-    }
-
+    if (error) throw new Error(`Failed to create offer: ${error.message}`)
     return this.mapToOffer(data)
   }
 
@@ -112,32 +98,15 @@ export class SupabaseOfferRepository implements OfferRepository {
         timing: offer.timing,
         boundaries: offer.boundaries,
         capacity: offer.capacity,
-        current_capacity: offer.currentCapacity,
-        status: offer.status,
-        rating: offer.rating,
-        review_count: offer.reviewCount
+        user_name: offer.userName,
+        user_avatar: offer.userAvatar,
       })
       .eq('id', id)
       .select()
       .single()
 
-    if (error) {
-      throw new Error(`Failed to update offer: ${error.message}`)
-    }
-
+    if (error) throw new Error(`Failed to update offer: ${error.message}`)
     return this.mapToOffer(data)
-  }
-
-  async delete(id: string): Promise<void> {
-    const supabase = await createSupabaseClient()
-    const { error } = await supabase
-      .from('offers')
-      .delete()
-      .eq('id', id)
-
-    if (error) {
-      throw new Error(`Failed to delete offer: ${error.message}`)
-    }
   }
 
   private mapToOffer(data: Database['public']['Tables']['offers']['Row']): Offer {
@@ -147,17 +116,17 @@ export class SupabaseOfferRepository implements OfferRepository {
       description: data.description,
       category: data.category,
       locationMode: data.location_mode,
-      timing: data.timing,
-      boundaries: data.boundaries || [],
-      capacity: data.capacity,
-      currentCapacity: data.current_capacity,
-      status: data.status,
+      timing: data.timing ?? undefined,
+      boundaries: data.boundaries,
+      capacity: data.capacity ?? undefined,
+      currentCapacity: data.current_capacity ?? undefined,
+      status: required(data.status, 'status'),
       userId: data.user_id,
       userName: data.user_name,
-      userAvatar: data.user_avatar,
-      rating: data.rating,
-      reviewCount: data.review_count,
-      createdAt: data.created_at
+      userAvatar: data.user_avatar ?? undefined,
+      rating: data.rating ?? undefined,
+      reviewCount: data.review_count ?? undefined,
+      createdAt: required(data.created_at, 'created_at'),
     }
   }
 }

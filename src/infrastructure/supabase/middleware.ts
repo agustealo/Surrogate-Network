@@ -58,7 +58,7 @@ export async function updateSession(request: NextRequest) {
     data: { user },
   } = await supabase.auth.getUser()
 
-  const protectedMemberRoutes = ['/home', '/discover', '/needs', '/offers', '/surrogacies', '/messages', '/rewards', '/profile', '/settings', '/feedback']
+  const protectedMemberRoutes = ['/home', '/discover', '/needs', '/offers', '/proposals', '/surrogacies', '/messages', '/rewards', '/profile', '/settings', '/feedback']
   const isMemberRoute = protectedMemberRoutes.some((route) =>
     request.nextUrl.pathname === route || request.nextUrl.pathname.startsWith(route + '/')
   )

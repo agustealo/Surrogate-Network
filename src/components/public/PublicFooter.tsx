@@ -1,61 +1,44 @@
-import { Network, Heart, Mail, Facebook, Twitter, Linkedin, Instagram } from 'lucide-react';
-import Link from 'next/link';
+import { Network } from 'lucide-react'
+import Link from 'next/link'
 
 export function PublicFooter() {
   return (
     <footer className="border-t bg-muted/30">
-      <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-12">
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
-          <div className="col-span-1 md:col-span-2">
-            <Link href="/" className="flex items-center gap-2 mb-4">
+      <div className="container mx-auto px-4 py-12 sm:px-6 lg:px-8">
+        <div className="grid grid-cols-1 gap-8 md:grid-cols-4">
+          <div className="md:col-span-2">
+            <Link href="/" className="mb-4 flex items-center gap-2">
               <Network className="h-6 w-6 text-primary" />
-              <span className="font-bold text-foreground">Surrogate Companion</span>
+              <span className="font-bold text-foreground">Surrogate Network</span>
             </Link>
-            <p className="text-sm text-muted-foreground mb-4">
-              Build meaningful connections through needs-based relationships. 
-              Discover what you need, offer what you can give, and grow together.
+            <p className="max-w-xl text-sm text-muted-foreground">
+              Build consent-based connections around explicit Needs and Offers. Consumer-trial features are exposed only when their persistence, permissions, and safety controls are deployed.
             </p>
-            <div className="flex items-center gap-4">
-              <Link href="/contact" className="text-muted-foreground hover:text-foreground transition-colors">
-                <Mail className="h-5 w-5" />
-              </Link>
-              <Link href="#" className="text-muted-foreground hover:text-foreground transition-colors">
-                <Twitter className="h-5 w-5" />
-              </Link>
-              <Link href="#" className="text-muted-foreground hover:text-foreground transition-colors">
-                <Facebook className="h-5 w-5" />
-              </Link>
-              <Link href="#" className="text-muted-foreground hover:text-foreground transition-colors">
-                <Instagram className="h-5 w-5" />
-              </Link>
-              <Link href="#" className="text-muted-foreground hover:text-foreground transition-colors">
-                <Linkedin className="h-5 w-5" />
-              </Link>
-            </div>
           </div>
+
           <div>
-            <h3 className="font-semibold text-foreground mb-4">Platform</h3>
+            <h3 className="mb-4 font-semibold text-foreground">Platform</h3>
             <ul className="space-y-2 text-sm text-muted-foreground">
-              <li><Link href="/how-it-works" className="hover:text-foreground transition-colors">How It Works</Link></li>
-              <li><Link href="/explore" className="hover:text-foreground transition-colors">Explore</Link></li>
-              <li><Link href="/principles" className="hover:text-foreground transition-colors">Principles</Link></li>
-              <li><Link href="/safety" className="hover:text-foreground transition-colors">Safety</Link></li>
+              <li><Link href="/how-it-works" className="transition-colors hover:text-foreground">How It Works</Link></li>
+              <li><Link href="/explore" className="transition-colors hover:text-foreground">Explore</Link></li>
+              <li><Link href="/principles" className="transition-colors hover:text-foreground">Principles</Link></li>
+              <li><Link href="/safety" className="transition-colors hover:text-foreground">Safety</Link></li>
             </ul>
           </div>
+
           <div>
-            <h3 className="font-semibold text-foreground mb-4">Legal</h3>
+            <h3 className="mb-4 font-semibold text-foreground">Trial information</h3>
             <ul className="space-y-2 text-sm text-muted-foreground">
-              <li><Link href="/privacy" className="hover:text-foreground transition-colors">Privacy Policy</Link></li>
-              <li><Link href="/terms" className="hover:text-foreground transition-colors">Terms of Service</Link></li>
-              <li><Link href="/cookie-policy" className="hover:text-foreground transition-colors">Cookie Policy</Link></li>
-              <li><Link href="/accessibility" className="hover:text-foreground transition-colors">Accessibility</Link></li>
+              <li><Link href="/privacy" className="transition-colors hover:text-foreground">Privacy Notice</Link></li>
+              <li><Link href="/terms" className="transition-colors hover:text-foreground">Trial Terms</Link></li>
             </ul>
           </div>
         </div>
-        <div className="mt-8 pt-8 border-t text-center text-sm text-muted-foreground">
-          <p>&copy; {new Date().getFullYear()} Surrogate Companion. All rights reserved.</p>
+
+        <div className="mt-8 border-t pt-8 text-center text-sm text-muted-foreground">
+          <p>&copy; {new Date().getFullYear()} Surrogate Network. Consumer trial.</p>
         </div>
       </div>
     </footer>
-  );
+  )
 }

@@ -1,28 +1,19 @@
-
-import { PageWrapper } from '@/components/layout/PageWrapper';
-import { NeedCreatorForm } from '@/components/forms/NeedCreatorForm';
-import type { Metadata } from 'next';
+import type { Metadata } from 'next'
+import { NeedForm } from '@/components/forms/NeedForm'
+import { PageWrapper } from '@/components/layout/PageWrapper'
 
 export const metadata: Metadata = {
-  title: 'Define Your Need - Surrogate Network',
-  description: 'Use our AI tool to define and tag your needs for better matching on Surrogate Network.',
-};
+  title: 'Create Need - Surrogate Network',
+  description: 'Publish a Need for other members to discover and pair with an Offer.',
+}
 
 export default function CreateNeedPage() {
-  const handleTagsFinalized = async (tags: string[]) => {
-    'use server';
-    console.log("Finalized tags (server-side):", tags);
-    // Here you would typically associate these tags with a new or existing request item for the user.
-    // For example, save to a database.
-  };
-
   return (
-    <PageWrapper title="Define a New Need" className="max-w-3xl mx-auto">
+    <PageWrapper title="Create a Need" className="mx-auto max-w-3xl">
       <p className="mb-8 text-muted-foreground">
-        Clearly defining your needs is the first step to finding the right support on Surrogate Network. 
-        Describe your need below, and let our AI assist you in generating relevant tags.
+        Describe the connection or help you are looking for. Your Need is persisted immediately and can be used in a proposal once published.
       </p>
-      <NeedCreatorForm onTagsGenerated={handleTagsFinalized} />
+      <NeedForm />
     </PageWrapper>
-  );
+  )
 }

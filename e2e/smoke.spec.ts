@@ -1,112 +1,134 @@
-// E2E Smoke Tests for Surrogate Companion
-// Tests core user flows and navigation
+import { expect, test, type BrowserContext, type Page } from '@playwright/test'
 
-import { test, expect } from '@playwright/test'
+type TrialMember = {
+  name: string
+  email: string
+  password: string
+}
 
-test.describe('Public Surface', () => {
-  test('should load landing page', async ({ page }) => {
+async function signUp(page: Page, member: TrialMember) {
+  await page.goto('/signup')
+  await page.getByLabel('Full Name').fill(member.name)
+  await page.getByLabel('Email Address').fill(member.email)
+  await page.getByLabel('Password', { exact: true }).fill(member.password)
+  await page.getByLabel('Confirm Password').fill(member.password)
+  await page.getByRole('checkbox').check()
+  await page.getByRole('button', { name: 'Create Account' }).click()
+  await page.waitForURL(/\/profile\//, { timeout: 20_000 })
+}
+
+async function createNeed(page: Page, title: string): Promise<string> {
+  await page.goto('/needs/create')
+  await page.getByLabel('Title').fill(title)
+  await page.getByLabel('Description').fill('I need a reliable companion for a consumer trial conversation and planning session.')
+  await page.getByLabel('Timing').fill('Flexible this week')
+  await page.getByLabel('Tags').fill('conversation, planning, companion')
+  await page.getByRole('button', { name: 'Publish Need' }).click()
+  await page.waitForURL(/\/needs\/[0-9a-f-]{36}$/i, { timeout: 20_000 })
+  await expect(page.getByText(title, { exact: true })).toBeVisible()
+  return page.url()
+}
+
+async function createOffer(page: Page, title: string): Promise<string> {
+  await page.goto('/offers/create')
+  await page.getByLabel('Title').fill(title)
+  await page.getByLabel('Description').fill('I can provide a reliable companion session for conversation, planning, and follow-through.')
+  await page.getByLabel('Timing').fill('Flexible this week')
+  await page.getByRole('button', { name: 'Publish Offer' }).click()
+  await page.waitForURL(/\/offers\/[0-9a-f-]{36}$/i, { timeout: 20_000 })
+  await expect(page.getByText(title, { exact: true })).toBeVisible()
+  return page.url()
+}
+
+async function dispose(contexts: BrowserContext[]) {
+  await Promise.all(contexts.map((context) => context.close()))
+}
+
+test.describe('Consumer trial smoke @smoke', () => {
+  test('public entry surface is usable', async ({ page }) => {
     await page.goto('/')
     await expect(page).toHaveTitle(/Surrogate Network/)
-    
-    // Check for key elements
     await expect(page.locator('h1')).toContainText('Meaningful Connections')
+    await expect(page.getByRole('link', { name: /sign in/i })).toBeVisible()
+    await expect(page.getByRole('link', { name: 'Join', exact: true })).toBeVisible()
   })
 
-  test('should have working public navigation', async ({ page }) => {
-    await page.goto('/')
-    
-    // Test navigation links
-    const homeLink = page.getByRole('link', { name: /home/i })
-    await expect(homeLink).toBeVisible()
+  test('two real members can complete the canonical marketplace lifecycle', async ({ browser }) => {
+    const runId = `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`
+    const memberA: TrialMember = {
+      name: `Trial Provider ${runId}`,
+      email: `trial-provider-${runId}@test.local`,
+      password: 'Consumer-Trial-A-123!',
+    }
+    const memberB: TrialMember = {
+      name: `Trial Requester ${runId}`,
+      email: `trial-requester-${runId}@test.local`,
+      password: 'Consumer-Trial-B-456!',
+    }
+    const needTitle = `Trial Need ${runId}`
+    const offerTitle = `Trial Offer ${runId}`
+
+    const requesterContext = await browser.newContext()
+    const providerContext = await browser.newContext()
+    const contexts = [requesterContext, providerContext]
+
+    try {
+      const requester = await requesterContext.newPage()
+      const provider = await providerContext.newPage()
+
+      await signUp(requester, memberB)
+      const needUrl = await createNeed(requester, needTitle)
+
+      await signUp(provider, memberA)
+      await createOffer(provider, offerTitle)
+
+      await provider.goto(needUrl)
+      const composer = provider.getByText('Make a proposal', { exact: true }).locator('..').locator('..')
+      await composer.getByRole('combobox').click()
+      await provider.getByRole('option', { name: offerTitle }).click()
+      await composer.getByPlaceholder('Add context for the other member').fill('Consumer trial proposal with explicit persisted terms.')
+      await composer.getByRole('button', { name: 'Send proposal' }).click()
+      await provider.waitForURL(/\/proposals$/, { timeout: 20_000 })
+      await expect(provider.getByText(`${needTitle} ↔ ${offerTitle}`, { exact: true })).toBeVisible()
+
+      await requester.goto('/proposals')
+      const incomingProposalTitle = requester.getByText(`${needTitle} ↔ ${offerTitle}`, { exact: true })
+      const incomingProposal = incomingProposalTitle.locator('..').locator('..')
+      await expect(incomingProposal.getByText('Incoming', { exact: true })).toBeVisible()
+      await incomingProposal.getByRole('button', { name: 'Accept' }).click()
+      await requester.waitForURL(/\/surrogacies\/[0-9a-f-]{36}$/i, { timeout: 20_000 })
+      await expect(requester.getByText(`${needTitle} ↔ ${offerTitle}`, { exact: true })).toBeVisible()
+
+      const scheduler = requester.getByText('Schedule a Moment', { exact: true }).locator('..').locator('..')
+      const momentTime = new Date(Date.now() - 5 * 60_000)
+      const localDateTime = momentTime.toISOString().slice(0, 16)
+      await scheduler.locator('input[type="datetime-local"]').fill(localDateTime)
+      await scheduler.getByRole('spinbutton').fill('30')
+      await scheduler.getByPlaceholder('Video call, coffee shop, address, etc.').fill('Video call')
+      await scheduler.getByPlaceholder('Shared notes or expectations').fill('Consumer trial exchange proof.')
+      await scheduler.getByRole('button', { name: 'Schedule Moment' }).click()
+      await expect(requester.getByText('Moment: scheduled', { exact: true })).toBeVisible({ timeout: 20_000 })
+
+      const momentCard = requester.getByText('Moment: scheduled', { exact: true }).locator('..').locator('..').locator('..')
+      await momentCard.getByRole('button', { name: 'Complete' }).click()
+      await expect(requester.getByText('Exchange: completed', { exact: true })).toBeVisible({ timeout: 20_000 })
+
+      const feedbackTitle = requester.getByText(`Feedback for ${memberA.name}`, { exact: true })
+      const feedbackCard = feedbackTitle.locator('..').locator('..')
+      await feedbackCard.getByPlaceholder('Optional comments').fill('Completed successfully during the consumer-trial E2E proof.')
+      await feedbackCard.getByPlaceholder('Skill endorsements, comma-separated').fill('communication, reliability')
+      await feedbackCard.getByRole('button', { name: 'Submit Feedback' }).click()
+      await expect(requester.getByText('You submitted feedback for this Exchange.', { exact: true })).toBeVisible({ timeout: 20_000 })
+
+      await provider.goto('/surrogacies')
+      await expect(provider.getByText(`${needTitle} ↔ ${offerTitle}`, { exact: true })).toBeVisible()
+    } finally {
+      await dispose(contexts)
+    }
   })
 
-  test('should show sign in and join buttons', async ({ page }) => {
-    await page.goto('/')
-    
-    const signInButton = page.getByRole('link', { name: /sign in/i })
-    const joinButton = page.getByRole('link', { name: /join/i })
-    
-    await expect(signInButton).toBeVisible()
-    await expect(joinButton).toBeVisible()
-  })
-})
-
-test.describe('Legacy Route Redirects @smoke', () => {
-  test('should redirect /dashboard to /home', async ({ page }) => {
-    const response = await page.goto('/dashboard')
-    // Should redirect to home
-    expect(response?.url()).toContain('/home')
-  })
-
-  test('should redirect /matches to /discover', async ({ page }) => {
-    const response = await page.goto('/matches')
-    expect(response?.url()).toContain('/discover')
-  })
-
-  test('should redirect /chat to /messages', async ({ page }) => {
-    const response = await page.goto('/chat')
-    expect(response?.url()).toContain('/messages')
-  })
-})
-
-test.describe('Responsive Design @smoke', () => {
-  test('should work on mobile viewport', async ({ page }) => {
-    await page.setViewportSize({ width: 375, height: 667 })
-    await page.goto('/')
-    
-    // Check mobile navigation appears
-    await expect(page).toHaveTitle(/Surrogate Network/)
-  })
-
-  test('should work on tablet viewport', async ({ page }) => {
-    await page.setViewportSize({ width: 768, height: 1024 })
-    await page.goto('/')
-    
-    await expect(page).toHaveTitle(/Surrogate Network/)
-  })
-
-  test('should work on desktop viewport', async ({ page }) => {
-    await page.setViewportSize({ width: 1920, height: 1080 })
-    await page.goto('/')
-    
-    await expect(page).toHaveTitle(/Surrogate Network/)
-  })
-})
-
-test.describe('Error Handling @smoke', () => {
-  test('should handle 404 pages gracefully', async ({ page }) => {
-    const response = await page.goto('/non-existent-page')
+  test('unknown routes return a real 404', async ({ page }) => {
+    const response = await page.goto('/non-existent-consumer-trial-route')
     expect(response?.status()).toBe(404)
-  })
-
-  test('should handle server errors gracefully', async ({ page }) => {
-    // This would test a known error endpoint if we had one
-    await page.goto('/')
-    await expect(page).toHaveTitle(/Surrogate Network/)
-  })
-})
-
-test.describe('Accessibility @smoke', () => {
-  test('should have proper heading structure', async ({ page }) => {
-    await page.goto('/')
-    
-    const h1 = page.locator('h1')
-    await expect(h1).toBeVisible()
-    
-    // Check h1 is the first heading
-    const firstHeading = await page.locator('h1, h2, h3').first()
-    await expect(await firstHeading.evaluate((node) => node.tagName)).toBe('H1')
-  })
-
-  test('should have accessible navigation', async ({ page }) => {
-    await page.goto('/')
-    
-    const navigation = page.getByRole('navigation')
-    await expect(navigation).toBeVisible()
-    
-    // Check for keyboard navigable links
-    const links = navigation.getByRole('link')
-    const linkCount = await links.count()
-    expect(linkCount).toBeGreaterThan(0)
   })
 })

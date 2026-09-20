@@ -1,0 +1,119 @@
+import { createClient } from '@/infrastructure/supabase/server'
+import type { Database } from '@/infrastructure/supabase/database.types'
+import type {
+  CounterProposalDto,
+  CreateProposalDto,
+  ProposalRecord,
+  ProposalRepository,
+  ProposalStatus,
+} from '@/repositories/ProposalRepository'
+
+type ProposalRow = Database['public']['Tables']['proposals']['Row']
+
+function required<T>(value: T | null, field: string): T {
+  if (value === null) throw new Error(`Malformed proposal row: ${field} is null`)
+  return value
+}
+
+export class SupabaseProposalRepository implements ProposalRepository {
+  async findById(id: string): Promise<ProposalRecord | null> {
+    const supabase = await createClient()
+    const { data, error } = await supabase.from('proposals').select('*').eq('id', id).maybeSingle()
+    if (error) throw new Error(`Failed to load proposal: ${error.message}`)
+    return data ? this.mapRow(data) : null
+  }
+
+  async findForUser(userId: string, limit = 100): Promise<ProposalRecord[]> {
+    const supabase = await createClient()
+    const { data, error } = await supabase
+      .from('proposals')
+      .select('*')
+      .or(`proposing_user_id.eq.${userId},receiving_user_id.eq.${userId}`)
+      .order('created_at', { ascending: false })
+      .limit(limit)
+
+    if (error) throw new Error(`Failed to load proposals: ${error.message}`)
+    return (data ?? []).map((row) => this.mapRow(row))
+  }
+
+  async create(input: CreateProposalDto): Promise<ProposalRecord> {
+    const supabase = await createClient()
+    const { data, error } = await supabase
+      .from('proposals')
+      .insert({
+        need_id: input.needId,
+        offer_id: input.offerId,
+        proposing_user_id: input.proposingUserId,
+        receiving_user_id: input.receivingUserId,
+        proposed_date: input.proposedDate,
+        duration: input.duration,
+        frequency: input.frequency,
+        location_method: input.locationMethod,
+        message: input.message,
+        status: 'pending',
+      })
+      .select('*')
+      .single()
+
+    if (error) throw new Error(`Failed to create proposal: ${error.message}`)
+    return this.mapRow(data)
+  }
+
+  async accept(id: string): Promise<string> {
+    const supabase = await createClient()
+    const { data, error } = await supabase.rpc('accept_proposal_for_trial', {
+      p_proposal_id: id,
+    })
+    if (error || !data) throw new Error(error?.message ?? 'Proposal acceptance did not create a relationship')
+    return data
+  }
+
+  async decline(id: string): Promise<void> {
+    await this.transition(id, 'declined')
+  }
+
+  async withdraw(id: string): Promise<void> {
+    await this.transition(id, 'withdrawn')
+  }
+
+  async counter(id: string, input: CounterProposalDto): Promise<void> {
+    await this.transition(id, 'countered', input)
+  }
+
+  private async transition(
+    id: string,
+    status: Extract<ProposalStatus, 'declined' | 'countered' | 'withdrawn'>,
+    input: CounterProposalDto = {},
+  ): Promise<void> {
+    const supabase = await createClient()
+    const { error } = await supabase.rpc('transition_proposal_for_trial', {
+      p_proposal_id: id,
+      p_new_status: status,
+      ...(input.message !== undefined ? { p_message: input.message } : {}),
+      ...(input.proposedDate !== undefined ? { p_proposed_date: input.proposedDate } : {}),
+      ...(input.duration !== undefined ? { p_duration: input.duration } : {}),
+      ...(input.frequency !== undefined ? { p_frequency: input.frequency } : {}),
+      ...(input.locationMethod !== undefined ? { p_location_method: input.locationMethod } : {}),
+    })
+    if (error) throw new Error(`Failed to ${status} proposal: ${error.message}`)
+  }
+
+  private mapRow(row: ProposalRow): ProposalRecord {
+    return {
+      id: row.id,
+      needId: row.need_id,
+      offerId: row.offer_id,
+      proposingUserId: row.proposing_user_id,
+      receivingUserId: row.receiving_user_id,
+      proposedDate: row.proposed_date ?? undefined,
+      duration: row.duration ?? undefined,
+      frequency: row.frequency ?? undefined,
+      locationMethod: row.location_method ?? undefined,
+      message: row.message ?? undefined,
+      status: required(row.status, 'status'),
+      counteredByUserId: row.countered_by_user_id ?? undefined,
+      createdAt: required(row.created_at, 'created_at'),
+      updatedAt: required(row.updated_at, 'updated_at'),
+    }
+  }
+}

@@ -50,7 +50,7 @@ export async function createClient() {
 /**
  * Privileged server-only client. Never use this client to identify the current
  * user and never expose it to client components. It intentionally bypasses RLS
- * and is reserved for narrowly-scoped trusted administrative/system commands.
+ * and is reserved for narrowly-scoped trusted administrative/system reads.
  */
 export function createServiceClient() {
   return createSupabaseClient<Database>(

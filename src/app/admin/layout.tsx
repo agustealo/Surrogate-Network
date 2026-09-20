@@ -1,33 +1,31 @@
-import type { Metadata } from 'next';
-import { redirect } from 'next/navigation';
-import { Toaster } from '@/components/ui/toaster';
-import { AdminNavigation } from '@/components/admin/AdminNavigation';
-import { AdminHeader } from '@/components/admin/AdminHeader';
-import { createClient } from '@/infrastructure/supabase/server';
+import type { Metadata } from 'next'
+import { redirect } from 'next/navigation'
+import { Toaster } from '@/components/ui/toaster'
+import { AdminNavigation } from '@/components/admin/AdminNavigation'
+import { AdminHeader } from '@/components/admin/AdminHeader'
+import { createClient } from '@/infrastructure/supabase/server'
 
 export const metadata: Metadata = {
   title: 'Surrogate Network - Admin Console',
   description: 'Administrative interface.',
-};
+}
 
-export default async function AdminLayout({
-  children,
-}: Readonly<{ children: React.ReactNode }>) {
-  const supabase = await createClient();
-  const { data: { user } } = await supabase.auth.getUser();
+export default async function AdminLayout({ children }: Readonly<{ children: React.ReactNode }>) {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) redirect('/login')
 
-  if (!user) redirect('/login');
-
-  const { data: profile } = await supabase
+  const { data: profile, error } = await supabase
     .from('profiles')
-    .select('is_admin')
+    .select('is_admin,is_suspended')
     .eq('id', user.id)
-    .single();
+    .single()
 
-  if (!profile?.is_admin) redirect('/home');
+  if (error || !profile?.is_admin) redirect('/home')
+  if (profile.is_suspended) redirect('/account-restricted')
 
   return (
-    <div className="flex flex-col min-h-screen bg-background">
+    <div className="flex min-h-screen flex-col bg-background">
       <AdminHeader />
       <div className="flex flex-1">
         <AdminNavigation />
@@ -35,5 +33,5 @@ export default async function AdminLayout({
       </div>
       <Toaster />
     </div>
-  );
+  )
 }
