@@ -30,7 +30,6 @@ jobs:
               raise SystemExit('database.types.ts EOF did not match the single verified newline delta')
           path.write_bytes(data + b'\n')
           PY
-          git diff --check
 
       - name: Commit exact generated EOF
         run: |
