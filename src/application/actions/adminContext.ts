@@ -4,6 +4,7 @@ import { createClient } from '@/infrastructure/supabase/server'
 
 export type AdminContext = {
   id: string
+  supabase: Awaited<ReturnType<typeof createClient>>
 }
 
 export async function requireAdmin(): Promise<AdminContext> {
@@ -21,5 +22,5 @@ export async function requireAdmin(): Promise<AdminContext> {
     throw new Error('Administrator authorization is required.')
   }
 
-  return { id: profile.id }
+  return { id: profile.id, supabase }
 }
