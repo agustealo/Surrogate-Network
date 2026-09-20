@@ -50,7 +50,7 @@ test.describe('Consumer trial smoke @smoke', () => {
     await expect(page).toHaveTitle(/Surrogate Network/)
     await expect(page.locator('h1')).toContainText('Meaningful Connections')
     await expect(page.getByRole('link', { name: /sign in/i })).toBeVisible()
-    await expect(page.getByRole('link', { name: /join/i })).toBeVisible()
+    await expect(page.getByRole('link', { name: 'Join', exact: true })).toBeVisible()
   })
 
   test('two real members can complete the canonical marketplace lifecycle', async ({ browser }) => {
