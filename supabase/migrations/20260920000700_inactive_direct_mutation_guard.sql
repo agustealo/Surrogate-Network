@@ -15,12 +15,12 @@ SECURITY INVOKER
 SET search_path = ''
 AS $$
 BEGIN
-  -- A deletion tombstone is immutable for every normal database role. Keeping
-  -- it stable protects shared foreign-key history from accidental resurrection
-  -- or erasure after the Auth principal has been removed.
+  -- A deletion tombstone is immutable for every normal database role. Use a
+  -- JSON projection because this trigger is shared by heterogeneous tables and
+  -- only profiles carry trial_deleted_at.
   IF TG_TABLE_NAME = 'profiles'
      AND TG_OP IN ('UPDATE', 'DELETE')
-     AND OLD.trial_deleted_at IS NOT NULL THEN
+     AND (to_jsonb(OLD)->>'trial_deleted_at') IS NOT NULL THEN
     RAISE EXCEPTION 'Deleted profile tombstones are immutable';
   END IF;
 
