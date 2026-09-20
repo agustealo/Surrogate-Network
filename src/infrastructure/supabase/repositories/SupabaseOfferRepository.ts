@@ -7,6 +7,11 @@ import type {
   UpdateOfferDto,
 } from '@/repositories/OfferRepository'
 
+function required<T>(value: T | null, field: string): T {
+  if (value === null) throw new Error(`Malformed Offer row: ${field} is null`)
+  return value
+}
+
 export class SupabaseOfferRepository implements OfferRepository {
   async findById(id: string): Promise<Offer | null> {
     const supabase = await createSupabaseClient()
@@ -111,17 +116,17 @@ export class SupabaseOfferRepository implements OfferRepository {
       description: data.description,
       category: data.category,
       locationMode: data.location_mode,
-      timing: data.timing,
-      boundaries: data.boundaries || [],
-      capacity: data.capacity,
-      currentCapacity: data.current_capacity,
-      status: data.status,
+      timing: data.timing ?? undefined,
+      boundaries: data.boundaries,
+      capacity: data.capacity ?? undefined,
+      currentCapacity: data.current_capacity ?? undefined,
+      status: required(data.status, 'status'),
       userId: data.user_id,
       userName: data.user_name,
-      userAvatar: data.user_avatar,
-      rating: data.rating,
-      reviewCount: data.review_count,
-      createdAt: data.created_at,
+      userAvatar: data.user_avatar ?? undefined,
+      rating: data.rating ?? undefined,
+      reviewCount: data.review_count ?? undefined,
+      createdAt: required(data.created_at, 'created_at'),
     }
   }
 }
