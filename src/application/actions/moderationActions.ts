@@ -13,6 +13,13 @@ const moderationSchema = z.object({
   suspendReportedUser: z.boolean().default(false),
 })
 
+type ModerationRpcClient = {
+  rpc<T>(name: string, args: Record<string, unknown>): PromiseLike<{
+    data: T | null
+    error: { message: string } | null
+  }>
+}
+
 export async function moderateReportAction(input: unknown): Promise<ActionResult> {
   try {
     const admin = await requireAdmin()
@@ -21,74 +28,18 @@ export async function moderateReportAction(input: unknown): Promise<ActionResult
       throw new Error('Record the moderation outcome before closing a report.')
     }
 
-    const service = createServiceClient()
-    const { data: report, error: reportError } = await service
-      .from('reports')
-      .select('id,reported_user_id,status,action_taken')
-      .eq('id', values.reportId)
-      .single()
-    if (reportError || !report) throw new Error('The report is unavailable.')
-
-    const resolvedAt = values.status === 'resolved' || values.status === 'dismissed'
-      ? new Date().toISOString()
-      : null
-
-    const { error: updateError } = await service
-      .from('reports')
-      .update({
-        status: values.status,
-        action_taken: values.actionTaken || null,
-        resolved_at: resolvedAt,
-      })
-      .eq('id', values.reportId)
-    if (updateError) throw new Error(`Unable to update report: ${updateError.message}`)
-
-    if (values.suspendReportedUser) {
-      const reason = values.actionTaken || `Suspended from report ${values.reportId}`
-      const { error: suspendError } = await service
-        .from('profiles')
-        .update({ is_suspended: true })
-        .eq('id', report.reported_user_id)
-      if (suspendError) throw new Error(`Report updated but suspension failed: ${suspendError.message}`)
-
-      const { data: activeRestriction, error: restrictionReadError } = await service
-        .from('restrictions')
-        .select('id')
-        .eq('user_id', report.reported_user_id)
-        .eq('type', 'suspension')
-        .eq('active', true)
-        .maybeSingle()
-      if (restrictionReadError) throw new Error(`Unable to verify suspension record: ${restrictionReadError.message}`)
-
-      if (!activeRestriction) {
-        const { error: restrictionError } = await service.from('restrictions').insert({
-          user_id: report.reported_user_id,
-          type: 'suspension',
-          reason,
-          active: true,
-        })
-        if (restrictionError) throw new Error(`Unable to persist suspension record: ${restrictionError.message}`)
-      }
-    }
-
-    const { error: auditError } = await service.from('audit_events').insert({
-      actor_id: admin.id,
-      action: 'report_moderated',
-      target_id: values.reportId,
-      target_type: 'report',
-      before: { status: report.status, action_taken: report.action_taken },
-      after: {
-        status: values.status,
-        action_taken: values.actionTaken || null,
-        suspended_reported_user: values.suspendReportedUser,
-      },
-      timestamp: new Date().toISOString(),
+    const rpc = createServiceClient() as unknown as ModerationRpcClient
+    const { error } = await rpc.rpc<void>('moderate_report_for_trial', {
+      p_report_id: values.reportId,
+      p_admin_id: admin.id,
+      p_status: values.status,
+      p_action_taken: values.actionTaken ?? null,
+      p_suspend_reported_user: values.suspendReportedUser,
     })
-    if (auditError) throw new Error(`Moderation succeeded but audit persistence failed: ${auditError.message}`)
+    if (error) throw new Error(`Unable to moderate report: ${error.message}`)
 
     revalidatePath('/admin')
     revalidatePath('/admin/reports')
-    revalidatePath(`/profile/${report.reported_user_id}`)
     return { ok: true, data: undefined }
   } catch (error) {
     return actionFailure(error)
