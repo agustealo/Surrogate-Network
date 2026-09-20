@@ -4,11 +4,6 @@ import { revalidatePath } from 'next/cache'
 import { z } from 'zod'
 import { actionFailure, requireActiveMember, type ActionResult } from '@/application/actions/memberContext'
 
-type RpcResponse<T> = { data: T | null; error: { message: string } | null }
-type TrialRpcClient = {
-  rpc<T>(name: string, args: Record<string, unknown>): PromiseLike<RpcResponse<T>>
-}
-
 const scheduleSchema = z.object({
   surrogacyId: z.string().uuid(),
   scheduledTime: z.string().datetime(),
@@ -29,20 +24,16 @@ const feedbackSchema = z.object({
   skillEndorsements: z.array(z.string().trim().min(1).max(80)).max(10).default([]),
 })
 
-function rpcClient(client: unknown): TrialRpcClient {
-  return client as TrialRpcClient
-}
-
 export async function createMomentAction(input: unknown): Promise<ActionResult<{ id: string }>> {
   try {
     const actor = await requireActiveMember()
     const values = scheduleSchema.parse(input)
-    const { data, error } = await rpcClient(actor.supabase).rpc<string>('create_moment_for_trial', {
+    const { data, error } = await actor.supabase.rpc('create_moment_for_trial', {
       p_surrogacy_id: values.surrogacyId,
       p_scheduled_time: values.scheduledTime,
       p_duration: values.duration,
-      p_location: values.location || null,
-      p_notes: values.notes || null,
+      p_location: values.location,
+      p_notes: values.notes,
     })
     if (error || !data) throw new Error(error?.message ?? 'Moment could not be created.')
 
@@ -59,7 +50,7 @@ export async function cancelMomentAction(momentId: string, surrogacyId: string):
     const actor = await requireActiveMember()
     const id = z.string().uuid().parse(momentId)
     const relationshipId = z.string().uuid().parse(surrogacyId)
-    const { error } = await rpcClient(actor.supabase).rpc<null>('cancel_moment_for_trial', {
+    const { error } = await actor.supabase.rpc('cancel_moment_for_trial', {
       p_moment_id: id,
     })
     if (error) throw new Error(error.message)
@@ -81,7 +72,7 @@ export async function completeMomentAction(
     const id = z.string().uuid().parse(momentId)
     const relationshipId = z.string().uuid().parse(surrogacyId)
     const exchangeStatus = z.enum(['completed', 'partial', 'disputed']).parse(status)
-    const { data, error } = await rpcClient(actor.supabase).rpc<string>('complete_moment_for_trial', {
+    const { data, error } = await actor.supabase.rpc('complete_moment_for_trial', {
       p_moment_id: id,
       p_exchange_status: exchangeStatus,
     })
@@ -101,7 +92,7 @@ export async function submitFeedbackAction(input: unknown): Promise<ActionResult
     const values = feedbackSchema.parse(input)
     const ratings = [values.reliability, values.communication, values.boundaryRespect, values.consideration, values.followThrough]
     const rating = Math.round(ratings.reduce((sum, value) => sum + value, 0) / ratings.length)
-    const { data, error } = await rpcClient(actor.supabase).rpc<string>('submit_feedback_for_trial', {
+    const { data, error } = await actor.supabase.rpc('submit_feedback_for_trial', {
       p_exchange_id: values.exchangeId,
       p_to_user_id: values.toUserId,
       p_rating: rating,
@@ -112,7 +103,7 @@ export async function submitFeedbackAction(input: unknown): Promise<ActionResult
         consideration: values.consideration,
         followThrough: values.followThrough,
       },
-      p_comments: values.comments || null,
+      p_comments: values.comments,
       p_skill_endorsements: values.skillEndorsements,
     })
     if (error || !data) throw new Error(error?.message ?? 'Feedback could not be submitted.')
