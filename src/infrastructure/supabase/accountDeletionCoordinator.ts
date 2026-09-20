@@ -24,7 +24,7 @@ export async function removePreparedAuthIdentity(userId: string): Promise<Prepar
   }
 
   const failures: string[] = []
-  const deletedEmail = `deleted+${userId.replaceAll('-', '')}@deleted.invalid`
+  const deletedEmail = `deleted+${userId.replace(/-/g, '')}@deleted.invalid`
 
   const { error: quarantineError } = await service.auth.admin.updateUserById(userId, {
     ban_duration: '876000h',
