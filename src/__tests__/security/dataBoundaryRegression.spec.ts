@@ -163,6 +163,51 @@ describe('Consumer-trial data boundaries', () => {
     expect(counterAttempt.error).toBeTruthy()
   })
 
+  it('keeps listing lifecycle state and relationship anchors non-destructive', async () => {
+    const [{ data: need, error: needError }, { data: offer, error: offerError }] = await Promise.all([
+      service.from('needs').insert({
+        title: 'Lifecycle Need',
+        description: 'Need used to prove lifecycle state is database authoritative.',
+        category: 'personal',
+        user_id: memberA.user.id,
+        user_name: 'Boundary A',
+        boundaries: ['platonic'],
+        location_mode: 'remote',
+        status: 'active',
+      }).select('id').single(),
+      service.from('offers').insert({
+        title: 'Lifecycle Offer',
+        description: 'Offer used to prove relationship anchors cannot be hard deleted.',
+        category: 'personal',
+        user_id: memberA.user.id,
+        user_name: 'Boundary A',
+        boundaries: ['platonic'],
+        location_mode: 'remote',
+        status: 'active',
+        capacity: 2,
+        current_capacity: 0,
+      }).select('id').single(),
+    ])
+    if (needError || !need) throw needError ?? new Error('Unable to seed lifecycle need')
+    if (offerError || !offer) throw offerError ?? new Error('Unable to seed lifecycle offer')
+
+    const clientA = await clientFor(memberA)
+    const forgeNeedStatus = await clientA.from('needs').update({ status: 'fulfilled' }).eq('id', need.id)
+    const deleteNeed = await clientA.from('needs').delete().eq('id', need.id)
+    const deleteOffer = await clientA.from('offers').delete().eq('id', offer.id)
+
+    expect(forgeNeedStatus.error).toBeTruthy()
+    expect(deleteNeed.error).toBeTruthy()
+    expect(deleteOffer.error).toBeTruthy()
+
+    const [needStillExists, offerStillExists] = await Promise.all([
+      service.from('needs').select('id,status').eq('id', need.id).single(),
+      service.from('offers').select('id,status').eq('id', offer.id).single(),
+    ])
+    expect(needStillExists.data?.status).toBe('active')
+    expect(offerStillExists.data?.status).toBe('active')
+  })
+
   it('denies direct proposal status mutation', async () => {
     const [{ data: need, error: needError }, { data: offer, error: offerError }] = await Promise.all([
       service.from('needs').insert({
