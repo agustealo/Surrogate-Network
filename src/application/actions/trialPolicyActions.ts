@@ -3,7 +3,7 @@
 import { revalidatePath } from 'next/cache'
 import { z } from 'zod'
 import { actionFailure, type ActionResult } from '@/application/actions/memberContext'
-import { createClient, createServiceClient } from '@/infrastructure/supabase/server'
+import { createClient } from '@/infrastructure/supabase/server'
 import { TRIAL_POLICY_VERSION } from '@/lib/trialPolicy'
 
 const consentSchema = z.object({
@@ -32,9 +32,8 @@ export async function acceptTrialPolicyAction(input: unknown): Promise<ActionRes
     if (profileError || !profile) throw new Error('Your member profile is unavailable.')
     if (profile.is_suspended) throw new Error('A restricted account cannot re-enter the trial through policy acceptance.')
 
-    const rpc = createServiceClient() as unknown as ConsentRpcClient
+    const rpc = supabase as unknown as ConsentRpcClient
     const { error } = await rpc.rpc<void>('accept_current_trial_policy', {
-      p_user_id: user.id,
       p_terms_version: TRIAL_POLICY_VERSION,
       p_privacy_version: TRIAL_POLICY_VERSION,
       p_age_confirmed: true,
