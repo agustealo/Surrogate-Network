@@ -7,7 +7,6 @@ export interface OfferRepository {
   findByCategory(category: SurrogateCategory, limit?: number): Promise<Offer[]>
   create(offer: CreateOfferDto): Promise<Offer>
   update(id: string, offer: UpdateOfferDto): Promise<Offer>
-  delete(id: string): Promise<void>
 }
 
 export type { SurrogateCategory, Boundary } from '@/domain/types'
