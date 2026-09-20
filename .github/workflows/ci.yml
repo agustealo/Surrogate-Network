@@ -139,6 +139,17 @@ jobs:
         run: npm run test:security
         env:
           CI: true
+      - name: Generate canonical Supabase database types
+        run: supabase gen types typescript --local > generated-database.types.ts
+      - name: Upload generated database type snapshot
+        uses: actions/upload-artifact@v6
+        with:
+          name: generated-database-types
+          path: generated-database.types.ts
+          retention-days: 7
+          if-no-files-found: error
+      - name: Reject schema/type drift
+        run: diff -u src/infrastructure/supabase/database.types.ts generated-database.types.ts
 
   test-navigation:
     name: NAVIGATION
