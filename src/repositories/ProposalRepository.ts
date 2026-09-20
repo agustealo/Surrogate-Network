@@ -41,8 +41,8 @@ export interface ProposalRepository {
   findById(id: string): Promise<ProposalRecord | null>
   findForUser(userId: string, limit?: number): Promise<ProposalRecord[]>
   create(input: CreateProposalDto): Promise<ProposalRecord>
-  accept(id: string, actorId: string): Promise<string>
-  decline(id: string, actorId: string): Promise<void>
-  withdraw(id: string, actorId: string): Promise<void>
-  counter(id: string, actorId: string, input: CounterProposalDto): Promise<void>
+  accept(id: string): Promise<string>
+  decline(id: string): Promise<void>
+  withdraw(id: string): Promise<void>
+  counter(id: string, input: CounterProposalDto): Promise<void>
 }
