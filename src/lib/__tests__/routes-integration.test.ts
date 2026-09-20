@@ -16,8 +16,11 @@ describe('Route registry integration', () => {
     expect(routes.member.offersCreate).toBe('/offers/create')
   })
 
-  it('contains only the implemented admin entry route', () => {
-    expect(routes.admin).toEqual({ dashboard: '/admin' })
+  it('contains the implemented admin routes', () => {
+    expect(routes.admin).toEqual({
+      dashboard: '/admin',
+      reports: '/admin/reports',
+    })
   })
 
   it('keeps canonical dynamic route builders without compatibility aliases', () => {
