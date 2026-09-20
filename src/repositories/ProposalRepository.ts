@@ -1,4 +1,6 @@
-import type { ProposalStatus } from '@/infrastructure/supabase/database.types'
+import type { Enums } from '@/infrastructure/supabase/database.types'
+
+export type ProposalStatus = Enums<'proposal_status'>
 
 export interface ProposalRecord {
   id: string
