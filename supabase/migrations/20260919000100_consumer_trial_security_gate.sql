@@ -1,45 +1,43 @@
 BEGIN;
 
 -- Consumer-trial security gate.
--- Supabase/Postgres functions are executable by PUBLIC by default. Sensitive
--- SECURITY DEFINER functions must therefore explicitly revoke PUBLIC in
--- addition to anon/authenticated, then grant only the trusted server roles.
+-- PostgreSQL grants EXECUTE on new functions to PUBLIC by default. Sensitive
+-- RPCs therefore revoke PUBLIC explicitly instead of assuming role-specific
+-- revokes close the Data API surface.
 
--- Prevent future functions created by the migration owner from silently
--- becoming Data API callable. Explicit grants remain possible per function.
 ALTER DEFAULT PRIVILEGES FOR ROLE postgres IN SCHEMA public
   REVOKE EXECUTE ON FUNCTIONS FROM PUBLIC;
 ALTER DEFAULT PRIVILEGES FOR ROLE postgres IN SCHEMA public
   REVOKE EXECUTE ON FUNCTIONS FROM anon, authenticated;
 
--- Sensitive authoritative mutation RPCs are server-only.
+-- Ledger mutation is trusted-server authority only.
 REVOKE EXECUTE ON FUNCTION public.update_token_balance(uuid, integer, text, transaction_type)
   FROM PUBLIC, anon, authenticated;
 REVOKE EXECUTE ON FUNCTION public.update_user_xp(uuid, integer, xp_source, text)
   FROM PUBLIC, anon, authenticated;
-REVOKE EXECUTE ON FUNCTION public.admin_update_profile(
-  uuid, text, text, text, text, text, text, boundary[], integer, integer,
-  integer, verification_status, boolean
-) FROM PUBLIC, anon, authenticated;
-
 GRANT EXECUTE ON FUNCTION public.update_token_balance(uuid, integer, text, transaction_type)
   TO service_role, postgres;
 GRANT EXECUTE ON FUNCTION public.update_user_xp(uuid, integer, xp_source, text)
   TO service_role, postgres;
+
+-- admin_update_profile performs its own authenticated-admin verification.
+-- Keep it available to authenticated admins, but never to PUBLIC or anon.
+REVOKE EXECUTE ON FUNCTION public.admin_update_profile(
+  uuid, text, text, text, text, text, text, boundary[], integer, integer,
+  integer, verification_status, boolean
+) FROM PUBLIC, anon;
 GRANT EXECUTE ON FUNCTION public.admin_update_profile(
   uuid, text, text, text, text, text, text, boundary[], integer, integer,
   integer, verification_status, boolean
-) TO service_role, postgres;
+) TO authenticated, postgres;
 
--- Maintenance is privileged too. It mutates command history globally and must
--- never be callable through an end-user JWT.
+-- Maintenance mutates command history globally and is server-only.
 REVOKE EXECUTE ON FUNCTION public.cleanup_expired_idempotency()
   FROM PUBLIC, anon, authenticated;
 GRANT EXECUTE ON FUNCTION public.cleanup_expired_idempotency()
   TO service_role, postgres;
 
--- The legacy admin predicate is still referenced by a profile RLS policy.
--- Keep it callable by authenticated users for policy evaluation, but pin the
+-- The admin predicate is referenced by RLS and the admin mutation RPC. Pin its
 -- search path and schema-qualify its relation so SECURITY DEFINER cannot be
 -- redirected through attacker-controlled objects.
 CREATE OR REPLACE FUNCTION public.is_admin_user(p_user_id uuid)
@@ -62,7 +60,9 @@ $$;
 REVOKE EXECUTE ON FUNCTION public.is_admin_user(uuid) FROM PUBLIC, anon;
 GRANT EXECUTE ON FUNCTION public.is_admin_user(uuid) TO authenticated, service_role, postgres;
 
--- Internal admin verifier is not a public RPC surface.
+-- Internal admin verifier is not a public RPC surface. SECURITY DEFINER admin
+-- functions execute it as the function owner, so authenticated callers do not
+-- need direct EXECUTE permission.
 CREATE OR REPLACE FUNCTION public.verify_admin_role(p_user_id uuid)
 RETURNS boolean
 LANGUAGE plpgsql
