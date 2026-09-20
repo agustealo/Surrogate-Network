@@ -15,19 +15,14 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
       - name: Setup Node.js
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v7
         with:
           node-version: ${{ env.NODE_VERSION }}
           cache: npm
       - name: Install dependencies
         run: npm ci
-      - name: Cache node modules
-        uses: actions/cache@v4
-        with:
-          path: node_modules
-          key: ${{ runner.os }}-node-modules-${{ hashFiles('package-lock.json') }}
 
   dependency-audit:
     name: DEPENDENCY AUDIT
@@ -35,9 +30,9 @@ jobs:
     needs: install
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
       - name: Setup Node.js
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v7
         with:
           node-version: ${{ env.NODE_VERSION }}
           cache: npm
@@ -52,17 +47,12 @@ jobs:
     needs: install
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
       - name: Setup Node.js
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v7
         with:
           node-version: ${{ env.NODE_VERSION }}
           cache: npm
-      - name: Restore node modules from cache
-        uses: actions/cache@v4
-        with:
-          path: node_modules
-          key: ${{ runner.os }}-node-modules-${{ hashFiles('package-lock.json') }}
       - name: Install dependencies
         run: npm ci
       - name: Run TypeScript type check
@@ -74,17 +64,12 @@ jobs:
     needs: install
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
       - name: Setup Node.js
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v7
         with:
           node-version: ${{ env.NODE_VERSION }}
           cache: npm
-      - name: Restore node modules from cache
-        uses: actions/cache@v4
-        with:
-          path: node_modules
-          key: ${{ runner.os }}-node-modules-${{ hashFiles('package-lock.json') }}
       - name: Install dependencies
         run: npm ci
       - name: Run ESLint
@@ -96,17 +81,12 @@ jobs:
     needs: install
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
       - name: Setup Node.js
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v7
         with:
           node-version: ${{ env.NODE_VERSION }}
           cache: npm
-      - name: Restore node modules from cache
-        uses: actions/cache@v4
-        with:
-          path: node_modules
-          key: ${{ runner.os }}-node-modules-${{ hashFiles('package-lock.json') }}
       - name: Install dependencies
         run: npm ci
       - name: Run unit tests
@@ -120,17 +100,12 @@ jobs:
     needs: install
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
       - name: Setup Node.js
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v7
         with:
           node-version: ${{ env.NODE_VERSION }}
           cache: npm
-      - name: Restore node modules from cache
-        uses: actions/cache@v4
-        with:
-          path: node_modules
-          key: ${{ runner.os }}-node-modules-${{ hashFiles('package-lock.json') }}
       - name: Install dependencies
         run: npm ci
       - name: Run component tests
@@ -144,17 +119,12 @@ jobs:
     needs: install
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
       - name: Setup Node.js
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v7
         with:
           node-version: ${{ env.NODE_VERSION }}
           cache: npm
-      - name: Restore node modules from cache
-        uses: actions/cache@v4
-        with:
-          path: node_modules
-          key: ${{ runner.os }}-node-modules-${{ hashFiles('package-lock.json') }}
       - name: Install dependencies
         run: npm ci
       - name: Install Supabase CLI
@@ -176,17 +146,12 @@ jobs:
     needs: install
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
       - name: Setup Node.js
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v7
         with:
           node-version: ${{ env.NODE_VERSION }}
           cache: npm
-      - name: Restore node modules from cache
-        uses: actions/cache@v4
-        with:
-          path: node_modules
-          key: ${{ runner.os }}-node-modules-${{ hashFiles('package-lock.json') }}
       - name: Install dependencies
         run: npm ci
       - name: Run navigation and shell ownership tests
@@ -200,17 +165,12 @@ jobs:
     needs: [dependency-audit, typecheck, lint, test-unit, test-component, test-security, test-navigation]
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
       - name: Setup Node.js
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v7
         with:
           node-version: ${{ env.NODE_VERSION }}
           cache: npm
-      - name: Restore node modules from cache
-        uses: actions/cache@v4
-        with:
-          path: node_modules
-          key: ${{ runner.os }}-node-modules-${{ hashFiles('package-lock.json') }}
       - name: Install dependencies
         run: npm ci
       - name: Build application
@@ -221,7 +181,7 @@ jobs:
           NEXT_PUBLIC_SUPABASE_ANON_KEY: build-only-local-key
           SUPABASE_SERVICE_ROLE_KEY: build-only-local-service-key
       - name: Upload build artifacts
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         with:
           name: build-output
           path: .next
@@ -233,9 +193,9 @@ jobs:
     needs: build
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
       - name: Setup Node.js
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v7
         with:
           node-version: ${{ env.NODE_VERSION }}
           cache: npm
@@ -260,7 +220,7 @@ jobs:
         env:
           CI: true
       - name: Upload E2E results
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         if: always()
         with:
           name: e2e-results
@@ -275,9 +235,9 @@ jobs:
     needs: build
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
       - name: Setup Node.js
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v7
         with:
           node-version: ${{ env.NODE_VERSION }}
           cache: npm
@@ -302,7 +262,7 @@ jobs:
         env:
           CI: true
       - name: Upload accessibility report
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         if: always()
         with:
           name: accessibility-report
