@@ -5,6 +5,10 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { ReportModerationControls } from '@/components/admin/ReportModerationControls'
 import { createServiceClient } from '@/infrastructure/supabase/server'
 
+function formatDateTime(value: string | null): string {
+  return value ? new Date(value).toLocaleString() : 'time unavailable'
+}
+
 export default async function AdminReportsPage() {
   const service = createServiceClient()
   const { data: reports, error } = await service
@@ -40,19 +44,21 @@ export default async function AdminReportsPage() {
 
       <div className="space-y-4">
         {(reports ?? []).map((report) => {
+          const status = report.status
+          if (!status) throw new Error(`Moderation report ${report.id} has no lifecycle status.`)
           const reportedName = names.get(report.reported_user_id) ?? 'Unavailable member'
           const reporterName = names.get(report.reporter_user_id) ?? 'Unavailable member'
           return (
             <Card key={report.id}>
               <CardHeader className="space-y-3">
                 <div className="flex flex-wrap gap-2">
-                  <Badge>{report.status}</Badge>
+                  <Badge>{status}</Badge>
                   <Badge variant="outline">{report.severity}</Badge>
                   <Badge variant="secondary">{report.type.replace(/_/g, ' ')}</Badge>
                 </div>
                 <CardTitle className="text-xl">Report concerning {reportedName}</CardTitle>
                 <CardDescription>
-                  Submitted by {reporterName} on {new Date(report.created_at).toLocaleString()}.
+                  Submitted by {reporterName} on {formatDateTime(report.created_at)}.
                 </CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
@@ -64,7 +70,7 @@ export default async function AdminReportsPage() {
                 {report.action_taken && (
                   <div className="rounded-md border p-3 text-sm"><span className="font-medium">Recorded outcome:</span> {report.action_taken}</div>
                 )}
-                <ReportModerationControls reportId={report.id} currentStatus={report.status} />
+                <ReportModerationControls reportId={report.id} currentStatus={status} />
               </CardContent>
             </Card>
           )
