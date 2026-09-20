@@ -3,15 +3,14 @@ export interface NeedRepository {
   findById(id: string): Promise<Need | null>;
   findAll(limit?: number): Promise<Need[]>;
   findByUserId(userId: string, limit?: number): Promise<Need[]>;
-  findByCategory(category: string, limit?: number): Promise<Need[]>;
+  findByCategory(category: SurrogateCategory, limit?: number): Promise<Need[]>;
   create(need: CreateNeedDto): Promise<Need>;
   update(id: string, need: UpdateNeedDto): Promise<Need>;
   delete(id: string): Promise<void>;
 }
 
-// Domain Types
-export type SurrogateCategory = 'personal' | 'utilitarian_business' | 'casual';
-export type Boundary = 'platonic' | 'romantic' | 'physical' | 'virtual' | 'one-off' | 'recurring';
+import type { SurrogateCategory, Boundary } from '@/domain/types';
+export type { SurrogateCategory, Boundary } from '@/domain/types';
 export type LocationMode = 'remote' | 'local' | 'either';
 export type Urgency = 'low' | 'medium' | 'high';
 export type NeedStatus = 'active' | 'fulfilled' | 'paused' | 'expired';

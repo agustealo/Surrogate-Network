@@ -1,7 +1,7 @@
 // Security Regression Tests for SC-00.4
 // These tests ensure critical security properties are maintained across the codebase
 
-import { describe, it, expect, beforeEach } from '@jest/globals';
+import { describe, it, expect, beforeAll } from '@jest/globals';
 import { createClient } from '@supabase/supabase-js';
 
 describe('Security Regression Tests', () => {
@@ -10,38 +10,27 @@ describe('Security Regression Tests', () => {
   let testUserB: any;
   let adminUser: any;
 
-  beforeEach(async () => {
-    // Setup test users for security testing
-    supabase = createClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-    );
+  beforeAll(async () => {
+    const url = process.env.NEXT_PUBLIC_SUPABASE_URL
+    const anonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+    const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY
+    if (!url || !anonKey || !serviceRoleKey) throw new Error('Security tests require the local Supabase runtime credentials')
 
-    // Create test users (in production, use test fixtures)
-    const { data: userA } = await supabase.auth.signUp({
-      email: 'security-test-a@test.com',
-      password: 'test-password-123',
-    });
-    testUserA = userA.user;
+    supabase = createClient(url, anonKey, { auth: { persistSession: false, autoRefreshToken: false } })
+    const admin = createClient(url, serviceRoleKey, { auth: { persistSession: false, autoRefreshToken: false } })
 
-    const { data: userB } = await supabase.auth.signUp({
-      email: 'security-test-b@test.com',
-      password: 'test-password-456',
-    });
-    testUserB = userB.user;
+    const createUser = async (email: string, password: string) => {
+      const { data, error } = await admin.auth.admin.createUser({ email, password, email_confirm: true })
+      if (error || !data.user) throw error ?? new Error(`Failed to create security principal ${email}`)
+      return data.user
+    }
 
-    // Create admin user
-    const { data: admin } = await supabase.auth.signUp({
-      email: 'security-admin@test.com',
-      password: 'admin-password-789',
-    });
-    adminUser = admin.user;
+    testUserA = await createUser('security-test-a@test.com', 'test-password-123')
+    testUserB = await createUser('security-test-b@test.com', 'test-password-456')
+    adminUser = await createUser('security-admin@test.com', 'admin-password-789')
 
-    // Make admin user an admin
-    await supabase
-      .from('profiles')
-      .update({ is_admin: true })
-      .eq('id', adminUser.id);
+    const { error: adminProfileError } = await admin.from('profiles').update({ is_admin: true }).eq('id', adminUser.id)
+    if (adminProfileError) throw adminProfileError
   });
 
   describe('Token/XP Security (P0-2)', () => {
@@ -260,11 +249,18 @@ describe('Security Regression Tests', () => {
     });
 
     it('should prevent unrelated user from mutating proposal', async () => {
-      // Sign in as user C (unrelated user)
-      const { data: userC } = await supabase.auth.signUp({
+      // Sign in as an unrelated user provisioned through the local admin API.
+      const admin = createClient(
+        process.env.NEXT_PUBLIC_SUPABASE_URL!,
+        process.env.SUPABASE_SERVICE_ROLE_KEY!,
+        { auth: { persistSession: false, autoRefreshToken: false } }
+      );
+      const { error: createUserCError } = await admin.auth.admin.createUser({
         email: 'security-test-c@test.com',
         password: 'test-password-abc',
+        email_confirm: true,
       });
+      if (createUserCError) throw createUserCError;
       await supabase.auth.signInWithPassword({
         email: 'security-test-c@test.com',
         password: 'test-password-abc',

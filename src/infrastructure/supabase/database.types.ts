@@ -6,7 +6,7 @@ export type Json =
   | { [key: string]: Json | undefined }
   | Json[]
 
-export interface Database {
+export type Database = {
   public: {
     Tables: {
       profiles: {
@@ -24,6 +24,7 @@ export interface Database {
           token_balance?: number
           verification_status: VerificationStatus
           is_suspended?: boolean
+          is_admin?: boolean
           created_at: string
           updated_at: string
         }
@@ -41,6 +42,7 @@ export interface Database {
           token_balance?: number
           verification_status?: VerificationStatus
           is_suspended?: boolean
+          is_admin?: boolean
           created_at?: string
           updated_at?: string
         }
@@ -58,9 +60,11 @@ export interface Database {
           token_balance?: number
           verification_status?: VerificationStatus
           is_suspended?: boolean
+          is_admin?: boolean
           created_at?: string
           updated_at?: string
         }
+        Relationships: []
       }
       needs: {
         Row: {
@@ -114,6 +118,7 @@ export interface Database {
           created_at?: string
           expires_at?: string
         }
+        Relationships: []
       }
       offers: {
         Row: {
@@ -170,6 +175,7 @@ export interface Database {
           review_count?: number
           created_at?: string
         }
+        Relationships: []
       }
       proposals: {
         Row: {
@@ -217,6 +223,7 @@ export interface Database {
           created_at?: string
           updated_at?: string
         }
+        Relationships: []
       }
       surrogacies: {
         Row: {
@@ -249,6 +256,7 @@ export interface Database {
           ended_at?: string
           agreement?: Json
         }
+        Relationships: []
       }
       moments: {
         Row: {
@@ -281,6 +289,7 @@ export interface Database {
           notes?: string
           created_at?: string
         }
+        Relationships: []
       }
       exchanges: {
         Row: {
@@ -304,6 +313,7 @@ export interface Database {
           completed_at?: string
           status?: ExchangeStatus
         }
+        Relationships: []
       }
       feedback: {
         Row: {
@@ -342,6 +352,7 @@ export interface Database {
           skill_endorsements?: string[]
           created_at?: string
         }
+        Relationships: []
       }
       media_assets: {
         Row: {
@@ -371,6 +382,7 @@ export interface Database {
           alt_text?: string
           created_at?: string
         }
+        Relationships: []
       }
       media_access_requests: {
         Row: {
@@ -403,6 +415,7 @@ export interface Database {
           responded_at?: string
           expires_at?: string
         }
+        Relationships: []
       }
       media_access_grants: {
         Row: {
@@ -432,6 +445,7 @@ export interface Database {
           granted_at?: string
           expires_at?: string
         }
+        Relationships: []
       }
       token_transactions: {
         Row: {
@@ -464,6 +478,7 @@ export interface Database {
           reference_type?: ReferenceType
           created_at?: string
         }
+        Relationships: []
       }
       xp_transactions: {
         Row: {
@@ -490,6 +505,7 @@ export interface Database {
           description?: string
           created_at?: string
         }
+        Relationships: []
       }
       member_progression: {
         Row: {
@@ -522,6 +538,7 @@ export interface Database {
           created_at?: string
           updated_at?: string
         }
+        Relationships: []
       }
       notifications: {
         Row: {
@@ -554,6 +571,7 @@ export interface Database {
           read?: boolean
           created_at?: string
         }
+        Relationships: []
       }
       reports: {
         Row: {
@@ -592,6 +610,7 @@ export interface Database {
           resolved_at?: string
           action_taken?: string
         }
+        Relationships: []
       }
       restrictions: {
         Row: {
@@ -621,6 +640,7 @@ export interface Database {
           active?: boolean
           created_at?: string
         }
+        Relationships: []
       }
       audit_events: {
         Row: {
@@ -662,8 +682,13 @@ export interface Database {
           ip_address?: string
           user_agent?: string
         }
+        Relationships: []
       }
     }
+    Views: { [key: string]: never }
+    Functions: { [key: string]: never }
+    Enums: { [key: string]: never }
+    CompositeTypes: { [key: string]: never }
   }
 }
 

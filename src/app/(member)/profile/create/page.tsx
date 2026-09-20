@@ -1,21 +1,15 @@
+import { redirect } from 'next/navigation'
+import { createClient } from '@/infrastructure/supabase/server'
+import { routes } from '@/lib/routes'
 
-import { PageWrapper } from '@/components/layout/PageWrapper';
-import { ProfileForm } from '@/components/forms/ProfileForm';
-import { Metadata } from 'next';
+export default async function CreateProfilePage() {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) redirect(routes.public.login)
 
-export const metadata: Metadata = {
-  title: 'Create Profile - Surrogate Network',
-  description: 'Create your Surrogate Network profile to start connecting.',
-};
+  const { data: profile, error } = await supabase.from('profiles').select('id').eq('id', user.id).maybeSingle()
+  if (error) throw new Error(`Failed to resolve profile state: ${error.message}`)
+  if (profile) redirect(routes.memberDynamic.profile(profile.id))
 
-export default function CreateProfilePage() {
-  return (
-    <PageWrapper title="Create Your Profile" className="max-w-3xl mx-auto">
-      <p className="mb-8 text-muted-foreground">
-        Share your offerings and requests to find or become a connection on Surrogate Network. 
-        Your profile helps us match you with compatible individuals.
-      </p>
-      <ProfileForm />
-    </PageWrapper>
-  );
+  redirect(routes.member.settings)
 }

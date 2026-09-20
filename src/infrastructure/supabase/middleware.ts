@@ -58,14 +58,15 @@ export async function updateSession(request: NextRequest) {
     data: { user },
   } = await supabase.auth.getUser()
 
-  // Protect member routes
-  if (request.nextUrl.pathname.startsWith('/member') && !user) {
-    return NextResponse.redirect(new URL('/login', request.url))
-  }
+  const protectedMemberRoutes = ['/home', '/discover', '/needs', '/offers', '/surrogacies', '/messages', '/rewards', '/profile', '/settings', '/feedback']
+  const isMemberRoute = protectedMemberRoutes.some((route) =>
+    request.nextUrl.pathname === route || request.nextUrl.pathname.startsWith(route + '/')
+  )
 
-  // Protect admin routes
-  if (request.nextUrl.pathname.startsWith('/admin') && !user) {
-    return NextResponse.redirect(new URL('/login', request.url))
+  if ((isMemberRoute || request.nextUrl.pathname.startsWith('/admin')) && !user) {
+    const loginUrl = new URL('/login', request.url)
+    loginUrl.searchParams.set('next', request.nextUrl.pathname)
+    return NextResponse.redirect(loginUrl)
   }
 
   return response

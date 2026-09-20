@@ -1,10 +1,10 @@
-import { MemberPlaceholderPage } from '@/components/member/MemberPlaceholderPage';
+import { redirect } from 'next/navigation'
+import { createClient } from '@/infrastructure/supabase/server'
 
-export default function MemberProfilePage() {
-  return (
-    <MemberPlaceholderPage
-      title="Profile"
-      description="Your canonical member profile workspace will live here."
-    />
-  );
+export default async function MemberProfilePage() {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+
+  if (!user) redirect('/login')
+  redirect(`/profile/${user.id}`)
 }

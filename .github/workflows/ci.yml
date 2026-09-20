@@ -166,24 +166,19 @@ jobs:
       - name: Install Supabase CLI
         run: npm install -g supabase
 
-      - name: Start Supabase
+      - name: Start Supabase and export runtime credentials
         run: |
           supabase start
           sleep 15
-        env:
-          SUPABASE_SERVICE_ROLE_KEY: local-service-role-key
+          supabase status -o env | sed 's/^ANON_KEY=/NEXT_PUBLIC_SUPABASE_ANON_KEY=/' | sed 's/^API_URL=/NEXT_PUBLIC_SUPABASE_URL=/' | sed 's/^SERVICE_ROLE_KEY=/SUPABASE_SERVICE_ROLE_KEY=/' | sed 's/="\(.*\)"$/=\1/' >> "$GITHUB_ENV"
 
       - name: Apply migrations
         run: supabase db reset --no-seed
-        continue-on-error: true
 
       - name: Run security regression tests
         run: npm run test:security
         env:
           CI: true
-          NEXT_PUBLIC_SUPABASE_URL: http://localhost:54321
-          NEXT_PUBLIC_SUPABASE_ANON_KEY: local-anon-key
-          SUPABASE_SERVICE_ROLE_KEY: local-service-role-key
 
   test-navigation:
     name: NAVIGATION
@@ -236,13 +231,6 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      - name: Create .env.local
-        run: |
-          echo "NEXT_PUBLIC_DEMO_MODE=true" > .env.local
-          echo "NEXT_PUBLIC_APP_URL=https://surrogate-companion.com" >> .env.local
-          echo "NEXT_PUBLIC_SUPABASE_URL=https://example.supabase.co" >> .env.local
-          echo "NEXT_PUBLIC_SUPABASE_ANON_KEY=demo-anon-key" >> .env.local
-          echo "SUPABASE_SERVICE_ROLE_KEY=demo-service-role-key" >> .env.local
 
       - name: Build application
         run: npm run build
@@ -279,13 +267,6 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      - name: Create .env.local
-        run: |
-          echo "NEXT_PUBLIC_DEMO_MODE=true" > .env.local
-          echo "NEXT_PUBLIC_APP_URL=https://surrogate-companion.com" >> .env.local
-          echo "NEXT_PUBLIC_SUPABASE_URL=https://example.supabase.co" >> .env.local
-          echo "NEXT_PUBLIC_SUPABASE_ANON_KEY=demo-anon-key" >> .env.local
-          echo "SUPABASE_SERVICE_ROLE_KEY=demo-service-role-key" >> .env.local
 
       - name: Download build artifacts
         uses: actions/download-artifact@v4
@@ -332,13 +313,6 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      - name: Create .env.local
-        run: |
-          echo "NEXT_PUBLIC_DEMO_MODE=true" > .env.local
-          echo "NEXT_PUBLIC_APP_URL=https://surrogate-companion.com" >> .env.local
-          echo "NEXT_PUBLIC_SUPABASE_URL=https://example.supabase.co" >> .env.local
-          echo "NEXT_PUBLIC_SUPABASE_ANON_KEY=demo-anon-key" >> .env.local
-          echo "SUPABASE_SERVICE_ROLE_KEY=demo-service-role-key" >> .env.local
 
       - name: Download build artifacts
         uses: actions/download-artifact@v4

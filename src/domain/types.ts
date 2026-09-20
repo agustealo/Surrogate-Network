@@ -30,105 +30,6 @@ export type VerificationStatus =
   | 'identity_verified'
   | 'fully_verified';
 
-// UI/Presentation types (for component layer only)
-export interface ProfileBadge {
-  id: string;
-  name: string;
-  iconUrl?: string;
-  description?: string;
-}
-
-export interface StrengthMatrixPoint {
-  attribute: string;
-  proficiency: number;
-}
-
-export interface ReviewSummaryPoint {
-  rating: string;
-  count: number;
-}
-
-// Legacy types for backward compatibility during migration.
-export interface LegacyProfile extends Profile {
-  offerings: LegacyOffering[];
-  requests: LegacyRequest[];
-  portfolioUrl?: string;
-  videoIntroUrl?: string;
-  badges?: ProfileBadge[];
-  matchScore?: number;
-  strengthMatrix?: StrengthMatrixPoint[];
-  reviewSummary?: ReviewSummaryPoint[];
-}
-
-export interface LegacyOffering {
-  id: string;
-  title: string;
-  description: string;
-  category: SurrogateCategory;
-  averageRating?: number;
-  ratingCount?: number;
-  boundaries?: Boundary[];
-  tokenReward?: number;
-  tokenCost?: number;
-}
-
-export interface LegacyRequest {
-  id: string;
-  title: string;
-  description: string;
-  category: SurrogateCategory;
-  tags?: string[];
-  averageRating?: number;
-  ratingCount?: number;
-  boundaries?: Boundary[];
-  tokenCost?: number;
-  tokenReward?: number;
-}
-
-export interface LegacyProposal {
-  id: string;
-  proposingUser: {
-    id: string;
-    name: string;
-    avatarUrl?: string;
-  };
-  theirOffering: {
-    id: string;
-    title: string;
-    category: SurrogateCategory;
-  };
-  forYourRequest: {
-    id: string;
-    title: string;
-    category: SurrogateCategory;
-  };
-  status: 'pending' | 'accepted' | 'declined';
-  createdAt: string;
-  message?: string;
-}
-
-export interface LegacyFeedback {
-  punctuality: number;
-  reliability: number;
-  communicationClarity: number;
-  comments?: string;
-  skillEndorsements?: string;
-}
-
-export type Offering = LegacyOffering;
-export type ProfileRequest = LegacyRequest;
-
-export type NewProfileData = Omit<Profile, 'id' | 'createdAt'> & {
-  offerings?: LegacyOffering[];
-  requests?: LegacyRequest[];
-  badges?: ProfileBadge[];
-  portfolioUrl?: string;
-  videoIntroUrl?: string;
-  matchScore?: number;
-  strengthMatrix?: StrengthMatrixPoint[];
-  reviewSummary?: ReviewSummaryPoint[];
-}
-
 export interface Need {
   id: string;
   title: string;
@@ -297,7 +198,7 @@ export interface Notification {
   type: 'message' | 'proposal' | 'surrogacy' | 'schedule' | 'media' | 'feedback' | 'token' | 'rank' | 'reward' | 'moderation' | 'system';
   title: string;
   body: string;
-  data?: Record<string, any>;
+  data?: Record<string, unknown>;
   read: boolean;
   createdAt: string;
 }
@@ -341,8 +242,8 @@ export interface AuditLog {
   action: string;
   targetId?: string;
   targetType?: string;
-  before?: any;
-  after?: any;
+  before?: unknown;
+  after?: unknown;
   reason?: string;
   timestamp: string;
   ipAddress?: string;
