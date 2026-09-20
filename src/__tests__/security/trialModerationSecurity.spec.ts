@@ -71,19 +71,18 @@ describe('Trial moderation security', () => {
     return client
   }
 
-  it('denies the moderation RPC to a normal authenticated client', async () => {
+  it('denies moderation to a normal authenticated member', async () => {
     const client = await authenticatedClient(nonAdmin)
     const { error } = await client.rpc('moderate_report_for_trial', {
       p_report_id: reportId,
-      p_admin_id: nonAdmin.id,
       p_status: 'resolved',
-      p_action_taken: 'Forged moderation',
+      p_action_taken: 'Invalid moderation attempt',
       p_suspend_reported_user: true,
     })
     expect(error).toBeTruthy()
   })
 
-  it('denies the moderation RPC directly to an authenticated admin JWT', async () => {
+  it('rejects the retired caller-supplied admin identity signature', async () => {
     const client = await authenticatedClient(admin)
     const { error } = await client.rpc('moderate_report_for_trial', {
       p_report_id: reportId,
@@ -95,22 +94,21 @@ describe('Trial moderation security', () => {
     expect(error).toBeTruthy()
   })
 
-  it('rejects a non-admin actor even through trusted service execution', async () => {
+  it('denies the service role access to the authenticated moderation wrapper', async () => {
     const { error } = await service.rpc('moderate_report_for_trial', {
       p_report_id: reportId,
-      p_admin_id: nonAdmin.id,
       p_status: 'resolved',
-      p_action_taken: 'Non-admin service actor attempt',
+      p_action_taken: 'Invalid service-role moderation attempt',
       p_suspend_reported_user: false,
     })
     expect(error).toBeTruthy()
   })
 
-  it('atomically resolves, suspends, restricts, and audits when a valid admin acts', async () => {
+  it('atomically resolves, suspends, restricts, and audits when the authenticated admin acts', async () => {
     const outcome = 'Confirmed boundary violation during consumer-trial moderation burn.'
-    const { error } = await service.rpc('moderate_report_for_trial', {
+    const client = await authenticatedClient(admin)
+    const { error } = await client.rpc('moderate_report_for_trial', {
       p_report_id: reportId,
-      p_admin_id: admin.id,
       p_status: 'resolved',
       p_action_taken: outcome,
       p_suspend_reported_user: true,
