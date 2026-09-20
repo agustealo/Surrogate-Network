@@ -48,7 +48,7 @@ export default async function AdminReportsPage() {
                 <div className="flex flex-wrap gap-2">
                   <Badge>{report.status}</Badge>
                   <Badge variant="outline">{report.severity}</Badge>
-                  <Badge variant="secondary">{report.type.replaceAll('_', ' ')}</Badge>
+                  <Badge variant="secondary">{report.type.replace(/_/g, ' ')}</Badge>
                 </div>
                 <CardTitle className="text-xl">Report concerning {reportedName}</CardTitle>
                 <CardDescription>
