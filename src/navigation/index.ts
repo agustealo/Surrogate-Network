@@ -33,9 +33,9 @@ export const publicNavigation: (NavigationItem | NavigationAction)[] = [
   { id: 'join', label: 'Join', href: routes.public.signup, surfaces: ['public'], modes: ['all'] },
 ]
 
-// Only trial-ready surfaces belong in primary navigation. Messaging remains in
-// the codebase as an explicit unavailable-state page, but is intentionally not
-// advertised until its persisted model and abuse controls exist.
+// Primary navigation is intentionally narrower than the route registry. Routes
+// such as Messaging and Rewards may remain reachable as truthful status/history
+// surfaces, but are not advertised until their production behavior is complete.
 export const memberNavigation: (NavigationItem | NavigationAction)[] = [
   { id: 'home', label: 'Home', href: routes.member.home, surfaces: ['member'], modes: ['desktop', 'mobile'] },
   { id: 'discover', label: 'Discover', href: routes.member.discover, surfaces: ['member'], modes: ['desktop', 'mobile'] },
@@ -45,7 +45,6 @@ export const memberNavigation: (NavigationItem | NavigationAction)[] = [
   { id: 'needs', label: 'Needs', href: routes.member.needs, surfaces: ['member'], modes: ['desktop'], section: 'My Activity' },
   { id: 'offers', label: 'Offers', href: routes.member.offers, surfaces: ['member'], modes: ['desktop'], section: 'My Activity' },
   { id: 'profile', label: 'Profile', href: routes.member.profile, surfaces: ['member'], modes: ['desktop'], section: 'Account' },
-  { id: 'rewards', label: 'Rewards', href: routes.member.rewards, surfaces: ['member'], modes: ['desktop'], section: 'Account' },
   { id: 'settings', label: 'Settings', href: routes.member.settings, surfaces: ['member'], modes: ['desktop'], section: 'Account' },
 ]
 
