@@ -15,8 +15,8 @@
     "test:unit": "jest --testPathPattern=src/lib/__tests__",
     "test:component": "jest --runInBand src/components/member/__tests__/MobileNavigation.test.tsx",
     "test:e2e": "playwright test",
-    "test:e2e:smoke": "playwright test --grep @smoke",
-    "test:a11y": "playwright test --grep @a11y",
+    "test:e2e:smoke": "playwright test --project=chromium --grep @smoke",
+    "test:a11y": "playwright test --project=chromium --grep @a11y",
     "test:watch": "jest --watch",
     "test:navigation": "jest --runInBand src/navigation/__tests__/navigation-registry.test.ts src/lib/__tests__/routes-integration.test.ts src/app/__tests__/layout-ownership.test.tsx src/app/__tests__/route-ownership.test.ts src/components/member/__tests__/MobileNavigation.test.tsx"
   },
