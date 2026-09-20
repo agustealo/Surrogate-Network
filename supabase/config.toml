@@ -24,8 +24,11 @@ file_size_limit = "5MiB"
 
 [auth]
 enabled = true
-site_url = "http://localhost:3000"
-additional_redirect_urls = ["https://localhost:3000"]
+site_url = "http://localhost:9002"
+additional_redirect_urls = [
+  "http://localhost:9002/auth/recovery",
+  "http://127.0.0.1:9002/auth/recovery"
+]
 jwt_expiry = 3600
 
 [auth.email]

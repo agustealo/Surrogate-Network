@@ -13,10 +13,12 @@ export const routes = {
     trialConsent: '/trial-consent',
     accountRestricted: '/account-restricted',
     accountDeactivated: '/account-deactivated',
+    accountDeleted: '/account-deleted',
     login: '/login',
     signup: '/signup',
     forgotPassword: '/forgot-password',
     resetPassword: '/reset-password',
+    authRecovery: '/auth/recovery',
   },
 
   member: {
@@ -33,6 +35,7 @@ export const routes = {
     profile: '/profile',
     settings: '/settings',
     blockedMembers: '/settings/blocked',
+    accountExport: '/account/export',
   },
 
   memberDynamic: {

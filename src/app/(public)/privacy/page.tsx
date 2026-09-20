@@ -1,5 +1,7 @@
+import Link from 'next/link'
 import type { Metadata } from 'next'
 import { PageWrapper } from '@/components/layout/PageWrapper'
+import { routes } from '@/lib/routes'
 
 export const metadata: Metadata = {
   title: 'Privacy Notice - Surrogate Network',
@@ -45,23 +47,28 @@ export default function PrivacyPage() {
         <p>
           The current trial uses Supabase for authentication and persisted application data. Information may therefore be processed
           by infrastructure providers needed to run the service. Access inside the application is restricted through authenticated
-          server actions, database permissions, and row-level security policies according to the type of record.
+          server actions, database permissions, row-level security policies, and database-owned lifecycle guards according to the
+          type of record.
         </p>
 
         <h2>Safety, audit, and retention</h2>
         <p>
           Some records may be retained when necessary for security, fraud prevention, dispute handling, moderation, or audit integrity.
-          For example, security audit events are designed to survive account deletion with the former actor identifier removed. Trial
-          records should not be treated as an appropriate place for secrets, financial credentials, government identifiers, or other
-          information that is unnecessary for a connection.
+          Account deletion removes live member access and redacts direct profile/listing content, while stable tombstone identifiers can
+          remain so shared relationship, safety, moderation, and audit records are not destroyed. Security audit events are designed to
+          survive deletion with the former actor identifier removed. Trial records should not be treated as an appropriate place for
+          secrets, financial credentials, government identifiers, or other information unnecessary for a connection.
         </p>
 
         <h2>Your choices</h2>
         <p>
-          You control the profile and marketplace information you choose to publish, and you can use in-product blocking and reporting
-          controls. During the trial, requests to access, correct, deactivate, or delete account information should be made through the
-          same trial-support channel through which access to the trial was provided. Some information may need to be retained where
-          required for security, legal obligations, or the integrity of other members&apos; records.
+          You control the profile and marketplace information you choose to publish and can use in-product blocking and reporting
+          controls. Signed-in members can <Link href={routes.member.settings}>download a machine-readable account export, deactivate
+          trial participation, or permanently delete the account from Settings</Link>. Export and deletion controls also remain available
+          from the restricted/deactivated account surfaces while authentication is still valid. Deactivation is reversible. Deletion is
+          terminal and redacts direct member content before the authentication identity is removed. Some shared or safety records may
+          remain in redacted or tombstoned form when removal would damage another member&apos;s history, moderation evidence, security
+          records, or audit integrity.
         </p>
 
         <h2>Trial changes</h2>
