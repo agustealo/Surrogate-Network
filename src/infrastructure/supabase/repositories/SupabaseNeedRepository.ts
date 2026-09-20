@@ -1,10 +1,10 @@
 import { createClient as createSupabaseClient } from '@/infrastructure/supabase/server'
 import type { Database } from '@/infrastructure/supabase/database.types'
-import type { 
-  NeedRepository, 
-  Need, 
-  CreateNeedDto, 
-  UpdateNeedDto 
+import type {
+  NeedRepository,
+  Need,
+  CreateNeedDto,
+  UpdateNeedDto,
 } from '@/repositories/NeedRepository'
 
 export class SupabaseNeedRepository implements NeedRepository {
@@ -16,14 +16,11 @@ export class SupabaseNeedRepository implements NeedRepository {
       .eq('id', id)
       .single()
 
-    if (error || !data) {
-      return null
-    }
-
+    if (error || !data) return null
     return this.mapToNeed(data)
   }
 
-  async findAll(limit: number = 20): Promise<Need[]> {
+  async findAll(limit = 20): Promise<Need[]> {
     const supabase = await createSupabaseClient()
     const { data, error } = await supabase
       .from('needs')
@@ -31,14 +28,11 @@ export class SupabaseNeedRepository implements NeedRepository {
       .order('created_at', { ascending: false })
       .limit(limit)
 
-    if (error || !data) {
-      return []
-    }
-
+    if (error || !data) return []
     return data.map((need) => this.mapToNeed(need))
   }
 
-  async findByUserId(userId: string, limit: number = 20): Promise<Need[]> {
+  async findByUserId(userId: string, limit = 20): Promise<Need[]> {
     const supabase = await createSupabaseClient()
     const { data, error } = await supabase
       .from('needs')
@@ -47,14 +41,11 @@ export class SupabaseNeedRepository implements NeedRepository {
       .order('created_at', { ascending: false })
       .limit(limit)
 
-    if (error || !data) {
-      return []
-    }
-
+    if (error || !data) return []
     return data.map((need) => this.mapToNeed(need))
   }
 
-  async findByCategory(category: Need['category'], limit: number = 20): Promise<Need[]> {
+  async findByCategory(category: Need['category'], limit = 20): Promise<Need[]> {
     const supabase = await createSupabaseClient()
     const { data, error } = await supabase
       .from('needs')
@@ -63,10 +54,7 @@ export class SupabaseNeedRepository implements NeedRepository {
       .order('created_at', { ascending: false })
       .limit(limit)
 
-    if (error || !data) {
-      return []
-    }
-
+    if (error || !data) return []
     return data.map((need) => this.mapToNeed(need))
   }
 
@@ -83,19 +71,15 @@ export class SupabaseNeedRepository implements NeedRepository {
         timing: need.timing,
         boundaries: need.boundaries,
         urgency: need.urgency,
-        status: need.status || 'active',
         user_id: need.userId,
         user_name: need.userName,
         user_avatar: need.userAvatar,
-        expires_at: need.expiresAt
+        expires_at: need.expiresAt,
       })
       .select()
       .single()
 
-    if (error) {
-      throw new Error(`Failed to create need: ${error.message}`)
-    }
-
+    if (error) throw new Error(`Failed to create need: ${error.message}`)
     return this.mapToNeed(data)
   }
 
@@ -112,30 +96,16 @@ export class SupabaseNeedRepository implements NeedRepository {
         timing: need.timing,
         boundaries: need.boundaries,
         urgency: need.urgency,
-        status: need.status,
-        expires_at: need.expiresAt
+        user_name: need.userName,
+        user_avatar: need.userAvatar,
+        expires_at: need.expiresAt,
       })
       .eq('id', id)
       .select()
       .single()
 
-    if (error) {
-      throw new Error(`Failed to update need: ${error.message}`)
-    }
-
+    if (error) throw new Error(`Failed to update need: ${error.message}`)
     return this.mapToNeed(data)
-  }
-
-  async delete(id: string): Promise<void> {
-    const supabase = await createSupabaseClient()
-    const { error } = await supabase
-      .from('needs')
-      .delete()
-      .eq('id', id)
-
-    if (error) {
-      throw new Error(`Failed to delete need: ${error.message}`)
-    }
   }
 
   private mapToNeed(data: Database['public']['Tables']['needs']['Row']): Need {
@@ -154,7 +124,7 @@ export class SupabaseNeedRepository implements NeedRepository {
       userName: data.user_name,
       userAvatar: data.user_avatar,
       createdAt: data.created_at,
-      expiresAt: data.expires_at
+      expiresAt: data.expires_at,
     }
   }
 }
