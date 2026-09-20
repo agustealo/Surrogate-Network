@@ -1,4 +1,4 @@
-import { createClient, createServiceClient } from '@/infrastructure/supabase/server'
+import { createClient } from '@/infrastructure/supabase/server'
 import type { Database, ProposalStatus } from '@/infrastructure/supabase/database.types'
 import type {
   CounterProposalDto,
@@ -64,38 +64,37 @@ export class SupabaseProposalRepository implements ProposalRepository {
     return this.mapRow(data as ProposalRow)
   }
 
-  async accept(id: string, actorId: string): Promise<string> {
-    const rpc = createServiceClient() as unknown as TrialRpcClient
+  async accept(id: string): Promise<string> {
+    const supabase = await createClient()
+    const rpc = supabase as unknown as TrialRpcClient
     const { data, error } = await rpc.rpc<string>('accept_proposal_for_trial', {
       p_proposal_id: id,
-      p_actor_id: actorId,
     })
     if (error || !data) throw new Error(error?.message ?? 'Proposal acceptance did not create a relationship')
     return data
   }
 
-  async decline(id: string, actorId: string): Promise<void> {
-    await this.transition(id, actorId, 'declined')
+  async decline(id: string): Promise<void> {
+    await this.transition(id, 'declined')
   }
 
-  async withdraw(id: string, actorId: string): Promise<void> {
-    await this.transition(id, actorId, 'withdrawn')
+  async withdraw(id: string): Promise<void> {
+    await this.transition(id, 'withdrawn')
   }
 
-  async counter(id: string, actorId: string, input: CounterProposalDto): Promise<void> {
-    await this.transition(id, actorId, 'countered', input)
+  async counter(id: string, input: CounterProposalDto): Promise<void> {
+    await this.transition(id, 'countered', input)
   }
 
   private async transition(
     id: string,
-    actorId: string,
     status: Extract<ProposalStatus, 'declined' | 'countered' | 'withdrawn'>,
     input: CounterProposalDto = {},
   ): Promise<void> {
-    const rpc = createServiceClient() as unknown as TrialRpcClient
+    const supabase = await createClient()
+    const rpc = supabase as unknown as TrialRpcClient
     const { error } = await rpc.rpc<ProposalStatus>('transition_proposal_for_trial', {
       p_proposal_id: id,
-      p_actor_id: actorId,
       p_new_status: status,
       p_message: input.message ?? null,
       p_proposed_date: input.proposedDate ?? null,
