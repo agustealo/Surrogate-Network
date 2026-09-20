@@ -1,7 +1,7 @@
 import { createServerClient, type CookieOptions } from '@supabase/ssr'
 import { createClient as createSupabaseClient } from '@supabase/supabase-js'
 import { cookies } from 'next/headers'
-import type { RuntimeDatabase } from './runtime-database.types'
+import type { Database } from './database.types'
 
 function requireEnv(name: 'NEXT_PUBLIC_SUPABASE_URL' | 'NEXT_PUBLIC_SUPABASE_ANON_KEY' | 'SUPABASE_SERVICE_ROLE_KEY'): string {
   const value = process.env[name]
@@ -19,7 +19,7 @@ function requireEnv(name: 'NEXT_PUBLIC_SUPABASE_URL' | 'NEXT_PUBLIC_SUPABASE_ANO
 export async function createClient() {
   const cookieStore = await cookies()
 
-  return createServerClient<RuntimeDatabase>(
+  return createServerClient<Database>(
     requireEnv('NEXT_PUBLIC_SUPABASE_URL'),
     requireEnv('NEXT_PUBLIC_SUPABASE_ANON_KEY'),
     {
@@ -50,10 +50,10 @@ export async function createClient() {
 /**
  * Privileged server-only client. Never use this client to identify the current
  * user and never expose it to client components. It intentionally bypasses RLS
- * and is reserved for narrowly-scoped trusted administrative/system commands.
+ * and is reserved for narrowly-scoped trusted administrative/system reads.
  */
 export function createServiceClient() {
-  return createSupabaseClient<RuntimeDatabase>(
+  return createSupabaseClient<Database>(
     requireEnv('NEXT_PUBLIC_SUPABASE_URL'),
     requireEnv('SUPABASE_SERVICE_ROLE_KEY'),
     {
