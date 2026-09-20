@@ -13,6 +13,14 @@ type SurrogacyDetailPageProps = {
   params: Promise<{ id: string }>
 }
 
+function formatDate(value: string | null): string {
+  return value ? new Date(value).toLocaleDateString() : 'date unavailable'
+}
+
+function formatDateTime(value: string | null): string {
+  return value ? new Date(value).toLocaleString() : 'time unavailable'
+}
+
 export default async function SurrogacyDetailPage({ params }: SurrogacyDetailPageProps) {
   const { id } = await params
   const supabase = await createClient()
@@ -60,7 +68,7 @@ export default async function SurrogacyDetailPage({ params }: SurrogacyDetailPag
       </div>
 
       <Card>
-        <CardHeader><CardTitle className="text-3xl">{need.title} ↔ {offer.title}</CardTitle><CardDescription>Connected with {otherName} since {new Date(relationship.started_at).toLocaleDateString()}.</CardDescription></CardHeader>
+        <CardHeader><CardTitle className="text-3xl">{need.title} ↔ {offer.title}</CardTitle><CardDescription>Connected with {otherName} since {formatDate(relationship.started_at)}.</CardDescription></CardHeader>
         <CardContent className="flex flex-wrap gap-2"><Button asChild size="sm" variant="outline"><Link href={`/needs/${need.id}`}>View Need</Link></Button><Button asChild size="sm" variant="outline"><Link href={`/offers/${offer.id}`}>View Offer</Link></Button></CardContent>
       </Card>
 
@@ -82,7 +90,7 @@ export default async function SurrogacyDetailPage({ params }: SurrogacyDetailPag
               <CardContent className="space-y-4">
                 {moment.notes && <p className="whitespace-pre-wrap text-sm">{moment.notes}</p>}
                 {moment.status === 'scheduled' && !exchange && <MomentActions momentId={moment.id} surrogacyId={relationship.id} />}
-                {exchange && <p className="text-sm text-muted-foreground">Recorded {new Date(exchange.completed_at).toLocaleString()}.</p>}
+                {exchange && <p className="text-sm text-muted-foreground">Recorded {formatDateTime(exchange.completed_at)}.</p>}
                 {canReview && <FeedbackForm exchangeId={exchange.id} toUserId={otherUserId} companionName={otherName} />}
                 {exchange && reviewedExchangeIds.has(exchange.id) && <p className="text-sm text-muted-foreground">You submitted feedback for this Exchange.</p>}
               </CardContent>
