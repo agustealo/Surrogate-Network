@@ -1,23 +1,18 @@
 import { createClient } from '@/infrastructure/supabase/server'
-import type { Database, ProposalStatus } from '@/infrastructure/supabase/database.types'
+import type { Database } from '@/infrastructure/supabase/database.types'
 import type {
   CounterProposalDto,
   CreateProposalDto,
   ProposalRecord,
   ProposalRepository,
+  ProposalStatus,
 } from '@/repositories/ProposalRepository'
 
-type ProposalRow = Database['public']['Tables']['proposals']['Row'] & {
-  countered_by_user_id?: string | null
-}
+type ProposalRow = Database['public']['Tables']['proposals']['Row']
 
-type RpcResponse<T> = {
-  data: T | null
-  error: { message: string } | null
-}
-
-type TrialRpcClient = {
-  rpc<T>(name: string, args: Record<string, unknown>): PromiseLike<RpcResponse<T>>
+function required<T>(value: T | null, field: string): T {
+  if (value === null) throw new Error(`Malformed proposal row: ${field} is null`)
+  return value
 }
 
 export class SupabaseProposalRepository implements ProposalRepository {
@@ -25,7 +20,7 @@ export class SupabaseProposalRepository implements ProposalRepository {
     const supabase = await createClient()
     const { data, error } = await supabase.from('proposals').select('*').eq('id', id).maybeSingle()
     if (error) throw new Error(`Failed to load proposal: ${error.message}`)
-    return data ? this.mapRow(data as ProposalRow) : null
+    return data ? this.mapRow(data) : null
   }
 
   async findForUser(userId: string, limit = 100): Promise<ProposalRecord[]> {
@@ -38,7 +33,7 @@ export class SupabaseProposalRepository implements ProposalRepository {
       .limit(limit)
 
     if (error) throw new Error(`Failed to load proposals: ${error.message}`)
-    return (data ?? []).map((row) => this.mapRow(row as ProposalRow))
+    return (data ?? []).map((row) => this.mapRow(row))
   }
 
   async create(input: CreateProposalDto): Promise<ProposalRecord> {
@@ -61,13 +56,12 @@ export class SupabaseProposalRepository implements ProposalRepository {
       .single()
 
     if (error) throw new Error(`Failed to create proposal: ${error.message}`)
-    return this.mapRow(data as ProposalRow)
+    return this.mapRow(data)
   }
 
   async accept(id: string): Promise<string> {
     const supabase = await createClient()
-    const rpc = supabase as unknown as TrialRpcClient
-    const { data, error } = await rpc.rpc<string>('accept_proposal_for_trial', {
+    const { data, error } = await supabase.rpc('accept_proposal_for_trial', {
       p_proposal_id: id,
     })
     if (error || !data) throw new Error(error?.message ?? 'Proposal acceptance did not create a relationship')
@@ -92,15 +86,14 @@ export class SupabaseProposalRepository implements ProposalRepository {
     input: CounterProposalDto = {},
   ): Promise<void> {
     const supabase = await createClient()
-    const rpc = supabase as unknown as TrialRpcClient
-    const { error } = await rpc.rpc<ProposalStatus>('transition_proposal_for_trial', {
+    const { error } = await supabase.rpc('transition_proposal_for_trial', {
       p_proposal_id: id,
       p_new_status: status,
-      p_message: input.message ?? null,
-      p_proposed_date: input.proposedDate ?? null,
-      p_duration: input.duration ?? null,
-      p_frequency: input.frequency ?? null,
-      p_location_method: input.locationMethod ?? null,
+      ...(input.message !== undefined ? { p_message: input.message } : {}),
+      ...(input.proposedDate !== undefined ? { p_proposed_date: input.proposedDate } : {}),
+      ...(input.duration !== undefined ? { p_duration: input.duration } : {}),
+      ...(input.frequency !== undefined ? { p_frequency: input.frequency } : {}),
+      ...(input.locationMethod !== undefined ? { p_location_method: input.locationMethod } : {}),
     })
     if (error) throw new Error(`Failed to ${status} proposal: ${error.message}`)
   }
@@ -117,10 +110,10 @@ export class SupabaseProposalRepository implements ProposalRepository {
       frequency: row.frequency ?? undefined,
       locationMethod: row.location_method ?? undefined,
       message: row.message ?? undefined,
-      status: row.status,
+      status: required(row.status, 'status'),
       counteredByUserId: row.countered_by_user_id ?? undefined,
-      createdAt: row.created_at,
-      updatedAt: row.updated_at,
+      createdAt: required(row.created_at, 'created_at'),
+      updatedAt: required(row.updated_at, 'updated_at'),
     }
   }
 }
