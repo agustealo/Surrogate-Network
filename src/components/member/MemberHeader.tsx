@@ -27,7 +27,7 @@ export function MemberHeader() {
         supabase.from('profiles').select('name,email,avatar_url,token_balance').eq('id', user.id).single(),
         supabase.from('notifications').select('id', { count: 'exact', head: true }).eq('user_id', user.id).eq('read', false),
       ]);
-      if (active && profile) setIdentity({ name: profile.name, email: profile.email, avatarUrl: profile.avatar_url, tokenBalance: profile.token_balance ?? 0, notificationCount: count ?? 0 });
+      if (active && profile) setIdentity({ name: profile.name, email: profile.email, avatarUrl: profile.avatar_url ?? undefined, tokenBalance: profile.token_balance ?? 0, notificationCount: count ?? 0 });
     })();
     return () => { active = false; };
   }, []);
