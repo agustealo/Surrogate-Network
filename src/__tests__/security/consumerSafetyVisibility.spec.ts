@@ -19,7 +19,8 @@ describe('Consumer safety visibility and deactivation boundaries', () => {
 
   async function createPrincipal(label: string): Promise<Principal> {
     const suffix = randomUUID()
-    const email = `${label}-${suffix}@test.local`
+    const emailLabel = label.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '')
+    const email = `${emailLabel}-${suffix}@test.local`
     const password = `Safety-${suffix}-Aa1!`
     const { data, error } = await service.auth.admin.createUser({
       email,
