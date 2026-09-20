@@ -1,0 +1,46 @@
+name: Bootstrap Supabase Type Snapshot
+
+on:
+  push:
+    branches:
+      - hardening/account-recovery-deletion-export-20260920
+
+permissions:
+  contents: write
+
+jobs:
+  sync-types:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout branch
+        uses: actions/checkout@v7
+        with:
+          ref: hardening/account-recovery-deletion-export-20260920
+          fetch-depth: 0
+      - name: Setup Node.js
+        uses: actions/setup-node@v7
+        with:
+          node-version: '22'
+          cache: npm
+      - name: Install dependencies
+        run: npm ci
+      - name: Install Supabase CLI
+        run: npm install -g supabase
+      - name: Start fresh Supabase runtime
+        run: supabase start
+      - name: Rebuild database from migrations
+        run: supabase db reset --no-seed
+      - name: Generate canonical database types
+        run: supabase gen types typescript --local > src/infrastructure/supabase/database.types.ts
+      - name: Commit generated snapshot
+        run: |
+          if git diff --quiet -- src/infrastructure/supabase/database.types.ts; then
+            echo 'Database type snapshot already current.'
+            exit 0
+          fi
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add src/infrastructure/supabase/database.types.ts
+          git commit -m 'chore: sync generated Supabase database types'
+          git push origin HEAD:hardening/account-recovery-deletion-export-20260920
