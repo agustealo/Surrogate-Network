@@ -11,6 +11,10 @@ type OfferDetailPageProps = {
   params: Promise<{ id: string }>
 }
 
+function formatDate(value: string | null): string {
+  return value ? new Date(value).toLocaleDateString() : 'date unavailable'
+}
+
 export default async function OfferDetailPage({ params }: OfferDetailPageProps) {
   const { id } = await params
   const supabase = await createClient()
@@ -48,7 +52,7 @@ export default async function OfferDetailPage({ params }: OfferDetailPageProps) 
         <CardHeader className="space-y-3">
           <div className="flex flex-wrap gap-2"><Badge variant="outline">{offer.category}</Badge><Badge variant="outline">{offer.location_mode}</Badge><Badge>{offer.status}</Badge></div>
           <CardTitle className="text-3xl">{offer.title}</CardTitle>
-          <p className="text-sm text-muted-foreground">Offered by <Link className="underline" href={routes.memberDynamic.profile(offer.user_id)}>{offer.user_name}</Link> · {new Date(offer.created_at).toLocaleDateString()}</p>
+          <p className="text-sm text-muted-foreground">Offered by <Link className="underline" href={routes.memberDynamic.profile(offer.user_id)}>{offer.user_name}</Link> · {formatDate(offer.created_at)}</p>
         </CardHeader>
         <CardContent className="space-y-5">
           <p className="whitespace-pre-wrap">{offer.description}</p>
