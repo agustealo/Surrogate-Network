@@ -1,17 +1,18 @@
 import type { Boundary, Database } from './database.types'
 
-type TrialConsentFields = {
+type TrialAccountFields = {
   trial_terms_version: string | null
   trial_terms_accepted_at: string | null
   trial_privacy_version: string | null
   trial_privacy_accepted_at: string | null
   trial_age_confirmed_at: string | null
+  trial_deactivated_at: string | null
 }
 
 type RuntimeProfilesTable = {
-  Row: Database['public']['Tables']['profiles']['Row'] & TrialConsentFields
-  Insert: Database['public']['Tables']['profiles']['Insert'] & Partial<TrialConsentFields>
-  Update: Database['public']['Tables']['profiles']['Update'] & Partial<TrialConsentFields>
+  Row: Database['public']['Tables']['profiles']['Row'] & TrialAccountFields
+  Insert: Database['public']['Tables']['profiles']['Insert'] & Partial<TrialAccountFields>
+  Update: Database['public']['Tables']['profiles']['Update'] & Partial<TrialAccountFields>
   Relationships: []
 }
 
