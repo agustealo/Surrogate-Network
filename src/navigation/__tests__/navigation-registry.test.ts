@@ -12,8 +12,11 @@ import { routes } from '@/lib/routes'
 
 describe('Navigation Registry', () => {
   it('advertises only implemented admin routes', () => {
-    expect(adminNavigation).toHaveLength(1)
+    const ids = adminNavigation.filter((item) => 'href' in item).map((item) => item.id)
+    expect(ids).toEqual(expect.arrayContaining(['dashboard', 'reports']))
+    expect(adminNavigation).toHaveLength(2)
     expect(adminNavigation[0]).toMatchObject({ id: 'dashboard', href: routes.admin.dashboard })
+    expect(adminNavigation[1]).toMatchObject({ id: 'reports', href: routes.admin.reports })
   })
 
   it('contains the consumer-trial member destinations', () => {
