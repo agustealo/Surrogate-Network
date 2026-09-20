@@ -16,21 +16,35 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
-
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: ${{ env.NODE_VERSION }}
           cache: npm
-
       - name: Install dependencies
         run: npm ci
-
       - name: Cache node modules
         uses: actions/cache@v4
         with:
           path: node_modules
           key: ${{ runner.os }}-node-modules-${{ hashFiles('package-lock.json') }}
+
+  dependency-audit:
+    name: DEPENDENCY AUDIT
+    runs-on: ubuntu-latest
+    needs: install
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+      - name: Install dependencies
+        run: npm ci
+      - name: Reject high or critical production dependency vulnerabilities
+        run: npm audit --omit=dev --audit-level=high
 
   typecheck:
     name: TYPECHECK
@@ -39,22 +53,18 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
-
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: ${{ env.NODE_VERSION }}
           cache: npm
-
       - name: Restore node modules from cache
         uses: actions/cache@v4
         with:
           path: node_modules
           key: ${{ runner.os }}-node-modules-${{ hashFiles('package-lock.json') }}
-
       - name: Install dependencies
         run: npm ci
-
       - name: Run TypeScript type check
         run: npm run typecheck
 
@@ -65,22 +75,18 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
-
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: ${{ env.NODE_VERSION }}
           cache: npm
-
       - name: Restore node modules from cache
         uses: actions/cache@v4
         with:
           path: node_modules
           key: ${{ runner.os }}-node-modules-${{ hashFiles('package-lock.json') }}
-
       - name: Install dependencies
         run: npm ci
-
       - name: Run ESLint
         run: npm run lint
 
@@ -91,22 +97,18 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
-
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: ${{ env.NODE_VERSION }}
           cache: npm
-
       - name: Restore node modules from cache
         uses: actions/cache@v4
         with:
           path: node_modules
           key: ${{ runner.os }}-node-modules-${{ hashFiles('package-lock.json') }}
-
       - name: Install dependencies
         run: npm ci
-
       - name: Run unit tests
         run: npm run test -- --passWithNoTests
         env:
@@ -119,22 +121,18 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
-
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: ${{ env.NODE_VERSION }}
           cache: npm
-
       - name: Restore node modules from cache
         uses: actions/cache@v4
         with:
           path: node_modules
           key: ${{ runner.os }}-node-modules-${{ hashFiles('package-lock.json') }}
-
       - name: Install dependencies
         run: npm ci
-
       - name: Run component tests
         run: npm run test:component -- --passWithNoTests
         env:
@@ -147,34 +145,26 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
-
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: ${{ env.NODE_VERSION }}
           cache: npm
-
       - name: Restore node modules from cache
         uses: actions/cache@v4
         with:
           path: node_modules
           key: ${{ runner.os }}-node-modules-${{ hashFiles('package-lock.json') }}
-
       - name: Install dependencies
         run: npm ci
-
       - name: Install Supabase CLI
         run: npm install -g supabase
-
       - name: Start Supabase and export runtime credentials
         run: |
           supabase start
-          sleep 15
           supabase status -o env | sed 's/^ANON_KEY=/NEXT_PUBLIC_SUPABASE_ANON_KEY=/' | sed 's/^API_URL=/NEXT_PUBLIC_SUPABASE_URL=/' | sed 's/^SERVICE_ROLE_KEY=/SUPABASE_SERVICE_ROLE_KEY=/' | sed 's/="\(.*\)"$/=\1/' >> "$GITHUB_ENV"
-
-      - name: Apply migrations
+      - name: Apply migrations from a clean database
         run: supabase db reset --no-seed
-
       - name: Run security regression tests
         run: npm run test:security
         env:
@@ -187,22 +177,18 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
-
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: ${{ env.NODE_VERSION }}
           cache: npm
-
       - name: Restore node modules from cache
         uses: actions/cache@v4
         with:
           path: node_modules
           key: ${{ runner.os }}-node-modules-${{ hashFiles('package-lock.json') }}
-
       - name: Install dependencies
         run: npm ci
-
       - name: Run navigation and shell ownership tests
         run: npm run test:navigation
         env:
@@ -211,32 +197,29 @@ jobs:
   build:
     name: BUILD
     runs-on: ubuntu-latest
-    needs: [typecheck, lint, test-unit, test-component, test-security, test-navigation]
+    needs: [dependency-audit, typecheck, lint, test-unit, test-component, test-security, test-navigation]
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
-
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: ${{ env.NODE_VERSION }}
           cache: npm
-
       - name: Restore node modules from cache
         uses: actions/cache@v4
         with:
           path: node_modules
           key: ${{ runner.os }}-node-modules-${{ hashFiles('package-lock.json') }}
-
       - name: Install dependencies
         run: npm ci
-
-
       - name: Build application
         run: npm run build
         env:
           NODE_ENV: production
-
+          NEXT_PUBLIC_SUPABASE_URL: http://127.0.0.1:54321
+          NEXT_PUBLIC_SUPABASE_ANON_KEY: build-only-local-key
+          SUPABASE_SERVICE_ROLE_KEY: build-only-local-service-key
       - name: Upload build artifacts
         uses: actions/upload-artifact@v4
         with:
@@ -245,49 +228,45 @@ jobs:
           retention-days: 7
 
   test-e2e:
-    name: E2E SMOKE
+    name: E2E TRIAL
     runs-on: ubuntu-latest
     needs: build
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
-
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: ${{ env.NODE_VERSION }}
           cache: npm
-
-      - name: Restore node modules from cache
-        uses: actions/cache@v4
-        with:
-          path: node_modules
-          key: ${{ runner.os }}-node-modules-${{ hashFiles('package-lock.json') }}
-
       - name: Install dependencies
         run: npm ci
-
-
-      - name: Download build artifacts
-        uses: actions/download-artifact@v4
-        with:
-          name: build-output
-          path: .next
-
-      - name: Install Playwright browsers
-        run: npx playwright install --with-deps
-
-      - name: Run E2E smoke tests
+      - name: Install Supabase CLI
+        run: npm install -g supabase
+      - name: Start fresh Supabase runtime
+        run: |
+          supabase start
+          supabase status -o env | sed 's/^ANON_KEY=/NEXT_PUBLIC_SUPABASE_ANON_KEY=/' | sed 's/^API_URL=/NEXT_PUBLIC_SUPABASE_URL=/' | sed 's/^SERVICE_ROLE_KEY=/SUPABASE_SERVICE_ROLE_KEY=/' | sed 's/="\(.*\)"$/=\1/' >> "$GITHUB_ENV"
+      - name: Rebuild database from migrations
+        run: supabase db reset --no-seed
+      - name: Build against the exact trial runtime
+        run: npm run build
+        env:
+          NODE_ENV: production
+      - name: Install Chromium
+        run: npx playwright install --with-deps chromium
+      - name: Run canonical two-member consumer journey
         run: npm run test:e2e:smoke
         env:
           CI: true
-
       - name: Upload E2E results
         uses: actions/upload-artifact@v4
         if: always()
         with:
           name: e2e-results
-          path: playwright-report/
+          path: |
+            playwright-report/
+            test-results/
           retention-days: 7
 
   accessibility:
@@ -297,103 +276,64 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
-
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: ${{ env.NODE_VERSION }}
           cache: npm
-
-      - name: Restore node modules from cache
-        uses: actions/cache@v4
-        with:
-          path: node_modules
-          key: ${{ runner.os }}-node-modules-${{ hashFiles('package-lock.json') }}
-
       - name: Install dependencies
         run: npm ci
-
-
-      - name: Download build artifacts
-        uses: actions/download-artifact@v4
-        with:
-          name: build-output
-          path: .next
-
-      - name: Install Playwright browsers
-        run: npx playwright install --with-deps
-
-      - name: Run accessibility audit
+      - name: Install Supabase CLI
+        run: npm install -g supabase
+      - name: Start fresh Supabase runtime
+        run: |
+          supabase start
+          supabase status -o env | sed 's/^ANON_KEY=/NEXT_PUBLIC_SUPABASE_ANON_KEY=/' | sed 's/^API_URL=/NEXT_PUBLIC_SUPABASE_URL=/' | sed 's/^SERVICE_ROLE_KEY=/SUPABASE_SERVICE_ROLE_KEY=/' | sed 's/="\(.*\)"$/=\1/' >> "$GITHUB_ENV"
+      - name: Rebuild database from migrations
+        run: supabase db reset --no-seed
+      - name: Build against the exact accessibility runtime
+        run: npm run build
+        env:
+          NODE_ENV: production
+      - name: Install Chromium
+        run: npx playwright install --with-deps chromium
+      - name: Run accessibility smoke audit
         run: npm run test:a11y
         env:
           CI: true
-
       - name: Upload accessibility report
         uses: actions/upload-artifact@v4
         if: always()
         with:
           name: accessibility-report
-          path: playwright-report/
+          path: |
+            playwright-report/
+            test-results/
           retention-days: 7
 
   quality-gate:
     name: QUALITY GATE
     runs-on: ubuntu-latest
-    needs: [typecheck, lint, test-unit, test-component, test-security, test-navigation, build, test-e2e, accessibility]
+    needs: [dependency-audit, typecheck, lint, test-unit, test-component, test-security, test-navigation, build, test-e2e, accessibility]
     if: always()
     steps:
       - name: Check all jobs passed
         run: |
-          if [ "${{ needs.typecheck.result }}" != "success" ]; then
-            echo "Type check failed"
-            exit 1
-          fi
-
-          if [ "${{ needs.lint.result }}" != "success" ]; then
-            echo "Lint failed"
-            exit 1
-          fi
-
-          if [ "${{ needs.test-unit.result }}" != "success" ]; then
-            echo "Unit tests failed"
-            exit 1
-          fi
-
-          if [ "${{ needs.test-component.result }}" != "success" ]; then
-            echo "Component tests failed"
-            exit 1
-          fi
-
-          if [ "${{ needs.test-security.result }}" != "success" ]; then
-            echo "Security tests failed"
-            exit 1
-          fi
-
-          if [ "${{ needs.test-navigation.result }}" != "success" ]; then
-            echo "Navigation tests failed"
-            exit 1
-          fi
-
-          if [ "${{ needs.build.result }}" != "success" ]; then
-            echo "Build failed"
-            exit 1
-          fi
-
-          if [ "${{ needs.test-e2e.result }}" != "success" ]; then
-            echo "E2E tests failed"
-            exit 1
-          fi
-
-          if [ "${{ needs.accessibility.result }}" != "success" ]; then
-            echo "Accessibility tests failed"
-            exit 1
-          fi
-
+          test "${{ needs.dependency-audit.result }}" = "success" || { echo "Production dependency audit failed"; exit 1; }
+          test "${{ needs.typecheck.result }}" = "success" || { echo "Type check failed"; exit 1; }
+          test "${{ needs.lint.result }}" = "success" || { echo "Lint failed"; exit 1; }
+          test "${{ needs.test-unit.result }}" = "success" || { echo "Unit tests failed"; exit 1; }
+          test "${{ needs.test-component.result }}" = "success" || { echo "Component tests failed"; exit 1; }
+          test "${{ needs.test-security.result }}" = "success" || { echo "Security tests failed"; exit 1; }
+          test "${{ needs.test-navigation.result }}" = "success" || { echo "Navigation tests failed"; exit 1; }
+          test "${{ needs.build.result }}" = "success" || { echo "Build failed"; exit 1; }
+          test "${{ needs.test-e2e.result }}" = "success" || { echo "E2E trial failed"; exit 1; }
+          test "${{ needs.accessibility.result }}" = "success" || { echo "Accessibility smoke failed"; exit 1; }
           echo "All quality gates passed."
-
       - name: Quality Gate Summary
         if: success()
         run: |
+          echo "Dependency audit: ${{ needs.dependency-audit.result }}"
           echo "Type check: ${{ needs.typecheck.result }}"
           echo "Lint: ${{ needs.lint.result }}"
           echo "Unit tests: ${{ needs.test-unit.result }}"
@@ -401,5 +341,5 @@ jobs:
           echo "Security tests: ${{ needs.test-security.result }}"
           echo "Navigation tests: ${{ needs.test-navigation.result }}"
           echo "Build: ${{ needs.build.result }}"
-          echo "E2E tests: ${{ needs.test-e2e.result }}"
+          echo "E2E trial: ${{ needs.test-e2e.result }}"
           echo "Accessibility: ${{ needs.accessibility.result }}"
