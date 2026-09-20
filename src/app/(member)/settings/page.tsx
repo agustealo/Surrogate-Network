@@ -1,5 +1,6 @@
 import Link from 'next/link'
 import type { Metadata } from 'next'
+import { AccountParticipationControls } from '@/components/account/AccountParticipationControls'
 import { PageWrapper } from '@/components/layout/PageWrapper'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
@@ -35,7 +36,15 @@ export default async function SettingsPage() {
 
         <Card>
           <CardHeader><CardTitle>Safety & privacy</CardTitle><CardDescription>Controls that are backed by persisted product behavior.</CardDescription></CardHeader>
-          <CardContent className="flex flex-wrap gap-3"><Button asChild variant="outline"><Link href="/settings/blocked">Blocked members</Link></Button><Button asChild variant="outline"><Link href="/privacy">Privacy</Link></Button><Button asChild variant="outline"><Link href="/terms">Terms</Link></Button><Button asChild variant="outline"><Link href="/safety">Safety</Link></Button></CardContent>
+          <CardContent className="flex flex-wrap gap-3"><Button asChild variant="outline"><Link href="/settings/blocked">Blocked members</Link></Button><Button asChild variant="outline"><Link href="/privacy">Privacy Notice</Link></Button><Button asChild variant="outline"><Link href="/terms">Trial Terms</Link></Button><Button asChild variant="outline"><Link href="/safety">Safety</Link></Button></CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader><CardTitle>Trial participation</CardTitle><CardDescription>Stop participating without misclassifying your account as a moderation suspension.</CardDescription></CardHeader>
+          <CardContent className="space-y-4">
+            <p className="text-sm text-muted-foreground">Deactivation blocks marketplace and relationship operations. It does not automatically erase records that must remain consistent for safety, audit, or other members&apos; history.</p>
+            <AccountParticipationControls mode="deactivate" />
+          </CardContent>
         </Card>
 
         <Card>
