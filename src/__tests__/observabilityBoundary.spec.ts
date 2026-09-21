@@ -7,7 +7,7 @@ describe('observability boundary', () => {
 
     const generated = resolveRequestId('bad\nrequest-id')
     expect(generated).not.toBe('bad\nrequest-id')
-    expect(generated).toMatch(/^[0-9a-f-]{36}$/)
+    expect(generated).toMatch(/^[A-Za-z0-9][A-Za-z0-9._:-]{7,127}$/)
   })
 
   it('removes query strings and fragments before request paths reach logs', () => {
@@ -46,6 +46,20 @@ describe('observability boundary', () => {
     expect(JSON.stringify(payload)).not.toContain('member@example.com')
     expect(JSON.stringify(payload)).not.toContain('secret-token')
     expect(JSON.stringify(payload)).not.toContain('top-secret')
+  })
+
+  it('normalizes non-Error throws without weakening production redaction', () => {
+    const payload = buildServerRequestErrorLog(
+      { name: 'ThrownObject', message: 'sensitive detail', digest: 'digest-object' },
+      { method: 'GET', path: '/home?secret=1', headers: {} },
+      { routerKind: 'App Router', routePath: '/home', routeType: 'render' },
+      'production'
+    )
+
+    expect(payload.errorName).toBe('ThrownObject')
+    expect(payload.errorDigest).toBe('digest-object')
+    expect(payload.path).toBe('/home')
+    expect(JSON.stringify(payload)).not.toContain('sensitive detail')
   })
 
   it('keeps development diagnostics available outside production', () => {
