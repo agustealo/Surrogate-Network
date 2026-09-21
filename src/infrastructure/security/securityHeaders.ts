@@ -1,4 +1,4 @@
-import { normalizeSupabaseUrl } from '@/infrastructure/config/runtimeConfig'
+import { normalizeSupabaseUrl } from '../config/runtimeConfig'
 
 export type SecurityHeader = {
   key: string
