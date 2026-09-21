@@ -1,7 +1,5 @@
 import { REQUEST_ID_HEADER, stripQueryAndFragment } from './requestCorrelation'
 
-type RequestErrorLike = Error & { digest?: string }
-
 type RequestLike = {
   path: string
   method: string
@@ -15,6 +13,13 @@ type RequestContextLike = {
   renderSource?: string
   revalidateReason?: string
   renderType?: string
+}
+
+type NormalizedError = {
+  name: string
+  message: string
+  stack: string | null
+  digest: string | null
 }
 
 function headerValue(
@@ -34,13 +39,41 @@ function fingerprint(value: string) {
   return (hash >>> 0).toString(16).padStart(8, '0')
 }
 
+function stringField(value: unknown, key: string) {
+  if (typeof value !== 'object' || value === null || !(key in value)) {
+    return null
+  }
+
+  const field = (value as Record<string, unknown>)[key]
+  return typeof field === 'string' ? field : null
+}
+
+function normalizeError(error: unknown): NormalizedError {
+  if (error instanceof Error) {
+    return {
+      name: error.name || 'Error',
+      message: error.message,
+      stack: error.stack ?? null,
+      digest: stringField(error, 'digest'),
+    }
+  }
+
+  return {
+    name: stringField(error, 'name') ?? 'NonErrorThrown',
+    message: stringField(error, 'message') ?? String(error),
+    stack: stringField(error, 'stack'),
+    digest: stringField(error, 'digest'),
+  }
+}
+
 export function buildServerRequestErrorLog(
-  error: RequestErrorLike,
+  error: unknown,
   request: RequestLike,
   context: RequestContextLike,
   nodeEnv = process.env.NODE_ENV
 ) {
   const production = nodeEnv === 'production'
+  const normalizedError = normalizeError(error)
 
   return {
     level: 'error',
@@ -55,20 +88,20 @@ export function buildServerRequestErrorLog(
     renderSource: context.renderSource ?? null,
     renderType: context.renderType ?? null,
     revalidateReason: context.revalidateReason ?? null,
-    errorName: error.name || 'Error',
-    errorDigest: error.digest ?? null,
-    errorFingerprint: fingerprint(`${error.name}:${error.message}`),
+    errorName: normalizedError.name,
+    errorDigest: normalizedError.digest,
+    errorFingerprint: fingerprint(`${normalizedError.name}:${normalizedError.message}`),
     ...(production
       ? {}
       : {
-          errorMessage: error.message,
-          errorStack: error.stack ?? null,
+          errorMessage: normalizedError.message,
+          errorStack: normalizedError.stack,
         }),
   }
 }
 
 export function logServerRequestError(
-  error: RequestErrorLike,
+  error: unknown,
   request: RequestLike,
   context: RequestContextLike
 ) {
