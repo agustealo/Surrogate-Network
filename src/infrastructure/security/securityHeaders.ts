@@ -1,3 +1,5 @@
+import { normalizeSupabaseUrl } from '@/infrastructure/config/runtimeConfig'
+
 export type SecurityHeader = {
   key: string
   value: string
@@ -8,17 +10,8 @@ function configuredSupabaseSources(supabaseUrl: string | undefined) {
     return { httpOrigin: null, websocketOrigin: null }
   }
 
-  let url: URL
-  try {
-    url = new URL(supabaseUrl)
-  } catch {
-    throw new Error('NEXT_PUBLIC_SUPABASE_URL must be a valid absolute URL')
-  }
-
-  if (url.protocol !== 'https:' && url.protocol !== 'http:') {
-    throw new Error('NEXT_PUBLIC_SUPABASE_URL must use http or https')
-  }
-
+  const normalizedUrl = normalizeSupabaseUrl(supabaseUrl)
+  const url = new URL(normalizedUrl)
   const websocketUrl = new URL(url.origin)
   websocketUrl.protocol = url.protocol === 'https:' ? 'wss:' : 'ws:'
 
