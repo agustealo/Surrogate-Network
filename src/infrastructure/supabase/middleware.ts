@@ -1,12 +1,24 @@
 import { createServerClient, type CookieOptions } from '@supabase/ssr'
 import { NextResponse, type NextRequest } from 'next/server'
 
+import { REQUEST_ID_HEADER, resolveRequestId } from '@/infrastructure/observability/requestCorrelation'
+
 export async function updateSession(request: NextRequest) {
-  let response = NextResponse.next({
-    request: {
-      headers: request.headers,
-    },
-  })
+  const requestId = resolveRequestId(request.headers.get(REQUEST_ID_HEADER))
+  const requestHeaders = new Headers(request.headers)
+  requestHeaders.set(REQUEST_ID_HEADER, requestId)
+
+  const createResponse = () => {
+    const nextResponse = NextResponse.next({
+      request: {
+        headers: requestHeaders,
+      },
+    })
+    nextResponse.headers.set(REQUEST_ID_HEADER, requestId)
+    return nextResponse
+  }
+
+  let response = createResponse()
 
   const supabase = createServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -22,11 +34,7 @@ export async function updateSession(request: NextRequest) {
             value,
             ...options,
           })
-          response = NextResponse.next({
-            request: {
-              headers: request.headers,
-            },
-          })
+          response = createResponse()
           response.cookies.set({
             name,
             value,
@@ -39,11 +47,7 @@ export async function updateSession(request: NextRequest) {
             value: '',
             ...options,
           })
-          response = NextResponse.next({
-            request: {
-              headers: request.headers,
-            },
-          })
+          response = createResponse()
           response.cookies.set({
             name,
             value: '',
@@ -66,7 +70,9 @@ export async function updateSession(request: NextRequest) {
   if ((isMemberRoute || request.nextUrl.pathname.startsWith('/admin')) && !user) {
     const loginUrl = new URL('/login', request.url)
     loginUrl.searchParams.set('next', request.nextUrl.pathname)
-    return NextResponse.redirect(loginUrl)
+    const redirectResponse = NextResponse.redirect(loginUrl)
+    redirectResponse.headers.set(REQUEST_ID_HEADER, requestId)
+    return redirectResponse
   }
 
   return response
