@@ -1,15 +1,10 @@
 import { createServerClient, type CookieOptions } from '@supabase/ssr'
 import { createClient as createSupabaseClient } from '@supabase/supabase-js'
 import { cookies } from 'next/headers'
-import type { Database } from './database.types'
 
-function requireEnv(name: 'NEXT_PUBLIC_SUPABASE_URL' | 'NEXT_PUBLIC_SUPABASE_ANON_KEY' | 'SUPABASE_SERVICE_ROLE_KEY'): string {
-  const value = process.env[name]
-  if (!value) {
-    throw new Error(`Missing required environment variable: ${name}`)
-  }
-  return value
-}
+import { getPublicRuntimeConfig } from '@/infrastructure/config/runtimeConfig'
+import { getServerRuntimeConfig } from '@/infrastructure/config/serverRuntimeConfig'
+import type { Database } from './database.types'
 
 /**
  * Request-scoped Supabase client. This is the canonical server client for
@@ -18,10 +13,11 @@ function requireEnv(name: 'NEXT_PUBLIC_SUPABASE_URL' | 'NEXT_PUBLIC_SUPABASE_ANO
  */
 export async function createClient() {
   const cookieStore = await cookies()
+  const config = getPublicRuntimeConfig()
 
   return createServerClient<Database>(
-    requireEnv('NEXT_PUBLIC_SUPABASE_URL'),
-    requireEnv('NEXT_PUBLIC_SUPABASE_ANON_KEY'),
+    config.supabaseUrl,
+    config.supabaseAnonKey,
     {
       cookies: {
         get(name: string) {
@@ -53,9 +49,11 @@ export async function createClient() {
  * and is reserved for narrowly-scoped trusted administrative/system reads.
  */
 export function createServiceClient() {
+  const config = getServerRuntimeConfig()
+
   return createSupabaseClient<Database>(
-    requireEnv('NEXT_PUBLIC_SUPABASE_URL'),
-    requireEnv('SUPABASE_SERVICE_ROLE_KEY'),
+    config.supabaseUrl,
+    config.supabaseServiceRoleKey,
     {
       auth: {
         autoRefreshToken: false,
