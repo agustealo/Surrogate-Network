@@ -135,6 +135,8 @@ jobs:
           supabase status -o env | sed 's/^ANON_KEY=/NEXT_PUBLIC_SUPABASE_ANON_KEY=/' | sed 's/^API_URL=/NEXT_PUBLIC_SUPABASE_URL=/' | sed 's/^SERVICE_ROLE_KEY=/SUPABASE_SERVICE_ROLE_KEY=/' | sed 's/="\(.*\)"$/=\1/' >> "$GITHUB_ENV"
       - name: Apply migrations from a clean database
         run: supabase db reset --no-seed
+      - name: Prove logical application-data recovery
+        run: bash scripts/recovery-drill.sh
       - name: Run security regression tests
         run: npm run test:security
         env:
