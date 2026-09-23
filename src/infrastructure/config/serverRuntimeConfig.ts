@@ -1,3 +1,5 @@
+import 'server-only'
+
 import { getPublicRuntimeConfig, type PublicRuntimeConfig } from './runtimeConfig'
 
 export type ServerRuntimeConfig = PublicRuntimeConfig & {
