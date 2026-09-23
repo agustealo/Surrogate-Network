@@ -23,7 +23,7 @@ describe('runtime configuration ownership', () => {
     }
   })
 
-  it('keeps the service-role secret server-only', () => {
+  it('keeps the service-role secret behind an explicit server-only module boundary', () => {
     const publicConfig = fs.readFileSync(
       path.join(process.cwd(), 'src/infrastructure/config/runtimeConfig.ts'),
       'utf8'
@@ -34,6 +34,18 @@ describe('runtime configuration ownership', () => {
     )
 
     expect(publicConfig).not.toContain('SUPABASE_SERVICE_ROLE_KEY')
+    expect(serverConfig).toContain("import 'server-only'")
     expect(serverConfig).toContain('process.env.SUPABASE_SERVICE_ROLE_KEY')
+  })
+
+  it('requires complete server configuration before reporting deployment readiness', () => {
+    const readinessRoute = fs.readFileSync(
+      path.join(process.cwd(), 'src/app/api/health/ready/route.ts'),
+      'utf8'
+    )
+
+    expect(readinessRoute).toContain('getServerRuntimeConfig')
+    expect(readinessRoute).not.toContain('getPublicRuntimeConfig')
+    expect(readinessRoute).not.toContain('createServiceClient')
   })
 })
