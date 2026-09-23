@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server'
 
-import { getPublicRuntimeConfig } from '@/infrastructure/config/runtimeConfig'
+import { getServerRuntimeConfig } from '@/infrastructure/config/serverRuntimeConfig'
 import { probeSupabaseReadiness } from '@/infrastructure/health/readiness'
 
 export const dynamic = 'force-dynamic'
@@ -10,7 +10,7 @@ export async function GET() {
   let config
 
   try {
-    config = getPublicRuntimeConfig()
+    config = getServerRuntimeConfig()
   } catch {
     return NextResponse.json(
       {
