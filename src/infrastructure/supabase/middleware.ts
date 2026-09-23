@@ -1,7 +1,10 @@
 import { createServerClient, type CookieOptions } from '@supabase/ssr'
 import { NextResponse, type NextRequest } from 'next/server'
 
+import { getPublicRuntimeConfig } from '@/infrastructure/config/runtimeConfig'
 import { REQUEST_ID_HEADER, resolveRequestId } from '@/infrastructure/observability/requestCorrelation'
+
+const HEALTH_PROBE_PATHS = new Set(['/api/health/live', '/api/health/ready'])
 
 export async function updateSession(request: NextRequest) {
   const requestId = resolveRequestId(request.headers.get(REQUEST_ID_HEADER))
@@ -18,11 +21,16 @@ export async function updateSession(request: NextRequest) {
     return nextResponse
   }
 
+  if (HEALTH_PROBE_PATHS.has(request.nextUrl.pathname)) {
+    return createResponse()
+  }
+
   let response = createResponse()
+  const config = getPublicRuntimeConfig()
 
   const supabase = createServerClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+    config.supabaseUrl,
+    config.supabaseAnonKey,
     {
       cookies: {
         get(name: string) {
