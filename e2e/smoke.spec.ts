@@ -7,13 +7,17 @@ type TrialMember = {
   password: string
 }
 
+type VisualEvidenceOptions = {
+  fullPage?: boolean
+}
+
 const visualEvidenceDirectory = 'docs/screenshots'
 
-async function captureVisualEvidence(page: Page, filename: string) {
+async function captureVisualEvidence(page: Page, filename: string, options: VisualEvidenceOptions = {}) {
   await mkdir(visualEvidenceDirectory, { recursive: true })
   await page.screenshot({
     path: `${visualEvidenceDirectory}/${filename}`,
-    fullPage: true,
+    fullPage: options.fullPage ?? false,
     animations: 'disabled',
   })
 }
@@ -101,7 +105,7 @@ test.describe('Consumer trial smoke @smoke', () => {
     await expect(page.locator('h1')).toContainText('Meaningful Connections')
     await expect(page.getByRole('link', { name: /sign in/i })).toBeVisible()
     await expect(page.getByRole('link', { name: 'Join', exact: true })).toBeVisible()
-    await captureVisualEvidence(page, '01-public-home.png')
+    await captureVisualEvidence(page, '01-public-home.png', { fullPage: true })
   })
 
   test('password recovery exchanges a real PKCE email link and changes the credential', async ({ browser }) => {
@@ -211,6 +215,7 @@ test.describe('Consumer trial smoke @smoke', () => {
       await feedbackCard.getByPlaceholder('Skill endorsements, comma-separated').fill('communication, reliability')
       await feedbackCard.getByRole('button', { name: 'Submit Feedback' }).click()
       await expect(requester.getByText('You submitted feedback for this Exchange.', { exact: true })).toBeVisible({ timeout: 20_000 })
+      await requester.getByText('Moments & Exchanges', { exact: true }).scrollIntoViewIfNeeded()
       await captureVisualEvidence(requester, '04-completed-exchange.png')
 
       await provider.goto('/surrogacies')
