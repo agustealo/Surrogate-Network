@@ -1,3 +1,5 @@
+![Surrogate Network](docs/assets/surrogate-network-banner.svg)
+
 # Surrogate Network
 
 Surrogate Network is a needs-based social companion platform for meaningful exchanges of support, companionship, and capability.
@@ -9,6 +11,20 @@ Need + Offer -> Discovery -> Proposal -> Surrogacy -> Moment -> Exchange -> Feed
 ```
 
 The product is hardened for controlled consumer trials with real persistence, explicit authority boundaries, production-oriented account lifecycle controls, runtime observability, health/readiness semantics, recovery proof, and exact-head release gates. That does **not** mean every roadmap feature or deployment-owner control is complete for unrestricted public-market launch.
+
+## Real product screenshots
+
+These screenshots are captured by the same Playwright consumer-trial path that exercises real persistence and the canonical two-member lifecycle. They are runtime evidence, not mockups or marketing comps.
+
+| Public entry | Published Need |
+| --- | --- |
+| ![Surrogate Network public home](docs/screenshots/01-public-home.png) | ![Published Need](docs/screenshots/02-published-need.png) |
+
+| Incoming Proposal | Completed Exchange |
+| --- | --- |
+| ![Incoming Proposal](docs/screenshots/03-incoming-proposal.png) | ![Completed Exchange](docs/screenshots/04-completed-exchange.png) |
+
+See [`docs/VISUAL_EVIDENCE.md`](docs/VISUAL_EVIDENCE.md) for screenshot provenance, regeneration rules, and brand-asset usage.
 
 ## Trial-ready product surface
 
@@ -142,7 +158,7 @@ The CI quality rail includes:
 
 SECURITY starts a fresh Supabase runtime, replays all migrations, runs the logical application-data recovery drill, runs security regressions, regenerates canonical database types, and rejects schema/type drift.
 
-E2E TRIAL proves the canonical two-member journey against a freshly migrated database and exercises the deployment verification contract against an exact local production build.
+E2E TRIAL proves the canonical two-member journey against a freshly migrated database, captures the documentation screenshot set from that real runtime, and exercises the deployment verification contract against an exact local production build.
 
 ## Deployment verification
 
@@ -210,9 +226,9 @@ src/
   __tests__/           security and regression coverage
 supabase/
   migrations/          canonical database/security history
-scripts/                recovery and deployment-verification tooling
+scripts/                recovery, workflow-integrity, and deployment-verification tooling
 e2e/                   Playwright trial and accessibility coverage
-docs/                  architecture, operations, recovery, development, and manifest docs
+docs/                  architecture, operations, recovery, development, visual evidence, and manifest docs
 ```
 
 ## Project rules
@@ -226,6 +242,7 @@ docs/                  architecture, operations, recovery, development, and mani
 - Exact-head CI evidence is required before merge/release claims.
 - A hosted release must be tied to an immutable deployed revision before certification.
 - Documentation must describe the repository that actually exists.
+- Product screenshots used by repository documentation must be regenerated from the real E2E runtime, not fabricated separately.
 
 Read [`docs/PROJECT_MANIFEST.md`](docs/PROJECT_MANIFEST.md) for the full methodology and release definitions.
 
@@ -233,6 +250,7 @@ Read [`docs/PROJECT_MANIFEST.md`](docs/PROJECT_MANIFEST.md) for the full methodo
 
 - [Project Manifest](docs/PROJECT_MANIFEST.md)
 - [Architecture](docs/ARCHITECTURE.md)
+- [Visual Evidence & Brand Assets](docs/VISUAL_EVIDENCE.md)
 - [Production Operations](docs/OPERATIONS_RUNBOOK.md)
 - [Production Recovery](docs/PRODUCTION_RECOVERY.md)
 - [Development Guide](docs/DEVELOPMENT.md)
