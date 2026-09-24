@@ -61,15 +61,25 @@ function assertNoCookies(response) {
   if (response.headers.get('set-cookie')) fail(`${response.url} must not set authentication/session cookies`)
 }
 
-async function request(origin, path, options = {}) {
-  const response = await fetch(new URL(path, origin), {
-    redirect: options.redirect ?? 'follow',
+async function request(origin, path) {
+  const url = new URL(path, origin)
+  const response = await fetch(url, {
+    redirect: 'manual',
     cache: 'no-store',
     signal: AbortSignal.timeout(10_000),
     headers: {
       'user-agent': 'surrogate-network-deployment-verifier/1',
     },
   })
+
+  if (new URL(response.url).origin !== origin) {
+    fail(`${path} escaped the deployment origin`)
+  }
+  if (response.status >= 300 && response.status < 400) {
+    const location = response.headers.get('location')
+    fail(`${path} redirected${location ? ` to ${location}` : ''}; verify the canonical deployment origin directly`)
+  }
+
   return response
 }
 
@@ -160,7 +170,7 @@ async function main() {
 
   console.log(`Deployment verified: ${origin}`)
   console.log(`Revision verified: ${expectedRevision}`)
-  console.log('Checks: liveness, dependency readiness, request correlation, no-store health, public auth surface, CSP, anti-framing, content-sniffing, referrer, permissions, and HSTS')
+  console.log('Checks: same-origin/no-redirect responses, liveness, dependency readiness, request correlation, no-store health, public auth surface, CSP, anti-framing, content-sniffing, referrer, permissions, and HSTS')
 }
 
 main().catch((error) => {

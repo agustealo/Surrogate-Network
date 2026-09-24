@@ -2,13 +2,15 @@
 
 ## Current status
 
-**Current baseline:** `master@db2675221f6b81b8621088a8732b5c42f40dc8b6`
+**Verified parent baseline entering this slice:** `master@db2675221f6b81b8621088a8732b5c42f40dc8b6`
 
-**Post-merge evidence:** GitHub Actions run **#272** completed successfully on September 24, 2026.
+**Parent post-merge evidence:** GitHub Actions run **#272** completed successfully on September 24, 2026.
 
 That run passed the full quality rail, including logical application-data recovery, SECURITY, zero schema/type drift, BUILD, E2E TRIAL, A11Y, and QUALITY GATE.
 
-This file is the current engineering status sheet. Historical candidate SHAs and already-closed gaps are intentionally not presented as open work.
+This file is the current engineering status sheet. The SHA above records the independently verified parent from which the active slice started; it is not meant to chase every future merge commit. The active PR/run is the authority for the current candidate's exact-head evidence.
+
+Historical candidate SHAs and already-closed gaps are intentionally not presented as open work.
 
 ## Product objective
 
@@ -120,6 +122,7 @@ This slice adds:
 
 - immutable release revision metadata on health responses;
 - a read-only `scripts/verify-deployment.mjs` deployment verifier;
+- same-origin/no-redirect verification so a supplied deployment origin cannot silently certify a different target;
 - a manual GitHub Actions **Deployment Verification** workflow tied to the exact workflow SHA;
 - local CI proof that the verifier accepts the correct revision and rejects the wrong one;
 - production incident/support/rollback playbooks;

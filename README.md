@@ -148,7 +148,7 @@ E2E TRIAL proves the canonical two-member journey against a freshly migrated dat
 
 A hosted deployment must be checked independently from repository CI.
 
-Run **Deployment Verification** from GitHub Actions on the exact revision intended to be live and provide the target deployment origin. The workflow rejects a target whose reported release revision does not equal the exact workflow SHA.
+Run **Deployment Verification** from GitHub Actions on the exact revision intended to be live and provide the canonical target deployment origin. The workflow rejects redirects to a different route/origin and rejects a target whose reported release revision does not equal the exact workflow SHA.
 
 Manual equivalent:
 
@@ -156,7 +156,7 @@ Manual equivalent:
 npm run verify:deployment -- https://app.example.com <exact-git-sha>
 ```
 
-The verifier is read-only. It checks liveness, dependency readiness, exact revision provenance, request correlation, health caching/cookie behavior, public auth/recovery surfaces, CSP, anti-framing/content-sniffing/referrer/permissions headers, and HSTS.
+The verifier is read-only. It checks same-origin/no-redirect responses, liveness, dependency readiness, exact revision provenance, request correlation, health caching/cookie behavior, public auth/recovery surfaces, CSP, anti-framing/content-sniffing/referrer/permissions headers, and HSTS.
 
 If the hosting provider does not expose `VERCEL_GIT_COMMIT_SHA` or `GITHUB_SHA` to the runtime, set the non-secret `SURROGATE_RELEASE_SHA` to the exact deployed git revision.
 
@@ -168,21 +168,21 @@ The SECURITY rail runs `scripts/recovery-drill.sh`, which proves that canonical 
 
 That drill does not prove Supabase-managed Auth, provider backup/PITR policy, or a full production project restore. See [`docs/PRODUCTION_RECOVERY.md`](docs/PRODUCTION_RECOVERY.md).
 
-## Current exact-head evidence
+## Verified parent evidence for the active operations slice
 
-On September 24, 2026, merged `master` commit:
+The active deployment-operations slice started from merged `master` commit:
 
 ```text
 db2675221f6b81b8621088a8732b5c42f40dc8b6
 ```
 
-passed post-merge CI run **#272**, including the recovery drill, SECURITY, zero schema/type drift, BUILD, E2E TRIAL, A11Y, and QUALITY GATE.
+Post-merge CI run **#272** passed on that parent, including the recovery drill, SECURITY, zero schema/type drift, BUILD, E2E TRIAL, A11Y, and QUALITY GATE.
 
-This is repository evidence for that exact merged baseline. Any later commit must earn its own exact-head green evidence.
+This records the independently verified parent, not a permanently self-updating “latest SHA.” Each later candidate/merge must earn its own exact-head evidence in GitHub Actions and its PR record.
 
 ## Readiness boundary
 
-The repository now covers the core consumer lifecycle, account recovery/export/deletion, structured runtime error observability, request correlation, runtime configuration ownership, liveness/readiness, logical application-data recovery, and exact-head CI.
+The repository covers the core consumer lifecycle, account recovery/export/deletion, structured runtime error observability, request correlation, runtime configuration ownership, liveness/readiness, logical application-data recovery, and exact-head CI.
 
 Remaining unrestricted-launch work is primarily deployment/governance/operations-specific:
 
