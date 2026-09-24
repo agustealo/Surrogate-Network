@@ -2,25 +2,27 @@
 
 ## Current status
 
-**Verified parent baseline entering this slice:** `master@db2675221f6b81b8621088a8732b5c42f40dc8b6`
+**Current production line:** `master@926c862393bcb12a5b258c02ed159a7604ad6570`
 
-**Parent post-merge evidence:** GitHub Actions run **#272** completed successfully on September 24, 2026.
+**Latest post-merge evidence:** GitHub Actions run **#308** completed successfully on September 24, 2026.
 
-That run passed the full quality rail, including logical application-data recovery, SECURITY, zero schema/type drift, BUILD, E2E TRIAL, A11Y, and QUALITY GATE.
+That run passed the full repository quality rail on the exact merge commit, including immutable workflow dependency verification, logical application-data recovery, SECURITY, zero schema/type drift, BUILD, the canonical two-member E2E trial, runtime visual-evidence generation, deployment-verifier proof, A11Y, and QUALITY GATE.
 
-This file is the current engineering status sheet. The SHA above records the independently verified parent from which the active slice started; it is not meant to chase every future merge commit. The active PR/run is the authority for the current candidate's exact-head evidence.
+PR **#10** merged from exact green head `45036cc3a3c3e5dedbc217e680beb51b4a7a56e8` after run **#307** passed the same release rail. There are currently no open code PRs.
 
-Historical candidate SHAs and already-closed gaps are intentionally not presented as open work.
+The remaining unrestricted-launch blockers are tracked in **issue #11, “Launch certification: hosted verification and operating controls.”** They are deployment, provider, repository-governance, and human-operations gates rather than missing core application architecture.
+
+This file is the current engineering status sheet. Historical candidate SHAs remain useful evidence, but a superseded SHA is never used to certify a newer candidate.
 
 ## Product objective
 
-Surrogate Network remains centered on one canonical consumer lifecycle:
+Surrogate Network is centered on one canonical consumer lifecycle:
 
 ```text
 Need + Offer -> Discovery -> Proposal -> Surrogacy -> Moment -> Exchange -> Feedback
 ```
 
-The engineering rule is unchanged: visible controls execute real persisted behavior, or they remain absent/truthfully unavailable.
+The engineering rule remains strict: visible controls execute real persisted behavior, or they remain absent/truthfully unavailable.
 
 ## Completed product/runtime authority
 
@@ -49,7 +51,7 @@ The engineering rule is unchanged: visible controls execute real persisted behav
 
 ### Account lifecycle
 
-- Password recovery uses real Supabase email + PKCE callback exchange.
+- Password recovery uses real Supabase email + PKCE callback exchange in the local integration rail.
 - Password update is recovery-session gated.
 - Members can download a machine-readable data export.
 - Reversible deactivation is separate from permanent deletion.
@@ -65,6 +67,7 @@ The engineering rule is unchanged: visible controls execute real persisted behav
 - `/api/health/live` is dependency-independent process liveness.
 - `/api/health/ready` proves required config plus the real anonymous Supabase data plane.
 - Health probes remain no-store and request-correlated.
+- Health responses expose immutable release provenance when deployment metadata is configured.
 
 ### Observability and browser security
 
@@ -80,6 +83,33 @@ The engineering rule is unchanged: visible controls execute real persisted behav
 - SECURITY starts from a fresh Supabase runtime and replays every migration.
 - `scripts/recovery-drill.sh` proves logical `public` application-data recovery through seed -> dump -> destructive rebuild -> transactional restore -> fingerprint verification -> pristine rebuild.
 - `docs/PRODUCTION_RECOVERY.md` defines the boundary between repository-owned logical recovery and Supabase/provider recovery.
+
+### Hosted-release verification tooling
+
+- `scripts/verify-deployment.mjs` provides a read-only hosted-runtime verifier.
+- Verification is same-origin/no-redirect and HTTPS-only for hosted certification.
+- Liveness, readiness, security headers, public auth/recovery surfaces, request correlation, and exact release revision are checked.
+- The manual **Deployment Verification** workflow expects the exact `${{ github.sha }}` revision.
+- CI proves the verifier accepts the correct revision and rejects an incorrect revision against the exact local production build.
+
+This tooling does **not** claim a production environment has been verified until it runs against the actual hosted production origin.
+
+### Release reproducibility
+
+- External GitHub Actions used by the release workflows are pinned to immutable commit SHAs.
+- Supabase CLI installs in CI are pinned to an exact version.
+- `scripts/verify-workflow-pins.mjs` rejects mutable external action refs and unpinned Supabase CLI installs.
+- Local composite actions are recursively inspected so mutable dependencies cannot hide behind `./...` action references.
+
+### Visual/documentation evidence
+
+- Canonical brand assets live under `docs/assets/`.
+- The README includes the branded Surrogate Network header/banner.
+- Real product screenshots originate from the same Playwright consumer-trial lifecycle used for release proof.
+- Source PNG captures are generated and uploaded during E2E for review.
+- Reviewed, web-optimized WebP derivatives are committed under `docs/screenshots/` for README/manuscript use.
+- Screenshot capture uses synthetic trial identities and excludes production member data/secrets.
+- The first evidence review also exposed and removed false member-header affordances and user-facing brand drift before publication.
 
 ### Media cleanup
 
@@ -107,56 +137,63 @@ Every release candidate must pass on the exact candidate SHA:
 8. NAVIGATION
 9. BUILD
 10. E2E TRIAL
+    - canonical two-member consumer lifecycle
+    - source screenshot evidence generation
+    - visual-evidence file assertions/upload
+    - local production deployment-verifier proof
 11. A11Y
 12. QUALITY GATE
 
 Evidence from a superseded SHA is historical only.
 
-## Current hardening slice
+## Remaining launch gates
 
-### Deployment verification + operations
+The remaining launch work is tracked by **issue #11** and should not be converted into speculative feature work.
 
-The next repository-owned boundary is operational proof for the actual hosted artifact.
+### 1. Repository governance
 
-This slice adds:
-
-- immutable release revision metadata on health responses;
-- a read-only `scripts/verify-deployment.mjs` deployment verifier;
-- same-origin/no-redirect verification so a supplied deployment origin cannot silently certify a different target;
-- a manual GitHub Actions **Deployment Verification** workflow tied to the exact workflow SHA;
-- local CI proof that the verifier accepts the correct revision and rejects the wrong one;
-- production incident/support/rollback playbooks;
-- current-truth README/manifest/architecture/sprint convergence.
-
-This tooling does **not** claim a production environment has been verified until the manual workflow is run against the real hosted target.
-
-## Remaining launch gates after this slice
-
-### Repository governance
-
-- Protect the default branch.
+- Protect `master`.
 - Require PR-based changes and aggregate `QUALITY GATE` before merge.
-- Prevent direct pushes that bypass exact-head evidence.
+- Prevent direct pushes that bypass exact-head evidence except explicitly authorized emergency administration.
 
-The current GitHub App connection does not expose repository-administration writes, so branch protection remains an external admin action.
+**Current state:** GitHub reports `master` as `protected: false` with no enforced required checks. The current ChatGPT GitHub action set exposes branch protection as a read but does not expose the repository-administration write needed to enable it.
 
-### Actual production deployment evidence
+### 2. Actual production deployment evidence
 
-- Run Deployment Verification against the real production origin from the exact deployed revision.
-- Ensure the runtime exposes immutable release provenance through `SURROGATE_RELEASE_SHA`, `VERCEL_GIT_COMMIT_SHA`, or `GITHUB_SHA`.
-- Verify real outbound password-recovery email/domain delivery with a designated production smoke account.
+- Deploy an explicitly certified release SHA to the real production origin.
+- Run **Deployment Verification** against that HTTPS origin from the exact deployed revision.
+- Record the production origin, workflow run, and exact deployed SHA.
+- Ensure the runtime exposes release provenance through `SURROGATE_RELEASE_SHA`, `VERCEL_GIT_COMMIT_SHA`, or `GITHUB_SHA`.
 
-### Provider recovery
+**Current state:** no canonical production origin is recorded in repository metadata/docs or surfaced by the external discovery pass, so no hosted verification claim is being made.
 
-- Record the selected Supabase backup retention/PITR policy.
+### 3. Real production password-recovery delivery
+
+- Use an approved production smoke account.
+- Prove provider-delivered recovery email receipt.
+- Complete the production callback/PKCE exchange and password change.
+- Prove the old credential no longer authenticates.
+- Keep tokens/recovery links out of public logs and documentation.
+
+### 4. Provider recovery
+
+- Record the production Supabase backup retention/PITR policy.
 - Perform a provider-level restore rehearsal into an isolated recovery project.
-- Record achieved recovery point/time and any managed Auth/provider limitations.
+- Validate managed Auth plus application-owned relational data.
+- Record measured RPO/RTO and provider limits.
 
-### Operating organization
+### 5. Operating organization
 
-- Assign on-call/incident ownership and alert destinations.
-- Assign moderation/safety escalation ownership.
-- Define approved support/contact channels and organization-specific privacy/compliance procedures.
+Assign and record ownership for:
+
+- on-call / incident command;
+- external alert destination and monitoring;
+- moderation/safety escalation;
+- support channel;
+- privacy/compliance requests;
+- deployment and rollback authority.
+
+Test the escalation path once before unrestricted launch.
 
 ### Deferred product features
 
@@ -178,7 +215,18 @@ Do not add these systems merely to make the product look larger.
 9. Hosted release claims require exact deployed-revision evidence.
 10. Public/member/admin surface separation remains enforced.
 11. Documentation must move with runtime/architecture truth.
+12. Product screenshots used by documentation must originate from real runtime evidence and be reviewed before durable promotion.
 
 ## Next engineering decision
 
-After deployment-operations tooling is independently green, do **not** reopen the proven core lifecycle without evidence. The next choice should be driven by the remaining external launch gates above or by a concrete consumer defect, not feature accumulation.
+Do **not** reopen the proven core lifecycle without a concrete defect or consumer-trial finding.
+
+The next work should come from issue #11 in this order:
+
+1. protect `master` and require `QUALITY GATE`;
+2. deploy an exact certified revision and run hosted Deployment Verification;
+3. prove real production password-recovery email delivery;
+4. run the Supabase provider-level restore/PITR rehearsal;
+5. assign and test the human operating/escalation layer.
+
+Until those gates are closed, additional feature accumulation is not release progress.
