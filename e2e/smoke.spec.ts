@@ -27,7 +27,7 @@ async function captureVisualEvidence(page: Page, filename: string, options: Visu
   })
 }
 
-async function signUp(page: Page, member: TrialMember) {
+async function signUp(page: Page, member: TrialMember): Promise<string> {
   await page.goto('/signup')
   await page.getByLabel('Full Name').fill(member.name)
   await page.getByLabel('Email Address').fill(member.email)
@@ -36,6 +36,7 @@ async function signUp(page: Page, member: TrialMember) {
   await page.getByRole('checkbox').check()
   await page.getByRole('button', { name: 'Create Account' }).click()
   await page.waitForURL(/\/profile\//, { timeout: 20_000 })
+  return page.url()
 }
 
 async function signIn(page: Page, member: TrialMember) {
@@ -110,7 +111,15 @@ test.describe('Consumer trial smoke @smoke', () => {
     await expect(page.locator('h1')).toContainText('Meaningful Connections')
     await expect(page.getByRole('link', { name: /sign in/i })).toBeVisible()
     await expect(page.getByRole('link', { name: 'Join', exact: true })).toBeVisible()
-    await captureVisualEvidence(page, '01-public-home.png', { fullPage: true })
+    await captureVisualEvidence(page, '01-public-home.png')
+
+    await page.goto('/how-it-works')
+    await expect(page.getByRole('heading', { name: 'How It Works' })).toBeVisible()
+    await captureVisualEvidence(page, '02-how-it-works.png', { fullPage: true })
+
+    await page.goto('/safety')
+    await expect(page.getByRole('heading', { name: /Safety/i })).toBeVisible()
+    await captureVisualEvidence(page, '03-safety.png', { fullPage: true })
   })
 
   test('password recovery exchanges a real PKCE email link and changes the credential', async ({ browser }) => {
@@ -151,7 +160,7 @@ test.describe('Consumer trial smoke @smoke', () => {
     }
   })
 
-  test('two real members can complete the canonical marketplace lifecycle, export data, and preserve shared history after deletion', async ({ browser }) => {
+  test('two real members complete the canonical marketplace lifecycle and expose the showcase product surfaces', async ({ browser }) => {
     const runId = `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`
     const memberA: TrialMember = {
       name: 'Alex Carter',
@@ -177,26 +186,28 @@ test.describe('Consumer trial smoke @smoke', () => {
       await signUp(requester, memberB)
       const needUrl = await createNeed(requester, needTitle)
       await requester.evaluate(() => window.scrollTo(0, 0))
-      await captureVisualEvidence(requester, '02-published-need.png')
+      await captureVisualEvidence(requester, '06-published-need.png')
 
-      await signUp(provider, memberA)
-      await createOffer(provider, offerTitle)
+      const providerProfileUrl = await signUp(provider, memberA)
+      const offerUrl = await createOffer(provider, offerTitle)
+      await provider.evaluate(() => window.scrollTo(0, 0))
+      await captureVisualEvidence(provider, '07-published-offer.png')
 
       await provider.goto('/discover')
       await expect(provider.getByRole('heading', { name: 'Discover', exact: true })).toBeVisible()
       await expect(provider.getByText(needTitle, { exact: true })).toBeVisible()
       await expect(provider.getByText(offerTitle, { exact: true })).toBeVisible()
       await provider.evaluate(() => window.scrollTo(0, 0))
-      await captureVisualEvidence(provider, '03-discovery-marketplace.png')
+      await captureVisualEvidence(provider, '05-discovery-marketplace.png')
 
       await provider.goto(needUrl)
       const composer = provider.getByText('Make a proposal', { exact: true }).locator('..').locator('..')
       await composer.getByRole('combobox').click()
       await provider.getByRole('option', { name: offerTitle }).click()
-      await composer.getByPlaceholder('Add context for the other member').fill('Consumer trial proposal with explicit persisted terms.')
+      await composer.getByPlaceholder('Add context for the other member').fill('I can help turn your weekly priorities into a practical plan and keep the conversation focused on next steps.')
       await composer.scrollIntoViewIfNeeded()
       await provider.evaluate(() => window.scrollBy(0, -180))
-      await captureVisualEvidence(provider, '04-proposal-composer.png')
+      await captureVisualEvidence(provider, '08-proposal-composer.png')
       await composer.getByRole('button', { name: 'Send proposal' }).click()
       await provider.waitForURL(/\/proposals$/, { timeout: 20_000 })
       await expect(provider.getByText(`${needTitle} ↔ ${offerTitle}`, { exact: true })).toBeVisible()
@@ -206,21 +217,39 @@ test.describe('Consumer trial smoke @smoke', () => {
       const incomingProposal = incomingProposalTitle.locator('..').locator('..')
       await expect(incomingProposal.getByText('Incoming', { exact: true })).toBeVisible()
       await requester.evaluate(() => window.scrollTo(0, 0))
-      await captureVisualEvidence(requester, '05-incoming-proposal.png')
+      await captureVisualEvidence(requester, '09-incoming-proposal.png')
       await incomingProposal.getByRole('button', { name: 'Accept' }).click()
       await requester.waitForURL(/\/surrogacies\/[0-9a-f-]{36}$/i, { timeout: 20_000 })
       const surrogacyUrl = requester.url()
       await expect(requester.getByText(`${needTitle} ↔ ${offerTitle}`, { exact: true })).toBeVisible()
       await requester.evaluate(() => window.scrollTo(0, 0))
-      await captureVisualEvidence(requester, '06-active-surrogacy.png')
+      await captureVisualEvidence(requester, '11-active-surrogacy.png')
 
+      await requester.goto('/home')
+      await expect(requester.getByRole('heading', { name: 'Your network' })).toBeVisible()
+      await expect(requester.getByText('Active Surrogacies')).toBeVisible()
+      await requester.evaluate(() => window.scrollTo(0, 0))
+      await captureVisualEvidence(requester, '04-member-dashboard.png')
+
+      await requester.goto(providerProfileUrl)
+      await expect(requester.getByRole('heading', { name: memberA.name })).toBeVisible()
+      await expect(requester.getByText(offerTitle, { exact: true })).toBeVisible()
+      const safetyControls = requester.getByText('Safety controls', { exact: true }).locator('..').locator('..')
+      await safetyControls.getByRole('button', { name: 'Report' }).click()
+      await safetyControls.getByPlaceholder('Describe what happened and include relevant context.').fill('Persistent contact after I declined an additional request.')
+      await requester.evaluate(() => window.scrollTo(0, 0))
+      await captureVisualEvidence(requester, '10-member-profile-safety.png', { fullPage: true })
+      await safetyControls.getByRole('button', { name: 'Submit report' }).click()
+      await expect(requester.getByText('Report submitted', { exact: true })).toBeVisible({ timeout: 20_000 })
+
+      await requester.goto(surrogacyUrl)
       const scheduler = requester.getByText('Schedule a Moment', { exact: true }).locator('..').locator('..')
       const momentTime = new Date(Date.now() - 5 * 60_000)
       const localDateTime = momentTime.toISOString().slice(0, 16)
       await scheduler.locator('input[type="datetime-local"]').fill(localDateTime)
       await scheduler.getByRole('spinbutton').fill('30')
       await scheduler.getByPlaceholder('Video call, coffee shop, address, etc.').fill('Video call')
-      await scheduler.getByPlaceholder('Shared notes or expectations').fill('Consumer trial exchange proof.')
+      await scheduler.getByPlaceholder('Shared notes or expectations').fill('Review weekly priorities and leave with three concrete next actions.')
       await scheduler.getByRole('button', { name: 'Schedule Moment' }).click()
       await expect(requester.getByText('Moment: scheduled', { exact: true })).toBeVisible({ timeout: 20_000 })
 
@@ -230,13 +259,13 @@ test.describe('Consumer trial smoke @smoke', () => {
 
       const feedbackTitle = requester.getByText(`Feedback for ${memberA.name}`, { exact: true })
       const feedbackCard = feedbackTitle.locator('..').locator('..')
-      await feedbackCard.getByPlaceholder('Optional comments').fill('Completed successfully during the consumer-trial E2E proof.')
-      await feedbackCard.getByPlaceholder('Skill endorsements, comma-separated').fill('communication, reliability')
+      await feedbackCard.getByPlaceholder('Optional comments').fill('Clear, thoughtful, and easy to plan with. We left the session with concrete next steps.')
+      await feedbackCard.getByPlaceholder('Skill endorsements, comma-separated').fill('communication, reliability, planning')
       await feedbackCard.getByRole('button', { name: 'Submit Feedback' }).click()
       await expect(requester.getByText('You submitted feedback for this Exchange.', { exact: true })).toBeVisible({ timeout: 20_000 })
       await requester.getByText('Moments & Exchanges', { exact: true }).scrollIntoViewIfNeeded()
       await requester.evaluate(() => window.scrollBy(0, -260))
-      await captureVisualEvidence(requester, '07-completed-exchange.png')
+      await captureVisualEvidence(requester, '12-completed-exchange-feedback.png')
 
       await provider.goto('/surrogacies')
       await expect(provider.getByText(`${needTitle} ↔ ${offerTitle}`, { exact: true })).toBeVisible()
@@ -245,7 +274,7 @@ test.describe('Consumer trial smoke @smoke', () => {
       await expect(provider.getByRole('link', { name: 'Download my data' })).toBeVisible()
       await expect(provider.getByRole('button', { name: 'Delete account' })).toBeVisible()
       await provider.evaluate(() => window.scrollTo(0, 0))
-      await captureVisualEvidence(provider, '08-account-controls.png', { fullPage: true })
+      await captureVisualEvidence(provider, '13-account-privacy-controls.png', { fullPage: true })
 
       const downloadPromise = provider.waitForEvent('download')
       await provider.getByRole('link', { name: 'Download my data' }).click()
@@ -260,6 +289,10 @@ test.describe('Consumer trial smoke @smoke', () => {
       expect(exported.surrogacies.length).toBeGreaterThan(0)
       expect(exported.offers.some((offer) => offer.title === offerTitle)).toBe(true)
 
+      await provider.goto(offerUrl)
+      await expect(provider.getByText(offerTitle, { exact: true })).toBeVisible()
+
+      await provider.goto('/settings')
       await provider.getByRole('button', { name: 'Delete account' }).click()
       await provider.getByLabel('Current password').fill(memberA.password)
       await provider.getByLabel('Type DELETE to confirm').fill('DELETE')
