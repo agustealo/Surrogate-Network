@@ -1,0 +1,72 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1600" height="520" viewBox="0 0 1600 520" role="img" aria-labelledby="title desc">
+  <title id="title">Surrogate Network</title>
+  <desc id="desc">Branded documentation banner for Surrogate Network using the product's royal violet and vibrant pink visual system.</desc>
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1600" y2="520" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#17171C"/>
+      <stop offset="0.62" stop-color="#2A1737"/>
+      <stop offset="1" stop-color="#451B45"/>
+    </linearGradient>
+    <linearGradient id="brand" x1="160" y1="120" x2="520" y2="420" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#A049DF"/>
+      <stop offset="1" stop-color="#F25A99"/>
+    </linearGradient>
+    <radialGradient id="glowA" cx="0" cy="0" r="1" gradientTransform="translate(1220 40) rotate(132) scale(520 420)" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#A049DF" stop-opacity="0.34"/>
+      <stop offset="1" stop-color="#A049DF" stop-opacity="0"/>
+    </radialGradient>
+    <radialGradient id="glowB" cx="0" cy="0" r="1" gradientTransform="translate(1430 410) rotate(-152) scale(430 300)" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#F25A99" stop-opacity="0.28"/>
+      <stop offset="1" stop-color="#F25A99" stop-opacity="0"/>
+    </radialGradient>
+    <filter id="shadow" x="-30%" y="-30%" width="160%" height="160%">
+      <feDropShadow dx="0" dy="16" stdDeviation="24" flood-color="#000" flood-opacity="0.28"/>
+    </filter>
+  </defs>
+
+  <rect width="1600" height="520" rx="42" fill="url(#bg)"/>
+  <rect width="1600" height="520" rx="42" fill="url(#glowA)"/>
+  <rect width="1600" height="520" rx="42" fill="url(#glowB)"/>
+
+  <g opacity="0.17" stroke="#CC99E6" stroke-width="2">
+    <path d="M1030 122 L1160 82 L1270 158 L1390 94 L1518 142"/>
+    <path d="M1010 320 L1130 250 L1250 302 L1378 238 L1510 330"/>
+    <path d="M1115 420 L1210 355 L1330 410 L1450 350"/>
+  </g>
+  <g opacity="0.55" fill="#F9F9FB">
+    <circle cx="1030" cy="122" r="5"/>
+    <circle cx="1160" cy="82" r="7"/>
+    <circle cx="1270" cy="158" r="5"/>
+    <circle cx="1390" cy="94" r="8"/>
+    <circle cx="1518" cy="142" r="5"/>
+    <circle cx="1010" cy="320" r="5"/>
+    <circle cx="1130" cy="250" r="8"/>
+    <circle cx="1250" cy="302" r="6"/>
+    <circle cx="1378" cy="238" r="7"/>
+    <circle cx="1510" cy="330" r="5"/>
+  </g>
+
+  <g transform="translate(120 92)" filter="url(#shadow)">
+    <rect width="300" height="300" rx="82" fill="#F9F9FB"/>
+    <path d="M76 78 C126 38 197 55 213 102 C229 145 190 166 149 169 C108 172 76 188 86 225 C96 261 158 269 207 235" fill="none" stroke="url(#brand)" stroke-width="25" stroke-linecap="round"/>
+    <g fill="#F9F9FB" stroke="url(#brand)" stroke-width="10">
+      <circle cx="76" cy="78" r="22"/>
+      <circle cx="213" cy="102" r="22"/>
+      <circle cx="149" cy="169" r="22"/>
+      <circle cx="86" cy="225" r="22"/>
+      <circle cx="207" cy="235" r="22"/>
+    </g>
+    <circle cx="149" cy="169" r="9" fill="#F25A99"/>
+  </g>
+
+  <g font-family="Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif" fill="#F9F9FB">
+    <text x="500" y="218" font-size="74" font-weight="760" letter-spacing="-2">Surrogate Network</text>
+    <text x="505" y="278" font-size="28" font-weight="500" fill="#E9DDF1">Meaningful connections built around real needs and real offers.</text>
+    <text x="505" y="334" font-size="21" font-weight="500" fill="#CC99E6">Need + Offer → Discovery → Proposal → Surrogacy → Moment → Exchange → Feedback</text>
+  </g>
+
+  <g transform="translate(505 378)">
+    <rect width="230" height="48" rx="24" fill="#A049DF" fill-opacity="0.16" stroke="#A049DF" stroke-opacity="0.58"/>
+    <text x="24" y="31" font-family="Inter, ui-sans-serif, system-ui, sans-serif" font-size="17" font-weight="650" fill="#F3E8FF">Consumer trial candidate</text>
+  </g>
+</svg>

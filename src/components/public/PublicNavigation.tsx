@@ -1,15 +1,16 @@
 import Link from 'next/link'
 import { BookOpen, Heart, LogIn, Network, Shield, UserPlus } from 'lucide-react'
 import { Button } from '@/components/ui/button'
+import { BRAND_HOME_LABEL, BRAND_NAME } from '@/lib/brand'
 import { routes } from '@/lib/routes'
 
 export function PublicNavigation() {
   return (
     <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
       <div className="container mx-auto flex min-h-16 flex-wrap items-center justify-between gap-2 px-4 py-2 sm:px-6 lg:px-8">
-        <Link href={routes.public.home} className="flex items-center gap-2" aria-label="Surrogate Companion home">
+        <Link href={routes.public.home} className="flex items-center gap-2" aria-label={BRAND_HOME_LABEL}>
           <Network className="h-7 w-7 text-primary" />
-          <span className="text-xl font-bold text-foreground">Surrogate Companion</span>
+          <span className="text-xl font-bold text-foreground">{BRAND_NAME}</span>
         </Link>
 
         <nav aria-label="Primary navigation" className="hidden items-center gap-1 md:flex">

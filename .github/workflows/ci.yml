@@ -15,9 +15,9 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
-        uses: actions/checkout@v7
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
       - name: Setup Node.js
-        uses: actions/setup-node@v7
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7
         with:
           node-version: ${{ env.NODE_VERSION }}
           cache: npm
@@ -30,14 +30,16 @@ jobs:
     needs: install
     steps:
       - name: Checkout code
-        uses: actions/checkout@v7
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
       - name: Setup Node.js
-        uses: actions/setup-node@v7
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7
         with:
           node-version: ${{ env.NODE_VERSION }}
           cache: npm
       - name: Install dependencies
         run: npm ci
+      - name: Verify workflow dependency pins
+        run: node scripts/verify-workflow-pins.mjs
       - name: Reject high or critical production dependency vulnerabilities
         run: npm audit --omit=dev --audit-level=high
 
@@ -47,9 +49,9 @@ jobs:
     needs: install
     steps:
       - name: Checkout code
-        uses: actions/checkout@v7
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
       - name: Setup Node.js
-        uses: actions/setup-node@v7
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7
         with:
           node-version: ${{ env.NODE_VERSION }}
           cache: npm
@@ -64,9 +66,9 @@ jobs:
     needs: install
     steps:
       - name: Checkout code
-        uses: actions/checkout@v7
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
       - name: Setup Node.js
-        uses: actions/setup-node@v7
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7
         with:
           node-version: ${{ env.NODE_VERSION }}
           cache: npm
@@ -81,9 +83,9 @@ jobs:
     needs: install
     steps:
       - name: Checkout code
-        uses: actions/checkout@v7
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
       - name: Setup Node.js
-        uses: actions/setup-node@v7
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7
         with:
           node-version: ${{ env.NODE_VERSION }}
           cache: npm
@@ -100,9 +102,9 @@ jobs:
     needs: install
     steps:
       - name: Checkout code
-        uses: actions/checkout@v7
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
       - name: Setup Node.js
-        uses: actions/setup-node@v7
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7
         with:
           node-version: ${{ env.NODE_VERSION }}
           cache: npm
@@ -119,16 +121,16 @@ jobs:
     needs: install
     steps:
       - name: Checkout code
-        uses: actions/checkout@v7
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
       - name: Setup Node.js
-        uses: actions/setup-node@v7
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7
         with:
           node-version: ${{ env.NODE_VERSION }}
           cache: npm
       - name: Install dependencies
         run: npm ci
       - name: Install Supabase CLI
-        run: npm install -g supabase
+        run: npm install -g supabase@2.117.0
       - name: Start Supabase and export runtime credentials
         run: |
           supabase start
@@ -144,7 +146,7 @@ jobs:
       - name: Generate canonical Supabase database types
         run: supabase gen types typescript --local > generated-database.types.ts
       - name: Upload generated database type snapshot
-        uses: actions/upload-artifact@v6
+        uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6
         with:
           name: generated-database-types
           path: generated-database.types.ts
@@ -159,9 +161,9 @@ jobs:
     needs: install
     steps:
       - name: Checkout code
-        uses: actions/checkout@v7
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
       - name: Setup Node.js
-        uses: actions/setup-node@v7
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7
         with:
           node-version: ${{ env.NODE_VERSION }}
           cache: npm
@@ -178,9 +180,9 @@ jobs:
     needs: [dependency-audit, typecheck, lint, test-unit, test-component, test-security, test-navigation]
     steps:
       - name: Checkout code
-        uses: actions/checkout@v7
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
       - name: Setup Node.js
-        uses: actions/setup-node@v7
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7
         with:
           node-version: ${{ env.NODE_VERSION }}
           cache: npm
@@ -194,7 +196,7 @@ jobs:
           NEXT_PUBLIC_SUPABASE_ANON_KEY: build-only-local-key
           SUPABASE_SERVICE_ROLE_KEY: build-only-local-service-key
       - name: Upload build artifacts
-        uses: actions/upload-artifact@v6
+        uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6
         with:
           name: build-output
           path: .next
@@ -206,16 +208,16 @@ jobs:
     needs: build
     steps:
       - name: Checkout code
-        uses: actions/checkout@v7
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
       - name: Setup Node.js
-        uses: actions/setup-node@v7
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7
         with:
           node-version: ${{ env.NODE_VERSION }}
           cache: npm
       - name: Install dependencies
         run: npm ci
       - name: Install Supabase CLI
-        run: npm install -g supabase
+        run: npm install -g supabase@2.117.0
       - name: Start fresh Supabase runtime
         run: |
           supabase start
@@ -232,6 +234,19 @@ jobs:
         run: npm run test:e2e:smoke
         env:
           CI: true
+      - name: Verify canonical visual evidence
+        run: |
+          test -s docs/screenshots/01-public-home.png
+          test -s docs/screenshots/02-published-need.png
+          test -s docs/screenshots/03-incoming-proposal.png
+          test -s docs/screenshots/04-completed-exchange.png
+      - name: Upload consumer visual evidence
+        uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6
+        with:
+          name: consumer-visual-evidence
+          path: docs/screenshots/*.png
+          retention-days: 14
+          if-no-files-found: error
       - name: Prove deployment verifier against the exact local production runtime
         run: |
           ./node_modules/.bin/next start -p 9003 > /tmp/deployment-verification.log 2>&1 &
@@ -268,7 +283,7 @@ jobs:
             exit 1
           fi
       - name: Upload E2E results
-        uses: actions/upload-artifact@v6
+        uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6
         if: always()
         with:
           name: e2e-results
@@ -283,16 +298,16 @@ jobs:
     needs: build
     steps:
       - name: Checkout code
-        uses: actions/checkout@v7
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
       - name: Setup Node.js
-        uses: actions/setup-node@v7
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7
         with:
           node-version: ${{ env.NODE_VERSION }}
           cache: npm
       - name: Install dependencies
         run: npm ci
       - name: Install Supabase CLI
-        run: npm install -g supabase
+        run: npm install -g supabase@2.117.0
       - name: Start fresh Supabase runtime
         run: |
           supabase start
@@ -310,7 +325,7 @@ jobs:
         env:
           CI: true
       - name: Upload accessibility report
-        uses: actions/upload-artifact@v6
+        uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6
         if: always()
         with:
           name: accessibility-report
