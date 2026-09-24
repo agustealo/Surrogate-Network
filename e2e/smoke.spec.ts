@@ -111,7 +111,7 @@ test.describe('Consumer trial smoke @smoke', () => {
   test('password recovery exchanges a real PKCE email link and changes the credential', async ({ browser }) => {
     const runId = `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`
     const member: TrialMember = {
-      name: `Recovery Member ${runId}`,
+      name: 'Recovery Test Member',
       email: `recovery-${runId}@test.local`,
       password: 'Recovery-Original-123!',
     }
@@ -149,17 +149,17 @@ test.describe('Consumer trial smoke @smoke', () => {
   test('two real members can complete the canonical marketplace lifecycle, export data, and preserve shared history after deletion', async ({ browser }) => {
     const runId = `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`
     const memberA: TrialMember = {
-      name: `Trial Provider ${runId}`,
+      name: 'Alex Carter',
       email: `trial-provider-${runId}@test.local`,
       password: 'Consumer-Trial-A-123!',
     }
     const memberB: TrialMember = {
-      name: `Trial Requester ${runId}`,
+      name: 'Jordan Lee',
       email: `trial-requester-${runId}@test.local`,
       password: 'Consumer-Trial-B-456!',
     }
-    const needTitle = `Trial Need ${runId}`
-    const offerTitle = `Trial Offer ${runId}`
+    const needTitle = 'Weekly Planning Companion'
+    const offerTitle = 'Conversation & Planning Support'
 
     const requesterContext = await browser.newContext()
     const providerContext = await browser.newContext()
