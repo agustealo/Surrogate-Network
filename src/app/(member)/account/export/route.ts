@@ -30,9 +30,6 @@ export async function GET() {
       tokenTransactions,
       xpTransactions,
       progression,
-      mediaAssets,
-      mediaRequests,
-      mediaGrants,
     ] = await Promise.all([
       service.from('profiles').select('*').eq('id', user.id).single(),
       service.from('needs').select('*').eq('user_id', user.id).order('created_at'),
@@ -46,9 +43,6 @@ export async function GET() {
       service.from('token_transactions').select('*').eq('user_id', user.id).order('created_at'),
       service.from('xp_transactions').select('*').eq('user_id', user.id).order('created_at'),
       service.from('member_progression').select('*').eq('user_id', user.id).maybeSingle(),
-      service.from('media_assets').select('*').eq('owner_id', user.id).order('created_at'),
-      service.from('media_access_requests').select('*').or(`from_user_id.eq.${user.id},to_user_id.eq.${user.id}`).order('requested_at'),
-      service.from('media_access_grants').select('*').or(`from_user_id.eq.${user.id},to_user_id.eq.${user.id}`).order('granted_at'),
     ])
 
     const baseResults = [
@@ -64,9 +58,6 @@ export async function GET() {
       ['token transactions', tokenTransactions.error],
       ['xp transactions', xpTransactions.error],
       ['progression', progression.error],
-      ['media assets', mediaAssets.error],
-      ['media requests', mediaRequests.error],
-      ['media grants', mediaGrants.error],
     ] as const
     for (const [label, error] of baseResults) assertQuery(label, error)
 
@@ -106,9 +97,6 @@ export async function GET() {
       token_transactions: tokenTransactions.data ?? [],
       xp_transactions: xpTransactions.data ?? [],
       progression: progression.data,
-      media_assets: mediaAssets.data ?? [],
-      media_access_requests: mediaRequests.data ?? [],
-      media_access_grants: mediaGrants.data ?? [],
       retention_note: 'Internal moderation, anti-abuse, audit, and security records are not included in this member export. Shared relationship records may be retained after account deletion in redacted or tombstoned form.',
     }
 
