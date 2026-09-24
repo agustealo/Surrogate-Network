@@ -1,4 +1,4 @@
-name: Surrogate Companion CI
+name: Surrogate Network CI
 
 on:
   push:
