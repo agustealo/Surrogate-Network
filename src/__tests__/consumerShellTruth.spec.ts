@@ -30,11 +30,12 @@ describe('consumer shell truth', () => {
     expect(memberHeader).not.toContain('aria-label="Notifications"')
   })
 
-  it('does not expose an inert admin search control', () => {
+  it('keeps admin chrome free of inert controls and page-level heading ownership', () => {
     const adminHeader = source('src/components/admin/AdminHeader.tsx')
 
     expect(adminHeader).not.toContain('Search administration')
     expect(adminHeader).not.toContain("from '@/components/ui/input'")
+    expect(adminHeader).not.toContain('<h1')
   })
 
   it('does not retain the obsolete mock AppHeader implementation', () => {
