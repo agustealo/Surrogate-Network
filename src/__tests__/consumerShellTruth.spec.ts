@@ -10,6 +10,7 @@ describe('consumer shell truth', () => {
     expect(source('src/lib/brand.ts')).toContain("BRAND_NAME = 'Surrogate Network'")
 
     for (const file of [
+      'src/app/(public)/page.tsx',
       'src/components/public/PublicNavigation.tsx',
       'src/components/member/MemberNavigation.tsx',
       'src/components/member/MemberHeader.tsx',
