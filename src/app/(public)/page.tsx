@@ -3,6 +3,7 @@ import { Card, CardDescription, CardHeader, CardTitle } from '@/components/ui/ca
 import { Button } from '@/components/ui/button';
 import { HeartHandshake, Shield, Star, MessageCircle, TrendingUp, Heart } from 'lucide-react';
 import Link from 'next/link';
+import { BRAND_NAME } from '@/lib/brand';
 import { routes } from '@/lib/routes';
 
 export const metadata: Metadata = {
@@ -31,7 +32,7 @@ export default function PublicHomePage() {
           </p>
           <div className="flex flex-col justify-center gap-4 sm:flex-row">
             <Button size="lg" asChild className="px-8 text-lg">
-              <Link href={routes.public.signup}>Join Surrogate Companion</Link>
+              <Link href={routes.public.signup}>Join {BRAND_NAME}</Link>
             </Button>
             <Button size="lg" variant="outline" asChild className="px-8 text-lg">
               <Link href={routes.public.howItWorks}>Learn How It Works</Link>
@@ -42,7 +43,7 @@ export default function PublicHomePage() {
 
       <section className="bg-background py-20">
         <div className="container mx-auto px-4 sm:px-6 lg:px-8">
-          <h2 className="mb-12 text-center text-3xl font-bold">How Surrogate Companion Works</h2>
+          <h2 className="mb-12 text-center text-3xl font-bold">How {BRAND_NAME} Works</h2>
           <div className="grid gap-8 md:grid-cols-3">
             <Card className="border-2 text-center transition-colors hover:border-primary/50">
               <CardHeader>
@@ -79,7 +80,7 @@ export default function PublicHomePage() {
 
       <section className="bg-muted/30 py-20">
         <div className="container mx-auto px-4 sm:px-6 lg:px-8">
-          <h2 className="mb-12 text-center text-3xl font-bold">Why Surrogate Companion?</h2>
+          <h2 className="mb-12 text-center text-3xl font-bold">Why {BRAND_NAME}?</h2>
           <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
             <div className="flex items-start gap-4">
               <Shield className="mt-1 h-6 w-6 shrink-0 text-primary" />
