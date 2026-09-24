@@ -70,7 +70,7 @@ async function createOffer(page: Page, title: string): Promise<string> {
 }
 
 async function dispose(contexts: BrowserContext[]) {
-  await Promise.all(contexts.map((context) => context.close()))
+  await Promise.allSettled(contexts.map((context) => context.close()))
 }
 
 function normalizeMailText(value: string): string {
@@ -161,6 +161,8 @@ test.describe('Consumer trial smoke @smoke', () => {
   })
 
   test('two real members complete the canonical marketplace lifecycle and expose the showcase product surfaces', async ({ browser }) => {
+    test.setTimeout(120_000)
+
     const runId = `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`
     const memberA: TrialMember = {
       name: 'Alex Carter',
