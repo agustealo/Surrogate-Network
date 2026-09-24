@@ -2,11 +2,12 @@
 
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
-import { 
+import {
   HeartHandshake, Settings, LogOut,
   ChevronDown, ChevronRight
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { BRAND_NAME } from '@/lib/brand';
 import { cn } from '@/lib/utils';
 import {
   Collapsible,
@@ -54,7 +55,7 @@ export function MemberNavigation() {
       <div className="p-4">
         <Link href="/home" className="flex items-center gap-2">
           <HeartHandshake className="h-6 w-6 text-primary" />
-          <span className="font-bold text-foreground">Surrogate Companion</span>
+          <span className="font-bold text-foreground">{BRAND_NAME}</span>
         </Link>
       </div>
       <nav className="flex-1 px-3 space-y-1">
@@ -67,7 +68,7 @@ export function MemberNavigation() {
               className={cn(
                 "flex items-center gap-3 px-3 py-2 text-sm font-medium rounded-md transition-colors",
                 isRouteActive(pathname, item.href)
-                  ? "bg-primary text-primary-foreground" 
+                  ? "bg-primary text-primary-foreground"
                   : "text-muted-foreground hover:bg-muted hover:text-foreground"
               )}
             >
@@ -94,8 +95,8 @@ export function MemberNavigation() {
             Settings
           </Button>
         </Link>
-        <Button 
-          variant="ghost" 
+        <Button
+          variant="ghost"
           className="w-full justify-start text-destructive"
           onClick={handleLogout}
         >
@@ -107,9 +108,9 @@ export function MemberNavigation() {
   );
 }
 
-function NavSection({ section, items, pathname, defaultOpen }: { 
-  section: string; 
-  items: NavigationItem[]; 
+function NavSection({ section, items, pathname, defaultOpen }: {
+  section: string;
+  items: NavigationItem[];
   pathname: string | null;
   defaultOpen: boolean;
 }) {
@@ -135,7 +136,7 @@ function NavSection({ section, items, pathname, defaultOpen }: {
               className={cn(
                 "flex items-center gap-3 px-3 py-2 text-sm font-medium rounded-md transition-colors",
                 isRouteActive(pathname, item.href)
-                  ? "bg-primary text-primary-foreground" 
+                  ? "bg-primary text-primary-foreground"
                   : "text-muted-foreground hover:bg-muted hover:text-foreground"
               )}
             >
