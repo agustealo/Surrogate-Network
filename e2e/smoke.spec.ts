@@ -1,9 +1,21 @@
+import { mkdir } from 'node:fs/promises'
 import { expect, test, type BrowserContext, type Download, type Page } from '@playwright/test'
 
 type TrialMember = {
   name: string
   email: string
   password: string
+}
+
+const visualEvidenceDirectory = 'docs/screenshots'
+
+async function captureVisualEvidence(page: Page, filename: string) {
+  await mkdir(visualEvidenceDirectory, { recursive: true })
+  await page.screenshot({
+    path: `${visualEvidenceDirectory}/${filename}`,
+    fullPage: true,
+    animations: 'disabled',
+  })
 }
 
 async function signUp(page: Page, member: TrialMember) {
@@ -89,6 +101,7 @@ test.describe('Consumer trial smoke @smoke', () => {
     await expect(page.locator('h1')).toContainText('Meaningful Connections')
     await expect(page.getByRole('link', { name: /sign in/i })).toBeVisible()
     await expect(page.getByRole('link', { name: 'Join', exact: true })).toBeVisible()
+    await captureVisualEvidence(page, '01-public-home.png')
   })
 
   test('password recovery exchanges a real PKCE email link and changes the credential', async ({ browser }) => {
@@ -154,6 +167,7 @@ test.describe('Consumer trial smoke @smoke', () => {
 
       await signUp(requester, memberB)
       const needUrl = await createNeed(requester, needTitle)
+      await captureVisualEvidence(requester, '02-published-need.png')
 
       await signUp(provider, memberA)
       await createOffer(provider, offerTitle)
@@ -171,6 +185,7 @@ test.describe('Consumer trial smoke @smoke', () => {
       const incomingProposalTitle = requester.getByText(`${needTitle} ↔ ${offerTitle}`, { exact: true })
       const incomingProposal = incomingProposalTitle.locator('..').locator('..')
       await expect(incomingProposal.getByText('Incoming', { exact: true })).toBeVisible()
+      await captureVisualEvidence(requester, '03-incoming-proposal.png')
       await incomingProposal.getByRole('button', { name: 'Accept' }).click()
       await requester.waitForURL(/\/surrogacies\/[0-9a-f-]{36}$/i, { timeout: 20_000 })
       const surrogacyUrl = requester.url()
@@ -196,6 +211,7 @@ test.describe('Consumer trial smoke @smoke', () => {
       await feedbackCard.getByPlaceholder('Skill endorsements, comma-separated').fill('communication, reliability')
       await feedbackCard.getByRole('button', { name: 'Submit Feedback' }).click()
       await expect(requester.getByText('You submitted feedback for this Exchange.', { exact: true })).toBeVisible({ timeout: 20_000 })
+      await captureVisualEvidence(requester, '04-completed-exchange.png')
 
       await provider.goto('/surrogacies')
       await expect(provider.getByText(`${needTitle} ↔ ${offerTitle}`, { exact: true })).toBeVisible()
