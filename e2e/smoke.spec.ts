@@ -28,7 +28,7 @@ async function captureVisualEvidence(page: Page, filename: string, options: Visu
   })
 }
 
-async function signUp(page: Page, member: TrialMember): Promise<string> {
+async function signUp(page: Page, member: TrialMember) {
   await page.goto('/signup')
   await page.getByLabel('Full Name').fill(member.name)
   await page.getByLabel('Email Address').fill(member.email)
@@ -37,7 +37,6 @@ async function signUp(page: Page, member: TrialMember): Promise<string> {
   await page.getByRole('checkbox').check()
   await page.getByRole('button', { name: 'Create Account' }).click()
   await page.waitForURL(/\/profile\//, { timeout: 20_000 })
-  return page.url()
 }
 
 async function signIn(page: Page, member: TrialMember) {
@@ -196,15 +195,19 @@ test.describe('Consumer trial smoke @smoke', () => {
       await requester.evaluate(() => window.scrollTo(0, 0))
       await captureVisualEvidence(requester, '02-published-need.png')
 
-      const providerProfileUrl = await signUp(provider, memberA)
+      await signUp(provider, memberA)
       const offerUrl = await createOffer(provider, offerTitle)
       await provider.evaluate(() => window.scrollTo(0, 0))
       await captureVisualEvidence(provider, '09-published-offer.png')
 
+      await provider.goto('/profile')
+      await provider.waitForURL(/\/profile\/[0-9a-f-]{36}$/i, { timeout: 20_000 })
+      const providerProfileUrl = provider.url()
+
       await provider.goto('/discover')
       await expect(provider.getByRole('heading', { name: 'Discover', exact: true })).toBeVisible()
-      await expect(provider.getByText(needTitle, { exact: true })).toBeVisible()
-      await expect(provider.getByText(offerTitle, { exact: true })).toBeVisible()
+      await expect(provider.locator(`a[href="${new URL(needUrl).pathname}"]`, { hasText: 'View Need' })).toBeVisible()
+      await expect(provider.locator(`a[href="${new URL(offerUrl).pathname}"]`, { hasText: 'View Offer' })).toBeVisible()
       await provider.evaluate(() => window.scrollTo(0, 0))
       await captureVisualEvidence(provider, '08-discovery-marketplace.png')
 
@@ -240,7 +243,7 @@ test.describe('Consumer trial smoke @smoke', () => {
       await captureVisualEvidence(requester, '07-member-dashboard.png')
 
       await requester.goto(providerProfileUrl)
-      await expect(requester.getByRole('heading', { name: memberA.name })).toBeVisible()
+      await expect(requester.locator('h1', { hasText: memberA.name })).toBeVisible()
       await expect(requester.getByText(offerTitle, { exact: true })).toBeVisible()
       const safetyControls = requester.getByText('Safety controls', { exact: true }).locator('..').locator('..')
       await safetyControls.getByRole('button', { name: 'Report' }).click()
