@@ -14,17 +14,17 @@ The product is hardened for controlled consumer trials with real persistence, ex
 
 ## Real product screenshots
 
-These screenshots are captured by the same Playwright consumer-trial path that exercises real persistence and the canonical two-member lifecycle. They are runtime evidence, not mockups or marketing comps.
+These screenshots come from the same Playwright consumer-trial path that exercises real persistence and the canonical two-member lifecycle. The committed WebP files are reviewed, web-optimized derivatives of exact-head runtime captures, not mockups or marketing comps.
 
 | Public entry | Published Need |
 | --- | --- |
-| ![Surrogate Network public home](docs/screenshots/01-public-home.png) | ![Published Need](docs/screenshots/02-published-need.png) |
+| ![Surrogate Network public home](docs/screenshots/01-public-home.webp) | ![Published Need](docs/screenshots/02-published-need.webp) |
 
 | Incoming Proposal | Completed Exchange |
 | --- | --- |
-| ![Incoming Proposal](docs/screenshots/03-incoming-proposal.png) | ![Completed Exchange](docs/screenshots/04-completed-exchange.png) |
+| ![Incoming Proposal](docs/screenshots/03-incoming-proposal.webp) | ![Completed Exchange](docs/screenshots/04-completed-exchange.webp) |
 
-See [`docs/VISUAL_EVIDENCE.md`](docs/VISUAL_EVIDENCE.md) for screenshot provenance, regeneration rules, and brand-asset usage.
+See [`docs/VISUAL_EVIDENCE.md`](docs/VISUAL_EVIDENCE.md) for screenshot provenance, regeneration rules, source-artifact evidence, and brand-asset usage.
 
 ## Trial-ready product surface
 
@@ -158,7 +158,7 @@ The CI quality rail includes:
 
 SECURITY starts a fresh Supabase runtime, replays all migrations, runs the logical application-data recovery drill, runs security regressions, regenerates canonical database types, and rejects schema/type drift.
 
-E2E TRIAL proves the canonical two-member journey against a freshly migrated database, captures the documentation screenshot set from that real runtime, and exercises the deployment verification contract against an exact local production build.
+E2E TRIAL proves the canonical two-member journey against a freshly migrated database, captures the source PNG documentation evidence from that real runtime, uploads it for review, and exercises the deployment verification contract against an exact local production build.
 
 ## Deployment verification
 
@@ -242,7 +242,7 @@ docs/                  architecture, operations, recovery, development, visual e
 - Exact-head CI evidence is required before merge/release claims.
 - A hosted release must be tied to an immutable deployed revision before certification.
 - Documentation must describe the repository that actually exists.
-- Product screenshots used by repository documentation must be regenerated from the real E2E runtime, not fabricated separately.
+- Product screenshots used by repository documentation must originate from the real E2E runtime, be reviewed, and only then be promoted into durable docs assets.
 
 Read [`docs/PROJECT_MANIFEST.md`](docs/PROJECT_MANIFEST.md) for the full methodology and release definitions.
 
