@@ -8,7 +8,7 @@ export function AdminHeader() {
       <div className="container mx-auto flex h-16 items-center px-4 sm:px-6 lg:px-8">
         <div className="flex items-center gap-2">
           <Shield className="h-6 w-6 text-primary" />
-          <h1 className="text-lg font-bold">Admin Console</h1>
+          <span className="text-lg font-bold">Admin Console</span>
         </div>
       </div>
     </header>
