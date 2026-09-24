@@ -96,7 +96,7 @@ export function AdminNavigation() {
   return (
     <aside className="hidden md:flex w-64 flex-col border-r bg-background">
       <div className="p-4 border-b">
-        <h2 className="text-sm font-semibold text-muted-foreground">Admin Console</h2>
+        <h2 className="text-sm font-semibold text-muted-foreground">Administration</h2>
       </div>
       <nav className="flex-1 px-3 py-4 space-y-4 overflow-y-auto">
         {Object.entries(grouped).map(([section, items]) => (
