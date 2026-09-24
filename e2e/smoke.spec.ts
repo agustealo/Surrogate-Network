@@ -1,5 +1,6 @@
 import { mkdir } from 'node:fs/promises'
 import { expect, test, type BrowserContext, type Download, type Page } from '@playwright/test'
+import { provisionScreenshotAdmin } from './support/screenshotAdmin'
 
 type TrialMember = {
   name: string
@@ -172,16 +173,23 @@ test.describe('Consumer trial smoke @smoke', () => {
       email: `trial-requester-${runId}@test.local`,
       password: 'Consumer-Trial-B-456!',
     }
+    const adminMember: TrialMember = {
+      name: 'Morgan Admin',
+      email: `trial-admin-${runId}@test.local`,
+      password: 'Consumer-Trial-Admin-789!',
+    }
     const needTitle = 'Weekly Planning Companion'
     const offerTitle = 'Conversation & Planning Support'
 
     const requesterContext = await browser.newContext()
     const providerContext = await browser.newContext()
-    const contexts = [requesterContext, providerContext]
+    const adminContext = await browser.newContext()
+    const contexts = [requesterContext, providerContext, adminContext]
 
     try {
       const requester = await requesterContext.newPage()
       const provider = await providerContext.newPage()
+      const admin = await adminContext.newPage()
 
       await signUp(requester, memberB)
       const needUrl = await createNeed(requester, needTitle)
@@ -241,6 +249,20 @@ test.describe('Consumer trial smoke @smoke', () => {
       await captureVisualEvidence(requester, '11-member-profile-safety.png', { fullPage: true })
       await safetyControls.getByRole('button', { name: 'Submit report' }).click()
       await expect(requester.getByText('Report submitted', { exact: true })).toBeVisible({ timeout: 20_000 })
+
+      await signUp(admin, adminMember)
+      await provisionScreenshotAdmin(adminMember.email)
+      await admin.goto('/admin')
+      await expect(admin.getByRole('heading', { name: 'Admin Console' })).toBeVisible()
+      await expect(admin.getByText('Open Reports')).toBeVisible()
+      await admin.evaluate(() => window.scrollTo(0, 0))
+      await captureVisualEvidence(admin, '14-admin-console.png')
+
+      await admin.goto('/admin/reports')
+      await expect(admin.getByRole('heading', { name: 'Moderation Reports' })).toBeVisible()
+      await expect(admin.getByText('Persistent contact after I declined an additional request.', { exact: true })).toBeVisible()
+      await admin.evaluate(() => window.scrollTo(0, 0))
+      await captureVisualEvidence(admin, '15-moderation-reports.png', { fullPage: true })
 
       await requester.goto(surrogacyUrl)
       const scheduler = requester.getByText('Schedule a Moment', { exact: true }).locator('..').locator('..')
