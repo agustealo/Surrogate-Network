@@ -232,6 +232,41 @@ jobs:
         run: npm run test:e2e:smoke
         env:
           CI: true
+      - name: Prove deployment verifier against the exact local production runtime
+        run: |
+          ./node_modules/.bin/next start -p 9003 > /tmp/deployment-verification.log 2>&1 &
+          app_pid=$!
+          cleanup() {
+            kill "$app_pid" 2>/dev/null || true
+          }
+          trap cleanup EXIT
+
+          booted=0
+          for attempt in $(seq 1 30); do
+            if curl --silent --fail http://127.0.0.1:9003/api/health/live > /dev/null; then
+              booted=1
+              break
+            fi
+            if ! kill -0 "$app_pid" 2>/dev/null; then
+              cat /tmp/deployment-verification.log
+              exit 1
+            fi
+            sleep 1
+          done
+
+          if [ "$booted" != "1" ]; then
+            cat /tmp/deployment-verification.log
+            echo "Exact local production runtime did not become live"
+            exit 1
+          fi
+
+          node scripts/verify-deployment.mjs http://127.0.0.1:9003 "$GITHUB_SHA" --allow-http
+
+          wrong_revision="deadbeefdeadbeefdeadbeefdeadbeefdeadbeef"
+          if node scripts/verify-deployment.mjs http://127.0.0.1:9003 "$wrong_revision" --allow-http; then
+            echo "Deployment verifier incorrectly accepted the wrong revision"
+            exit 1
+          fi
       - name: Upload E2E results
         uses: actions/upload-artifact@v6
         if: always()

@@ -8,7 +8,7 @@ Surrogate Network is a needs-based social companion platform. The canonical cons
 Need + Offer -> Discovery -> Proposal -> Surrogacy -> Moment -> Exchange -> Feedback
 ```
 
-The architecture is designed around that lifecycle. Progression, moderation, notifications, permissions, and administration support it; they are not separate product models.
+The architecture is designed around that lifecycle. Progression, moderation, notifications, account lifecycle, operations, and administration support it; they are not separate product models.
 
 ## Canonical stack
 
@@ -18,7 +18,7 @@ The architecture is designed around that lifecycle. Progression, moderation, not
 - Supabase Auth
 - PostgreSQL
 - Row Level Security
-- Supabase Storage/Realtime where used
+- Supabase platform services only where a shipped feature owns the lifecycle contract
 - Jest + Testing Library
 - Playwright
 - GitHub Actions
@@ -39,7 +39,7 @@ Primary public navigation owns:
 - Sign In
 - Join
 
-Public routes also include trial Terms/Privacy and public profile projection as required by the flow.
+Public routes also include trial Terms/Privacy, password recovery, and public profile projection as required by the flow.
 
 ### Member
 
@@ -67,6 +67,18 @@ The admin console is a separate authorized surface. Its current primary navigati
 
 Moderation operations run through authenticated admin verification plus trusted server/database authority. Member UI must not import or expose admin controls.
 
+### Operations
+
+Operational surfaces are deliberately separate from consumer features:
+
+- `/api/health/live`
+- `/api/health/ready`
+- request correlation and structured error events
+- logical recovery tooling
+- deployment verification tooling/workflow
+
+Health and verification endpoints must not become a second consumer API or leak credentials/internal exception content.
+
 ## Dependency direction
 
 ```text
@@ -79,7 +91,12 @@ application
 domain + repository contracts
       ^
       |
-infrastructure (Supabase)
+infrastructure
+  |-- Supabase
+  |-- runtime config
+  |-- health
+  |-- observability
+  `-- operations
 ```
 
 ### Presentation
@@ -114,6 +131,14 @@ infrastructure (Supabase)
 - generated database types;
 - Supabase repository implementations.
 
+`src/infrastructure/config` owns runtime environment parsing/validation. Supabase consumers do not independently read/normalize the same environment variables.
+
+`src/infrastructure/health` owns dependency readiness probing.
+
+`src/infrastructure/observability` owns request correlation and production-safe server error event shaping.
+
+`src/infrastructure/operations` owns non-secret release provenance used by operational verification.
+
 ## Supabase authority model
 
 ### Request-scoped client
@@ -134,7 +159,7 @@ Examples include:
 - Moment/Exchange/Feedback lifecycle operations;
 - report moderation;
 - trial-policy acceptance;
-- account participation/deactivation.
+- account participation/deactivation/deletion preparation.
 
 Function execution grants are part of the security model. Sensitive functions must not inherit broad PUBLIC/authenticated execution by accident.
 
@@ -142,7 +167,7 @@ Function execution grants are part of the security model. Sensitive functions mu
 
 ### Need and Offer
 
-Members create and manage their own marketplace records through authenticated actions/repositories under RLS.
+Members create and manage their own marketplace records through authenticated actions/repositories under RLS. Lifecycle/status/counters that are authoritative remain database-owned.
 
 ### Proposal
 
@@ -156,11 +181,11 @@ Proposal acceptance is transactional. The trusted database path updates the prop
 
 Downstream relationship operations use trusted lifecycle functions/actions rather than scattered direct table writes. Feedback is bound to completed Exchange context.
 
-## Safety and privacy
+## Safety, privacy, and account lifecycle
 
 ### Public profiles
 
-Public member discovery reads a restricted projection rather than the full `profiles` row. Private and authority fields such as email, XP/tokens, admin flags, consent state, and suspension state must not leak cross-user.
+Public member discovery reads a restricted projection rather than the full `profiles` row. Private and authority fields such as email, XP/tokens, admin flags, consent state, suspension/deletion state must not leak cross-user.
 
 ### Blocking
 
@@ -170,13 +195,93 @@ Blocking is persisted and enforced at the data boundary. It affects discoverabil
 
 Members can create safety reports. Admin moderation is isolated to the admin surface and performs trusted atomic state changes with audit evidence.
 
-### Suspension and self-deactivation
+### Suspension, deactivation, deletion
 
-Moderation suspension and voluntary trial deactivation are separate states. Database checks enforce both. Historical relationship records remain available where appropriate, while new participation is blocked.
+Moderation suspension, voluntary deactivation, and permanent deletion are distinct states.
+
+- suspension is moderation authority;
+- deactivation is reversible member participation control;
+- deletion is terminal, database-first, redacts direct member content, preserves tombstone/shared history where required, and then coordinates external Auth deletion.
+
+Stale authenticated tokens are prevented from mutating protected tables after terminal/inactive states.
 
 ### Trial consent
 
 Current trial Terms/Privacy/age confirmation is explicit and stored through trusted authority. It is distinct from suspension/identity validity.
+
+### Password recovery
+
+Recovery uses Supabase email + PKCE code exchange into the SSR session. Password update requires a short-lived recovery marker plus the authenticated recovery session rather than exposing a generic signed-in password mutation route.
+
+## Runtime configuration
+
+`src/infrastructure/config/runtimeConfig.ts` is the canonical public Supabase config parser/validator.
+
+`src/infrastructure/config/serverRuntimeConfig.ts` is server-only and extends the public config with the required service-role credential.
+
+Consumers must not introduce parallel `process.env` parsing for these values.
+
+## Health architecture
+
+### Liveness
+
+`/api/health/live` answers whether the application process can serve a dynamic request. It intentionally bypasses the Supabase auth refresh path so a Supabase outage does not make process liveness indistinguishable from dependency readiness.
+
+### Readiness
+
+`/api/health/ready` validates required server runtime config and probes the real anonymous `public_profiles` Supabase/PostgREST contract. It returns `503` when the dependency contract is unusable.
+
+Health responses are dynamic/no-store and retain request correlation. They expose no credentials or raw upstream errors.
+
+## Observability architecture
+
+Middleware owns validated/generated `x-request-id` propagation.
+
+Next.js `instrumentation.ts` captures request errors through the supported framework hook and sends them through the canonical structured logger.
+
+Production error events retain route/request/error grouping metadata while omitting raw query strings, error messages, and stacks from the application event payload.
+
+`error.tsx` and `global-error.tsx` own honest user-facing rendering failure states.
+
+## Release provenance and deployment verification
+
+Health responses expose a sanitized git revision when runtime metadata is available. Provenance sources are resolved in this order:
+
+1. `SURROGATE_RELEASE_SHA`
+2. `VERCEL_GIT_COMMIT_SHA`
+3. `GITHUB_SHA`
+
+`scripts/verify-deployment.mjs` is the read-only deployment contract verifier. The manual GitHub **Deployment Verification** workflow executes it against a supplied hosted origin and requires the target's reported revision to match the exact workflow SHA.
+
+Repository CI also runs the verifier against the exact local production build and proves that a deliberately wrong revision is rejected.
+
+This separates two claims:
+
+- CI proves a repository candidate;
+- deployment verification proves a hosted target corresponds to that immutable candidate and satisfies the operational HTTP/header/readiness contract.
+
+## Recovery architecture
+
+`scripts/recovery-drill.sh` proves logical recovery of application-owned relational `public` data after a destructive migration rebuild.
+
+`docs/PRODUCTION_RECOVERY.md` owns the boundary between repository recovery proof and provider-level Supabase backup/PITR/full-project restoration.
+
+Provider-managed Auth/backup settings are not inferred from local CI.
+
+## Media boundary
+
+The dormant URL-metadata media subsystem was removed because it did not own a real Supabase Storage/object lifecycle and was not part of the current consumer surface.
+
+A future media feature must define, before UI promotion:
+
+- bucket/object ownership;
+- upload authority;
+- private/public access semantics;
+- signed-access rules if needed;
+- deletion/retention behavior;
+- provider/object recovery behavior.
+
+Do not restore the retired metadata tables as a shortcut.
 
 ## Navigation ownership
 
@@ -202,13 +307,14 @@ A schema change is incomplete until:
 1. the migration exists;
 2. a clean database can replay all migrations;
 3. security regression tests pass;
-4. generated database types match the schema.
+4. logical recovery remains valid when affected;
+5. generated database types match the schema.
 
 ## Browser security
 
-`next.config.ts` owns response security headers, including the current CSP and anti-framing/content-sniffing/referrer/permissions controls.
+`next.config.ts` owns response security headers. CSP sources are scoped to the configured Supabase origin rather than wildcard projects; production also sends HSTS plus anti-framing, content-sniffing, referrer, permissions, and related controls.
 
-Browser security is part of the product boundary. Do not loosen headers solely to silence a failing integration without understanding the required source.
+Do not loosen headers solely to silence a failing integration without understanding the required source.
 
 ## CI architecture
 
@@ -220,18 +326,19 @@ The release rail is intentionally layered:
 4. E2E TRIAL + A11Y
 5. QUALITY GATE
 
-SECURITY starts a fresh Supabase runtime, replays migrations, runs security tests, regenerates database types, and rejects schema drift.
+SECURITY starts a fresh Supabase runtime, replays migrations, proves logical application-data recovery, runs security tests, regenerates database types, and rejects schema drift.
 
-E2E TRIAL rebuilds a fresh runtime and proves the canonical two-member lifecycle in Chromium.
+E2E TRIAL rebuilds a fresh runtime, proves the canonical two-member lifecycle, and exercises the deployment verifier against the exact local production build.
 
 Any commit change invalidates earlier exact-head evidence.
 
 ## Deferred/non-primary systems
 
-The following should remain outside primary product claims until production behavior is complete:
+The following remain outside primary product claims until production behavior is complete:
 
 - Messaging
 - Rewards/economic UX
+- future media/object workflows
 - broader community/governance systems
 - advanced automated trust/fraud systems
 - additional admin modules beyond the current operational console
@@ -240,4 +347,4 @@ Deferred systems must not be simulated with consumer-facing fake data.
 
 ## Architecture change rule
 
-When architecture changes, update this document, `docs/PROJECT_MANIFEST.md`, and any affected development/data/API docs in the same change. Remove obsolete guidance rather than preserving contradictory active documentation.
+When architecture changes, update this document, `docs/PROJECT_MANIFEST.md`, and any affected development/data/API/operations docs in the same change. Remove obsolete guidance rather than preserving contradictory active documentation.

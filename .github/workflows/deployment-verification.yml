@@ -1,0 +1,29 @@
+name: Deployment Verification
+
+on:
+  workflow_dispatch:
+    inputs:
+      target_url:
+        description: 'Production deployment origin, for example https://app.example.com'
+        required: true
+        type: string
+
+permissions:
+  contents: read
+
+jobs:
+  verify-deployment:
+    name: VERIFY DEPLOYMENT
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout exact revision
+        uses: actions/checkout@v7
+      - name: Setup Node.js
+        uses: actions/setup-node@v7
+        with:
+          node-version: '22'
+      - name: Verify hosted runtime and exact revision
+        env:
+          TARGET_URL: ${{ inputs.target_url }}
+          EXPECTED_REVISION: ${{ github.sha }}
+        run: node scripts/verify-deployment.mjs "$TARGET_URL" "$EXPECTED_REVISION"

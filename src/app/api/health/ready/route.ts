@@ -2,11 +2,13 @@ import { NextResponse } from 'next/server'
 
 import { getServerRuntimeConfig } from '@/infrastructure/config/serverRuntimeConfig'
 import { probeSupabaseReadiness } from '@/infrastructure/health/readiness'
+import { getReleaseRevision } from '@/infrastructure/operations/releaseMetadata'
 
 export const dynamic = 'force-dynamic'
 export const revalidate = 0
 
 export async function GET() {
+  const revision = getReleaseRevision()
   let config
 
   try {
@@ -15,6 +17,7 @@ export async function GET() {
     return NextResponse.json(
       {
         status: 'not_ready',
+        revision,
         checks: {
           runtimeConfig: 'failed',
           supabase: 'not_checked',
@@ -35,6 +38,7 @@ export async function GET() {
   return NextResponse.json(
     {
       status: ready ? 'ready' : 'not_ready',
+      revision,
       checks: {
         runtimeConfig: 'ok',
         supabase: ready ? 'ok' : 'failed',
