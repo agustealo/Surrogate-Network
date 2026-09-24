@@ -1,153 +1,184 @@
-# Consumer Trial Readiness Sprint
+# Consumer Trial and Market-Readiness Sprint
 
-## Status
+## Current status
 
-**Current baseline:** `master@c68fe8af3ace66622ce4e0f24f672807dadf984e`
+**Verified parent baseline entering this slice:** `master@db2675221f6b81b8621088a8732b5c42f40dc8b6`
 
-**Post-merge evidence:** GitHub Actions run **#235** passed the complete quality rail on September 20, 2026.
+**Parent post-merge evidence:** GitHub Actions run **#272** completed successfully on September 24, 2026.
 
-This document describes the current repository state. Historical sprint narratives, obsolete certification SHAs, removed compatibility scaffolds, and demo-mode claims are intentionally not retained as current truth.
+That run passed the full quality rail, including logical application-data recovery, SECURITY, zero schema/type drift, BUILD, E2E TRIAL, A11Y, and QUALITY GATE.
 
-## Consumer-trial objective
+This file is the current engineering status sheet. The SHA above records the independently verified parent from which the active slice started; it is not meant to chase every future merge commit. The active PR/run is the authority for the current candidate's exact-head evidence.
 
-Deliver a controlled consumer-trial build where every visible primary workflow executes real persisted logic with explicit authority boundaries:
+Historical candidate SHAs and already-closed gaps are intentionally not presented as open work.
+
+## Product objective
+
+Surrogate Network remains centered on one canonical consumer lifecycle:
 
 ```text
 Need + Offer -> Discovery -> Proposal -> Surrogacy -> Moment -> Exchange -> Feedback
 ```
 
-The trial bar also includes consent, safety, moderation, account participation controls, honest navigation, fresh-database migration proof, and a real two-member browser journey.
+The engineering rule is unchanged: visible controls execute real persisted behavior, or they remain absent/truthfully unavailable.
 
-## Completed on the merged baseline
+## Completed product/runtime authority
 
-### Runtime and persistence
+### Identity and member authority
 
-- Supabase/PostgreSQL is the canonical persistence platform.
-- Supabase Auth owns member identity.
-- Row Level Security is enforced for user-scoped access.
-- Service-role authority is isolated to trusted server/system operations.
-- Supabase-generated database types are canonical and CI rejects schema/type drift.
-- Need, Offer, Proposal, Surrogacy, Moment, Exchange, and Feedback flows persist real data.
+- Supabase Auth owns human identity.
+- PostgreSQL/RLS owns member-scoped data access.
+- Service-role authority is server-only and narrowly scoped.
+- Public profile projection excludes private/authoritative account fields.
+- Direct member writes cannot mutate authoritative lifecycle/account fields.
 
-### Proposal and relationship authority
+### Marketplace and relationship lifecycle
 
-- Proposal pairing validates Need/Offer ownership at the database boundary.
-- Clients cannot directly author authoritative proposal state transitions.
-- Proposal acceptance is transactional across proposal status, Need/Offer counters/status, Surrogacy creation, participants, audit, and outbox state.
-- Connections render the canonical linked Need and Offer identity for both participants.
+- Need and Offer persistence is real.
+- Proposal pairing and transitions are database-authoritative.
+- Proposal acceptance is transactional across marketplace and Surrogacy state.
+- Surrogacy, Moment, Exchange, and Feedback paths are persisted and browser-proven.
+- Connections preserve canonical Need/Offer relationship identity.
 
-### Safety and member lifecycle
+### Safety and moderation
 
-- Blocking and reporting are persisted and RLS-protected.
-- Public profile visibility respects blocking and excludes private/authority fields.
-- Admin moderation uses authenticated human-admin verification plus trusted transactional database authority.
-- Moderation can resolve/dismiss/investigate reports and atomically apply member restrictions/suspension with audit evidence.
-- Trial Terms/Privacy/age consent is explicit and server-authoritative.
-- Member self-deactivation is distinct from moderation suspension.
-- Deactivation blocks new participation and preserves historical relationship records.
-- Database-backed abuse/rate controls are present on trial action paths.
+- Blocking/reporting are persisted and enforced at the data boundary.
+- Admin moderation is a separate authorized surface.
+- Restrictions/suspension, audit evidence, and moderation outcomes use canonical trusted authority.
+- Trial action rate limits are database-backed.
 
-### UI and surface ownership
+### Account lifecycle
 
-- Public, member, and admin shells are separate.
-- Primary member navigation contains only trial-ready surfaces.
-- Messaging and Rewards remain outside primary navigation until production behavior is complete.
-- Admin operations remain in the dedicated admin console.
-- Privacy and Terms trial surfaces are present.
-- Browser response security headers are configured.
+- Password recovery uses real Supabase email + PKCE callback exchange.
+- Password update is recovery-session gated.
+- Members can download a machine-readable data export.
+- Reversible deactivation is separate from permanent deletion.
+- Permanent deletion is database-first, terminal, and tombstone-based so shared history/audit integrity survives Auth deletion.
+- Stale JWTs cannot resurrect redacted/deleted state through direct Data API writes.
+- External Auth cleanup attempts are recorded for operational follow-up.
 
-### Test and release evidence
+### Runtime configuration and health
 
-Post-merge run #235 passed:
+- Public Supabase runtime configuration has one canonical owner.
+- Service-role configuration is isolated behind a server-only owner.
+- Browser, server, middleware, CSP, and health paths use the canonical config boundary.
+- `/api/health/live` is dependency-independent process liveness.
+- `/api/health/ready` proves required config plus the real anonymous Supabase data plane.
+- Health probes remain no-store and request-correlated.
 
-- INSTALL
-- DEPENDENCY AUDIT
-- TYPECHECK
-- LINT
-- UNIT
-- COMPONENT
-- SECURITY
-- NAVIGATION
-- BUILD
-- E2E TRIAL
-- A11Y
-- QUALITY GATE
+### Observability and browser security
 
-SECURITY proved:
+- Request IDs are validated/generated and propagated through middleware/redirects.
+- Next.js server request errors are emitted as structured production-safe events.
+- Production error events strip query strings and omit raw message/stack content.
+- Error boundaries exist for App Router and global rendering failures.
+- CSP is scoped to the configured Supabase origin, not wildcard projects.
+- Production HSTS, anti-framing, content-sniffing, referrer, permissions, and DNS-prefetch controls are present.
 
-- clean Supabase startup;
-- full migration replay from an empty database;
-- the security regression suite;
-- generated Supabase database types;
-- zero schema/type drift.
+### Recovery
 
-E2E TRIAL proved a real two-member flow:
+- SECURITY starts from a fresh Supabase runtime and replays every migration.
+- `scripts/recovery-drill.sh` proves logical `public` application-data recovery through seed -> dump -> destructive rebuild -> transactional restore -> fingerprint verification -> pristine rebuild.
+- `docs/PRODUCTION_RECOVERY.md` defines the boundary between repository-owned logical recovery and Supabase/provider recovery.
 
-1. Both members sign up and accept trial policy.
-2. Requester creates a Need.
-3. Provider creates an Offer.
-4. Provider sends a Proposal linked to the Need/Offer pair.
-5. Requester accepts the Proposal.
-6. Surrogacy/Connection is created.
-7. A Moment is scheduled and completed.
-8. An Exchange is recorded.
-9. Feedback is submitted.
-10. The counterpart sees the resulting Connection identity.
+### Media cleanup
 
-A11Y passed the public accessibility smoke suite on a fresh runtime.
+- Dormant media metadata/tables and unused legacy profile media UI were removed.
+- The current product does not pretend arbitrary media URLs are a production Storage subsystem.
+- A future media feature must own explicit bucket/object ownership, authorization, deletion, and recovery semantics before shipping.
 
-## Current documentation/onboarding cleanup
+## Current quality rail
 
-The former root README, sprint file, and startup guide had drifted behind runtime reality. They still described placeholder routes, demo fixtures, fake Supabase credentials, obsolete SC-00.x certification, and a future relationship runtime that now exists.
+Every release candidate must pass on the exact candidate SHA:
 
-This cleanup converges repository guidance on the current architecture:
+1. INSTALL
+2. DEPENDENCY AUDIT
+3. TYPECHECK
+4. LINT
+5. UNIT
+6. COMPONENT
+7. SECURITY
+   - fresh Supabase startup
+   - clean migration replay
+   - logical application-data recovery drill
+   - security regression suite
+   - generated database types
+   - zero schema/type drift
+8. NAVIGATION
+9. BUILD
+10. E2E TRIAL
+11. A11Y
+12. QUALITY GATE
 
-- no demo mode;
-- no fake Supabase credentials;
-- no mock proposal/runtime claims;
-- no obsolete exact-head certification SHA;
-- current Next.js/React/Node stack;
-- current CI gate names;
-- real local Supabase startup;
-- tracked `.env.example` containing only actual runtime keys.
+Evidence from a superseded SHA is historical only.
 
-## Remaining release work
+## Current hardening slice
 
-The merged baseline is appropriate for controlled consumer trials under the project manifest. It is **not** a blanket market-ready certification.
+### Deployment verification + operations
 
-### Governance
+The next repository-owned boundary is operational proof for the actual hosted artifact.
+
+This slice adds:
+
+- immutable release revision metadata on health responses;
+- a read-only `scripts/verify-deployment.mjs` deployment verifier;
+- same-origin/no-redirect verification so a supplied deployment origin cannot silently certify a different target;
+- a manual GitHub Actions **Deployment Verification** workflow tied to the exact workflow SHA;
+- local CI proof that the verifier accepts the correct revision and rejects the wrong one;
+- production incident/support/rollback playbooks;
+- current-truth README/manifest/architecture/sprint convergence.
+
+This tooling does **not** claim a production environment has been verified until the manual workflow is run against the real hosted target.
+
+## Remaining launch gates after this slice
+
+### Repository governance
 
 - Protect the default branch.
-- Require PR-based changes and the aggregate `QUALITY GATE` before merge.
+- Require PR-based changes and aggregate `QUALITY GATE` before merge.
 - Prevent direct pushes that bypass exact-head evidence.
 
-The current GitHub connection used during this audit exposes branch protection as read-only, so this governance control must be enabled through a connection/account with repository administration permission.
+The current GitHub App connection does not expose repository-administration writes, so branch protection remains an external admin action.
 
-### Broader market-readiness
+### Actual production deployment evidence
 
-- Validate and harden account recovery end to end.
-- Define and implement the production account deletion/export policy.
-- Add production observability and error reporting.
-- Establish backup/restore procedures and prove recovery.
-- Complete production media/storage lifecycle and retention rules.
-- Create operational/support incident runbooks.
-- Complete Messaging before returning it to primary navigation.
-- Complete Rewards/economic UX before returning it to primary navigation.
-- Perform deployment-environment verification against the actual production hosting/Supabase configuration.
+- Run Deployment Verification against the real production origin from the exact deployed revision.
+- Ensure the runtime exposes immutable release provenance through `SURROGATE_RELEASE_SHA`, `VERCEL_GIT_COMMIT_SHA`, or `GITHUB_SHA`.
+- Verify real outbound password-recovery email/domain delivery with a designated production smoke account.
+
+### Provider recovery
+
+- Record the selected Supabase backup retention/PITR policy.
+- Perform a provider-level restore rehearsal into an isolated recovery project.
+- Record achieved recovery point/time and any managed Auth/provider limitations.
+
+### Operating organization
+
+- Assign on-call/incident ownership and alert destinations.
+- Assign moderation/safety escalation ownership.
+- Define approved support/contact channels and organization-specific privacy/compliance procedures.
+
+### Deferred product features
+
+- Messaging stays outside primary navigation until real production behavior is complete.
+- Rewards/economic UX stays outside primary navigation until its authority and consumer experience are complete.
+
+Do not add these systems merely to make the product look larger.
 
 ## Engineering rules carried forward
 
 1. No mock/demo/sample fallback in production runtime.
 2. No duplicate authority paths.
-3. No legacy compatibility layer kept merely for history.
+3. No legacy compatibility layer retained as a graveyard.
 4. Server/database authority for privileged state.
 5. RLS for member-scoped access.
 6. Schema changes only through migrations.
 7. Generated database types must match the migrated schema.
-8. Exact-head green CI before merge or release claims.
-9. Public/member/admin surface separation remains enforced.
-10. Documentation changes with architecture and runtime behavior.
+8. Exact-head green CI before merge/release claims.
+9. Hosted release claims require exact deployed-revision evidence.
+10. Public/member/admin surface separation remains enforced.
+11. Documentation must move with runtime/architecture truth.
 
-## Next engineering slice
+## Next engineering decision
 
-After this documentation/onboarding truth cleanup is independently green, the next release-hardening slice should focus on **governance plus production operations**, not reopening the already-proven core relationship lifecycle.
+After deployment-operations tooling is independently green, do **not** reopen the proven core lifecycle without evidence. The next choice should be driven by the remaining external launch gates above or by a concrete consumer defect, not feature accumulation.

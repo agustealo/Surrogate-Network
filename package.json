@@ -18,7 +18,8 @@
     "test:e2e:smoke": "playwright test --project=chromium --grep @smoke",
     "test:a11y": "playwright test --project=chromium --grep @a11y",
     "test:watch": "jest --watch",
-    "test:navigation": "jest --runInBand src/navigation/__tests__/navigation-registry.test.ts src/lib/__tests__/routes-integration.test.ts src/app/__tests__/layout-ownership.test.tsx src/app/__tests__/route-ownership.test.ts src/components/member/__tests__/MobileNavigation.test.tsx"
+    "test:navigation": "jest --runInBand src/navigation/__tests__/navigation-registry.test.ts src/lib/__tests__/routes-integration.test.ts src/app/__tests__/layout-ownership.test.tsx src/app/__tests__/route-ownership.test.ts src/components/member/__tests__/MobileNavigation.test.tsx",
+    "verify:deployment": "node scripts/verify-deployment.mjs"
   },
   "dependencies": {
     "@hookform/resolvers": "^4.1.3",

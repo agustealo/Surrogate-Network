@@ -10,42 +10,49 @@ Canonical lifecycle:
 Need + Offer -> Discovery -> Proposal -> Surrogacy -> Moment -> Exchange -> Feedback
 ```
 
-Progression, tokens, notifications, media permissions, moderation, and administration support that lifecycle. They are not parallel product models.
+Progression, tokens, notifications, moderation, administration, account lifecycle, and operational controls support that lifecycle. They are not parallel product models.
+
+The current product does not ship a generic media subsystem. Any future media feature must begin with an explicit object-storage ownership, authorization, deletion, and recovery contract rather than reviving arbitrary URL metadata.
 
 ## Engineering methodology
 
 The project follows these non-negotiable rules:
 
 1. **Runtime truth over presentation.** A consumer-visible control must execute real logic or be absent/disabled with an honest state. Production UI must never present fabricated users, counts, health, messages, rewards, reports, balances, or activity as live data.
-2. **One canonical implementation.** Routes, navigation, domain rules, persistence contracts, authorization, and state transitions each have one source of truth. Duplicate implementations are removed rather than synchronized.
+2. **One canonical implementation.** Routes, navigation, domain rules, persistence contracts, runtime configuration, authorization, and state transitions each have one source of truth. Duplicate implementations are removed rather than synchronized.
 3. **Dependency direction points inward.** UI depends on application use cases; application depends on domain/repository contracts; infrastructure implements those contracts. Domain code must not import Supabase, Next.js, or presentation code.
-4. **Server authority for privileged state.** Tokens, XP, ranks, verification, moderation, restrictions, audit records, and administrative mutations are server-authoritative and auditable. The browser never calculates or writes authoritative economic/security state.
-5. **RLS is mandatory, not decorative.** User-scoped data access is performed with the request-scoped Supabase client so Row Level Security evaluates the authenticated user. The service-role client is reserved for narrowly scoped trusted system/admin commands.
-6. **No silent demo fallback.** Tests may own fixtures. Production and development runtime must use real local/remote Supabase data. A backend failure renders a real error or empty state, never invented consumer data.
-7. **Schema changes are migrations.** The `supabase/migrations` directory is the database history. Dashboard-only schema edits are not accepted.
-8. **Exact-head certification.** A release candidate is the exact commit that passed dependency audit, typecheck, lint, unit/component/security/navigation tests, production build, the fresh-database two-member E2E trial, accessibility smoke, and the aggregate quality gate. Evidence from an earlier SHA is historical only.
-9. **Small modules, explicit contracts.** Avoid `any`, god services, mega-pages, implicit globals, and cross-surface imports. Prefer typed repositories, use cases, pure domain functions, and focused components.
-10. **Docs are part of the product.** Architectural changes update this manifest and the relevant architecture/data/development documents in the same change. Documentation must not certify a release before the exact-head gate has actually passed.
+4. **Server authority for privileged state.** Tokens, XP, ranks, verification, moderation, restrictions, account tombstones, audit records, and administrative mutations are server/database authoritative and auditable. The browser never calculates or writes authoritative economic/security state.
+5. **RLS is mandatory, not decorative.** User-scoped data access is performed with the request-scoped Supabase client so Row Level Security evaluates the authenticated user. Service-role authority is reserved for narrowly scoped trusted system/admin operations.
+6. **No silent demo fallback.** Tests may own fixtures. Production and development runtime must use real local/remote Supabase data. A backend failure renders a real error/empty/unavailable state, never invented consumer data.
+7. **Schema changes are migrations.** `supabase/migrations` is the database/security history. Dashboard-only schema edits are not accepted.
+8. **Exact-head certification.** A release candidate is the exact commit that passed dependency audit, typecheck, lint, unit/component/security/navigation tests, production build, recovery drill, fresh-database E2E trial, accessibility smoke, and aggregate QUALITY GATE. Evidence from an earlier SHA is historical only.
+9. **Deployed revision truth.** A hosted release is not certified until the target reports an immutable deployed git revision and the repository deployment verifier confirms that revision and runtime contract.
+10. **Small modules, explicit contracts.** Avoid `any`, god services, mega-pages, implicit globals, and cross-surface imports. Prefer typed repositories, use cases, pure domain functions, and focused components.
+11. **Docs are part of the product.** Architectural/operational changes update this manifest and relevant docs in the same change. Documentation must not certify evidence that has not actually passed.
 
 ## Canonical stack
 
-- Next.js App Router + React + TypeScript
-- Supabase Auth, PostgreSQL, Storage, Realtime, and RLS
+- Next.js 16 App Router + React 19 + TypeScript
+- Supabase Auth + PostgreSQL + Row Level Security
+- Supabase platform services only when a shipped feature owns their lifecycle contract
 - Repository interfaces under `src/repositories`
 - Supabase adapters under `src/infrastructure/supabase`
+- Runtime config under `src/infrastructure/config`
+- Health/observability/operations under `src/infrastructure/health`, `src/infrastructure/observability`, and `src/infrastructure/operations`
 - Application orchestration under `src/application`
 - Canonical domain definitions under `src/domain`
-- Public, member, and admin UI surfaces under `src/app`
+- Public/member/admin UI surfaces under `src/app`
 - Jest + Testing Library + Playwright
-- GitHub Actions as the release quality gate
+- GitHub Actions as release/deployment verification authority
 
-Firebase is not part of the architecture.
+Firebase and Genkit are not part of the architecture.
 
 ## Surface ownership
 
-- **Public:** marketing, principles, safety, authentication, public discovery, trial Terms and Privacy Notice.
-- **Member:** authenticated consumer experience only, including explicit trial consent and account lifecycle controls.
-- **Admin:** separate authorized operational console. Moderation and other privileged operations never leak into the member shell.
+- **Public:** marketing, principles, safety, authentication, password recovery, public discovery, trial Terms and Privacy Notice.
+- **Member:** authenticated consumer experience, explicit trial consent, marketplace/relationship flows, safety controls, export/deactivation/deletion.
+- **Admin:** separate authorized operational console. Moderation and privileged operations never leak into the member shell.
+- **Operations:** health endpoints, request correlation, structured error telemetry, recovery tooling, and deployment verification are operational infrastructure, not consumer feature surfaces.
 
 ## Runtime boundaries
 
@@ -59,23 +66,80 @@ application
 domain + repository contracts
       ^
       |
-infrastructure (Supabase)
+infrastructure (Supabase / config / health / observability / operations)
 ```
 
 Forbidden dependencies include domain -> infrastructure, member -> admin UI, public -> admin UI, client -> service-role credentials, and presentation -> direct privileged mutations.
 
 ## Production data policy
 
-Production code must not contain consumer-facing mock/demo/sample records. Fixtures belong in test-only modules or database seed tooling. Placeholder routes must not be linked as shipped features. Placeholder image hosts are not production media storage.
+Production code must not contain consumer-facing mock/demo/sample records. Fixtures belong in test-only modules or database seed tooling. Placeholder routes must not be linked as shipped features. Placeholder image hosts or arbitrary URL metadata are not production media storage.
+
+## Account lifecycle policy
+
+- Password recovery uses Supabase email + PKCE exchange and a recovery-session-gated password update.
+- Self-deactivation is reversible and distinct from moderation suspension.
+- Permanent deletion is terminal and database-first.
+- Direct member/profile/listing content is redacted before external Auth cleanup.
+- Shared relationship/safety/moderation/audit records may remain as tombstoned/redacted history where deleting them would damage counterpart history or platform integrity.
+- Stale JWTs must not regain direct mutation authority after deactivation/deletion.
+- External Auth cleanup failures remain operationally visible rather than pretending deletion completed everywhere.
+
+## Runtime configuration and health
+
+Public Supabase URL/anon configuration has one canonical owner. Service-role configuration has a separate server-only owner.
+
+Health semantics are explicit:
+
+- `/api/health/live`: process liveness only; does not require Supabase.
+- `/api/health/ready`: required runtime config + real anonymous Supabase data-plane readiness.
+
+Readiness must fail closed. Never turn it into an unconditional 200 for deployment convenience.
+
+Health responses may expose only sanitized non-secret release provenance.
+
+## Observability
+
+- Every dynamic request receives a validated/generated request ID.
+- Production request-error logs are structured and request-correlated.
+- Query strings/fragments and raw production exception message/stack content are excluded from the application error event.
+- Error fingerprints/digests exist for grouping without using sensitive raw content.
+- App Router/global error boundaries provide honest user-facing failure recovery.
+
+## Recovery boundary
+
+Repository CI proves logical application-data recovery for the app-owned `public` schema using canonical migrations and a transactional restore drill.
+
+Repository CI does **not** prove Supabase-managed Auth recovery, provider backup/PITR policy, Storage object recovery, or full-project provider restoration. Those require deployment-owner/provider evidence as documented in `docs/PRODUCTION_RECOVERY.md`.
 
 ## Consumer-trial readiness
 
-A consumer-trial candidate must have real authentication; explicit age/Terms/Privacy consent; real Need/Offer/Proposal/Surrogacy/Moment/Exchange/Feedback persistence; database-enforced member authority; blocking/reporting; an actionable admin moderation queue; suspension and self-deactivation boundaries; honest public/member navigation; privacy and safety surfaces; responsive/accessibility smoke coverage; and exact-head CI certification of the canonical two-member journey on a freshly migrated database.
+A consumer-trial candidate must have real authentication; explicit age/Terms/Privacy consent; real Need/Offer/Proposal/Surrogacy/Moment/Exchange/Feedback persistence; database-enforced member authority; blocking/reporting; an actionable admin moderation queue; suspension/self-deactivation/deletion boundaries; honest public/member navigation; privacy/safety surfaces; account recovery/export; runtime health; responsive/accessibility coverage; and exact-head CI certification of the canonical two-member journey on a freshly migrated database.
 
 Features that are not complete enough for the trial must be absent from primary navigation rather than simulated. Messaging and Rewards may retain truthful non-primary routes while their production behavior remains incomplete.
 
 ## Definition of market-ready
 
-A broader market release requires everything in the consumer-trial bar plus hardened account recovery and deletion/export policy; production observability and error reporting; rate and abuse controls; backup/recovery procedures; production media/storage lifecycle; operational runbooks; and any additional compliance or support processes required by the deployed product.
+A broader market release requires everything in the consumer-trial bar plus:
 
-Anything below the relevant bar must be described by its actual state rather than labeled production-ready.
+- production observability and request correlation;
+- production account recovery/export/deletion controls;
+- rate/abuse controls;
+- logical recovery proof plus recorded provider backup/PITR policy and provider-level restore rehearsal;
+- exact hosted-deployment verification tied to immutable release provenance;
+- operational incident/support/rollback procedures;
+- real password-recovery email/provider verification;
+- repository governance preventing unproven direct pushes;
+- operating-organization moderation/on-call/privacy/support ownership;
+- production contracts for any additional promoted feature such as Messaging, Rewards, or media.
+
+Repository code can implement tooling for these controls, but it must not claim deployment-owner evidence that has not actually been produced.
+
+## Release evidence rule
+
+There are two separate proofs:
+
+1. **Repository candidate proof:** exact SHA passes the complete CI `QUALITY GATE`.
+2. **Hosted deployment proof:** Deployment Verification confirms the real target reports that same immutable revision and satisfies the runtime/header/readiness contract.
+
+Both proofs are required before claiming that a specific hosted release corresponds to a specific green repository revision.
