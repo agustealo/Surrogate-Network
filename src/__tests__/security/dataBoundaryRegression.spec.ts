@@ -242,9 +242,9 @@ describe('Consumer-trial data boundaries', () => {
       offer_id: offer.id,
       proposing_user_id: memberA.user.id,
       receiving_user_id: memberB.user.id,
-      status: 'pending',
-    }).select('id').single()
+    }).select('id,status').single()
     if (createError || !proposal) throw createError ?? new Error('Unable to seed proposal')
+    expect(proposal.status).toBe('pending')
 
     const clientB = await clientFor(memberB)
     const [proposerAttempt, recipientAttempt] = await Promise.all([
@@ -285,9 +285,9 @@ describe('Consumer-trial data boundaries', () => {
       type: 'other',
       severity: 'medium',
       description: 'Boundary report with sufficient detail for regression coverage.',
-      status: 'pending',
-    }).select('id').single()
+    }).select('id,status').single()
     if (reportError || !report) throw reportError ?? new Error('Unable to seed report')
+    expect(report.status).toBe('pending')
 
     const reportMutation = await clientA
       .from('reports')
