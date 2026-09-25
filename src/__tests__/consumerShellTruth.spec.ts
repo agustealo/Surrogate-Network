@@ -38,6 +38,15 @@ describe('consumer shell truth', () => {
     expect(adminHeader).not.toContain('<h1')
   })
 
+  it('mounts toast feedback wherever public-profile safety actions can run', () => {
+    const publicProfile = source('src/app/profile/[id]/page.tsx')
+    const safetyControls = source('src/components/safety/ProfileSafetyControls.tsx')
+
+    expect(safetyControls).toContain("toast({ title: 'Report submitted'")
+    expect(publicProfile).toContain("from '@/components/ui/toaster'")
+    expect(publicProfile).toContain('<Toaster />')
+  })
+
   it('does not retain the obsolete mock AppHeader implementation', () => {
     expect(() => source('src/components/layout/AppHeader.tsx')).toThrow()
   })
