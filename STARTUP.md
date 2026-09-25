@@ -127,14 +127,15 @@ npm run build
 npm run test:e2e:smoke
 ```
 
-## Release evidence
+## Release evidence ownership
 
-The consumer-trial baseline merged on September 20, 2026 at:
+Release evidence is immutable and SHA-specific. This startup guide must not claim a forever-current release SHA or workflow run because any later merge would make that claim stale.
 
-```text
-c68fe8af3ace66622ce4e0f24f672807dadf984e
-```
+For every repository candidate:
 
-Post-merge CI run #235 passed the full quality rail, including SECURITY, BUILD, A11Y, E2E TRIAL, and QUALITY GATE.
+- use the exact PR head's complete `QUALITY GATE` run as candidate evidence;
+- verify the post-merge `master` SHA independently;
+- treat evidence from older SHAs as historical only;
+- use GitHub issue #11, **Launch certification: hosted verification and operating controls**, as the mutable ledger for the current unrestricted-launch state.
 
-That evidence belongs only to that exact commit. Any newer branch or commit must pass its own exact-head CI before being described as release-ready.
+Repository CI does not certify a hosted deployment. A public release additionally requires the manual **Deployment Verification** workflow against the real HTTPS production origin and the same immutable deployed revision.
