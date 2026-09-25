@@ -36,7 +36,7 @@ export default async function ProfilePage({ params }: Props) {
   const isSelf = user?.id === profileId
 
   return (
-    <main className="container mx-auto max-w-5xl space-y-8 px-4 py-8">
+    <div className="container mx-auto max-w-5xl space-y-8 px-4 py-8">
       <Card>
         <CardContent className="flex flex-col gap-5 pt-6 sm:flex-row sm:items-start">
           <Avatar className="h-24 w-24"><AvatarImage src={profile.avatar_url ?? undefined} alt={profileName} /><AvatarFallback>{profileName.slice(0, 2).toUpperCase()}</AvatarFallback></Avatar>
@@ -63,6 +63,6 @@ export default async function ProfilePage({ params }: Props) {
         <div className="grid gap-4 md:grid-cols-2">{(offersResult.data ?? []).map((offer) => <Card key={offer.id}><CardHeader><Badge className="w-fit" variant="outline">{offer.category}</Badge><CardTitle>{offer.title}</CardTitle></CardHeader><CardContent><p>{offer.description}</p>{typeof offer.rating === 'number' && <p className="mt-2 text-sm text-muted-foreground">{offer.rating.toFixed(1)} · {offer.review_count ?? 0} reviews</p>}<Button asChild size="sm" variant="outline" className="mt-4"><Link href={`/offers/${offer.id}`}>View Offer</Link></Button></CardContent></Card>)}</div>
         {!offersResult.data?.length && <p className="text-muted-foreground">No active Offers.</p>}
       </section>
-    </main>
+    </div>
   )
 }

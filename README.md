@@ -24,7 +24,13 @@ These screenshots come from the same Playwright consumer-trial path that exercis
 | --- | --- |
 | ![Incoming Proposal](docs/screenshots/03-incoming-proposal.webp) | ![Completed Exchange](docs/screenshots/04-completed-exchange.webp) |
 
-See [`docs/VISUAL_EVIDENCE.md`](docs/VISUAL_EVIDENCE.md) for screenshot provenance, regeneration rules, source-artifact evidence, and brand-asset usage.
+### Consumer-trial showcase
+
+The current showcase grid was promoted from the reviewed, fully green consumer-trial artifact and covers live Discovery, authenticated member safety controls, account export/deletion/deactivation, the authorized Admin Console, moderation reports, and Community Principles.
+
+![Surrogate Network consumer trial showcase](docs/screenshots/05-showcase-grid.webp)
+
+The authoritative source set contains 16 runtime PNGs in the corresponding `consumer-visual-evidence` GitHub Actions artifact. See [`docs/VISUAL_EVIDENCE.md`](docs/VISUAL_EVIDENCE.md) for screenshot provenance, regeneration rules, source-artifact evidence, and brand-asset usage.
 
 ## Trial-ready product surface
 

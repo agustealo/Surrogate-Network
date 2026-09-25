@@ -53,6 +53,7 @@ Firebase and Genkit are not part of the architecture.
 - **Member:** authenticated consumer experience, explicit trial consent, marketplace/relationship flows, safety controls, export/deactivation/deletion.
 - **Admin:** separate authorized operational console. Moderation and privileged operations never leak into the member shell.
 - **Operations:** health endpoints, request correlation, structured error telemetry, recovery tooling, and deployment verification are operational infrastructure, not consumer feature surfaces.
+- **Shared presentation shells:** reusable public/member chrome may be shared as presentation components, but authorization remains owned by the canonical route/layout policy. The public profile route may choose public or member chrome from session state; it does not become a second account-policy or authorization authority.
 
 ## Runtime boundaries
 
@@ -117,6 +118,14 @@ Repository CI does **not** prove Supabase-managed Auth recovery, provider backup
 A consumer-trial candidate must have real authentication; explicit age/Terms/Privacy consent; real Need/Offer/Proposal/Surrogacy/Moment/Exchange/Feedback persistence; database-enforced member authority; blocking/reporting; an actionable admin moderation queue; suspension/self-deactivation/deletion boundaries; honest public/member navigation; privacy/safety surfaces; account recovery/export; runtime health; responsive/accessibility coverage; and exact-head CI certification of the canonical two-member journey on a freshly migrated database.
 
 Features that are not complete enough for the trial must be absent from primary navigation rather than simulated. Messaging and Rewards may retain truthful non-primary routes while their production behavior remains incomplete.
+
+## Visual evidence contract
+
+- The consumer E2E rail captures 16 real runtime PNG frames spanning public, member, relationship, safety, account, admin, moderation, and Principles surfaces.
+- Source PNGs are CI evidence. They are uploaded as the `consumer-visual-evidence` artifact and are not committed as the documentation source of truth.
+- Repository documentation may promote reviewed, web-optimized WebP derivatives only after the source artifact has been manually inspected.
+- Documentation promotion does not replace exact-head CI. Any commit that adds or changes promoted assets or their references must itself pass the complete `QUALITY GATE` before merge.
+- The current showcase derivative was produced from the fully green run **#334** artifact at `a67f0252d5a57f460716a7107ff0aed74901d739`. That parent passed SECURITY, recovery, schema/type drift checks, BUILD, E2E TRIAL, A11Y, exact local deployment verification, and aggregate `QUALITY GATE` before the documentation promotion commit was created.
 
 ## Definition of market-ready
 
