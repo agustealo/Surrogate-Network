@@ -149,6 +149,20 @@ The request-scoped server client preserves the authenticated member session. Use
 
 The service-role client bypasses RLS and is therefore restricted to narrowly scoped trusted system/admin operations. It must never be used to infer who the current human user is.
 
+### Data API privileges
+
+PostgreSQL object privileges and Row Level Security are separate layers of the same data boundary:
+
+- grants decide whether `anon`, `authenticated`, or `service_role` can reach a table/view and operation through Supabase/PostgREST at all;
+- RLS decides which rows an allowed caller may see or mutate;
+- column grants further fence member-controlled fields where workflow/status/reputation state must remain database-owned.
+
+`supabase/migrations/20260925000100_explicit_data_api_privileges.sql` is the convergence point for the shipped Data API surface. It removes dependence on Supabase project-era automatic grants, explicitly declares the current role/table operations, and makes future `public` tables/functions/sequences private to API roles until the migration that owns them grants the required access.
+
+Anonymous access is intentionally limited to the safe `public_profiles` projection. Authenticated access is explicitly granted only for shipped member read/write paths. Service-role access remains server-only trusted infrastructure and does not replace RLS-preserving member clients.
+
+A new database object is not a shipped Data API object merely because it exists in the `public` schema. Its migration must deliberately grant the required role/operation surface and retain the appropriate RLS or trusted-RPC authority.
+
 ### Database functions
 
 Complex privileged transitions are implemented as migration-managed PostgreSQL functions so multi-row state changes remain atomic and auditable.
@@ -302,13 +316,16 @@ Do not hardcode a second menu registry in another component.
 
 `src/infrastructure/supabase/database.types.ts` is generated from the migrated local database. CI regenerates this file and rejects drift.
 
-A schema change is incomplete until:
+A schema/security change is incomplete until:
 
 1. the migration exists;
 2. a clean database can replay all migrations;
-3. security regression tests pass;
-4. logical recovery remains valid when affected;
-5. generated database types match the schema.
+3. Data API grants, RLS, column authority, and function execution remain explicit for affected objects;
+4. security regression tests pass;
+5. logical recovery remains valid when affected;
+6. generated database types match the schema.
+
+Provider default grants must never be treated as application authority.
 
 ## Browser security
 
