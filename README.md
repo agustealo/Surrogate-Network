@@ -12,25 +12,59 @@ Need + Offer -> Discovery -> Proposal -> Surrogacy -> Moment -> Exchange -> Feed
 
 The product is hardened for controlled consumer trials with real persistence, explicit authority boundaries, production-oriented account lifecycle controls, runtime observability, health/readiness semantics, recovery proof, and exact-head release gates. That does **not** mean every roadmap feature or deployment-owner control is complete for unrestricted public-market launch.
 
-## Real product screenshots
+## Real product tour
 
-These screenshots come from the same Playwright consumer-trial path that exercises real persistence and the canonical two-member lifecycle. The committed WebP files are reviewed, web-optimized derivatives of exact-head runtime captures, not mockups or marketing comps.
+These are **actual browser screenshots** captured by the real Playwright consumer-trial journey against a freshly migrated Supabase runtime. They are the exact PNG frames promoted from green CI run **#357** for `master@be859bca5a0639c7f8d2472faaa46c2732bad442`. They are not mockups, stitched galleries, marketing renders, or manually reconstructed screens.
 
-| Public entry | Published Need |
-| --- | --- |
-| ![Surrogate Network public home](docs/screenshots/01-public-home.webp) | ![Published Need](docs/screenshots/02-published-need.webp) |
+### 1. Public entry
 
-| Incoming Proposal | Completed Exchange |
-| --- | --- |
-| ![Incoming Proposal](docs/screenshots/03-incoming-proposal.webp) | ![Completed Exchange](docs/screenshots/04-completed-exchange.webp) |
+![Surrogate Network public home](docs/screenshots/01-public-home.png)
 
-### Consumer-trial showcase
+The public landing experience introduces needs-based relationships and routes people into the real authentication journey.
 
-The current showcase grid was promoted from the reviewed, fully green consumer-trial artifact and covers live Discovery, authenticated member safety controls, account export/deletion/deactivation, the authorized Admin Console, moderation reports, and Community Principles.
+### 2. Publish a Need
 
-![Surrogate Network consumer trial showcase](docs/screenshots/05-showcase-grid.webp)
+![Published Need](docs/screenshots/02-published-need.png)
 
-The authoritative source set contains 16 runtime PNGs in the corresponding `consumer-visual-evidence` GitHub Actions artifact. See [`docs/VISUAL_EVIDENCE.md`](docs/VISUAL_EVIDENCE.md) for screenshot provenance, regeneration rules, source-artifact evidence, and brand-asset usage.
+The member has created a real persisted Need. The screenshot shows the authenticated shell and the saved listing state.
+
+### 3. Discover real marketplace records
+
+![Discovery marketplace](docs/screenshots/08-discovery-marketplace.png)
+
+Discovery reads the Need and Offer records created by the same trial journey rather than seeded presentation data.
+
+### 4. Publish an Offer
+
+![Published Offer](docs/screenshots/09-published-offer.png)
+
+The complementary Offer is persisted through the shipped member flow.
+
+### 5. Compose a Proposal
+
+![Proposal composer](docs/screenshots/10-proposal-composer.png)
+
+The proposal composer is bound to the actual Need and Offer records created earlier in the journey.
+
+### 6. Receive the Proposal
+
+![Incoming Proposal](docs/screenshots/03-incoming-proposal.png)
+
+This is the real browser page after Proposal persistence. The compact proposal card and its Accept / Decline / Counter controls are the shipped UI state, not a rendered substitute.
+
+### 7. Form an active Surrogacy
+
+![Active Surrogacy](docs/screenshots/12-active-surrogacy.png)
+
+After acceptance, the database-backed relationship becomes an active Surrogacy/Connection and exposes the real Moment scheduling flow.
+
+### 8. Complete the Exchange
+
+![Completed Exchange](docs/screenshots/04-completed-exchange.png)
+
+The lifecycle is shown after Moment completion and submitted Feedback, proving the product beyond proposal acceptance.
+
+Eight additional standalone runtime frames cover How It Works, Safety, the member dashboard, profile safety controls, account privacy controls, the Admin Console, moderation reports, and Community Principles. See [`docs/VISUAL_EVIDENCE.md`](docs/VISUAL_EVIDENCE.md) for the full 16-shot catalog, exact provenance, and regeneration rules.
 
 ## Trial-ready product surface
 
@@ -70,6 +104,7 @@ Messaging and Rewards are intentionally absent from primary member navigation un
 
 - **Framework:** Next.js 16, React 19, TypeScript.
 - **Data/Auth:** Supabase Auth + PostgreSQL + Row Level Security.
+- **Data API authority:** explicit PostgreSQL grants owned by migrations, with RLS and column authority layered on top.
 - **Storage/Realtime:** not a generic requirement. A future shipped feature must own an explicit object/realtime lifecycle before adopting these services.
 - **Domain:** `src/domain`.
 - **Application orchestration:** `src/application`.
@@ -190,17 +225,17 @@ The SECURITY rail runs `scripts/recovery-drill.sh`, which proves that canonical 
 
 That drill does not prove Supabase-managed Auth, provider backup/PITR policy, or a full production project restore. See [`docs/PRODUCTION_RECOVERY.md`](docs/PRODUCTION_RECOVERY.md).
 
-## Verified parent evidence for the active operations slice
+## Verified parent evidence for this documentation slice
 
-The active deployment-operations slice started from merged `master` commit:
+This screenshot/documentation slice was cut from merged `master` commit:
 
 ```text
-db2675221f6b81b8621088a8732b5c42f40dc8b6
+be859bca5a0639c7f8d2472faaa46c2732bad442
 ```
 
-Post-merge CI run **#272** passed on that parent, including the recovery drill, SECURITY, zero schema/type drift, BUILD, E2E TRIAL, A11Y, and QUALITY GATE.
+Post-merge CI run **#357** passed on that exact revision, including the recovery drill, SECURITY, zero schema/type drift, BUILD, E2E TRIAL, A11Y, exact local deployment verification, and aggregate QUALITY GATE. The 16 committed screenshots are the exact PNG files from that run's `consumer-visual-evidence` artifact.
 
-This records the independently verified parent, not a permanently self-updating “latest SHA.” Each later candidate/merge must earn its own exact-head evidence in GitHub Actions and its PR record.
+This records independently verified parent evidence. The documentation/screenshot commit must still earn its own exact-head CI before merge.
 
 ## Readiness boundary
 
@@ -242,13 +277,13 @@ docs/                  architecture, operations, recovery, development, visual e
 - Real runtime logic only. No silent demo fallback.
 - One canonical implementation per responsibility.
 - Privileged state is server/database authoritative.
-- RLS is enforced, not decorative.
+- Data API grants, column authority, and RLS are enforced, not decorative.
 - Schema changes are migrations.
 - Public, member, and admin concerns remain separated.
 - Exact-head CI evidence is required before merge/release claims.
 - A hosted release must be tied to an immutable deployed revision before certification.
 - Documentation must describe the repository that actually exists.
-- Product screenshots used by repository documentation must originate from the real E2E runtime, be reviewed, and only then be promoted into durable docs assets.
+- Product screenshots used by repository documentation must originate from the real E2E runtime, remain standalone and inspectable, and only then be promoted into durable docs assets.
 
 Read [`docs/PROJECT_MANIFEST.md`](docs/PROJECT_MANIFEST.md) for the full methodology and release definitions.
 
