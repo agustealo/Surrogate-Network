@@ -132,13 +132,59 @@ A consumer-trial candidate must have real authentication; explicit age/Terms/Pri
 
 Features that are not complete enough for the trial must be absent from primary navigation rather than simulated. Messaging and Rewards may retain truthful non-primary routes while their production behavior remains incomplete.
 
+## Product and operating-surface evidence
+
+The README carries the eight-shot lifecycle tour. This manifest carries the complementary eight runtime states that explain the surrounding product contract.
+
+### Public explanation and safety
+
+![How It Works](screenshots/05-how-it-works.png)
+
+The public explanation presents the same lifecycle the domain model implements.
+
+![Safety](screenshots/06-safety.png)
+
+The public Safety surface makes consent, boundaries, and reporting part of the product rather than an external policy afterthought.
+
+### Member operations and safety
+
+![Member dashboard](screenshots/07-member-dashboard.png)
+
+The authenticated dashboard exposes live Need, Offer, and Surrogacy state for the synthetic trial member.
+
+![Member profile safety](screenshots/11-member-profile-safety.png)
+
+The profile surface contains the real block/report controls used during the E2E journey.
+
+![Account privacy controls](screenshots/13-account-privacy-controls.png)
+
+The account surface exposes export, deactivation, deletion, Terms, and Privacy controls from the shipped member UI.
+
+### Separate administrative authority
+
+![Admin Console](screenshots/14-admin-console.png)
+
+The Admin Console is a separate authorized surface and reports live operational counts without becoming a second member shell.
+
+![Moderation reports](screenshots/15-moderation-reports.png)
+
+The moderation queue contains the real report created through the member safety path and exposes moderator actions.
+
+### Community contract
+
+![Community Principles](screenshots/16-community-principles.png)
+
+The Community Principles / Co-op Charter makes the social contract visible in the actual public product.
+
 ## Visual evidence contract
 
 - The consumer E2E rail captures 16 real runtime PNG frames spanning public, member, relationship, safety, account, admin, moderation, and Principles surfaces.
-- Source PNGs are CI evidence. They are uploaded as the `consumer-visual-evidence` artifact and are not committed as the documentation source of truth.
-- Repository documentation may promote reviewed, web-optimized WebP derivatives only after the source artifact has been manually inspected.
+- CI uploads those exact PNGs as the `consumer-visual-evidence` artifact for exact-head review.
+- Reviewed documentation promotion commits the individual source PNGs directly. The repository must not replace them with a stitched showcase grid, browserless rendering, or a hand-built visual approximation.
+- The committed 16-frame set was promoted byte-for-byte from post-merge run **#357** (`36179582230`) for `master@be859bca5a0639c7f8d2472faaa46c2732bad442`, artifact digest `sha256:c5f352d8143479f6a76e4345345906262989ed7108b9e3b13a1f2a03446e061d`.
+- `README.md` uses eight lifecycle frames; this manifest uses the complementary eight product/operations frames; `docs/VISUAL_EVIDENCE.md` catalogs all 16 with provenance and meaning.
 - Documentation promotion does not replace exact-head CI. Any commit that adds or changes promoted assets or their references must itself pass the complete `QUALITY GATE` before merge.
-- The current showcase derivative was produced from the fully green run **#334** artifact at `a67f0252d5a57f460716a7107ff0aed74901d739`. That parent passed SECURITY, recovery, schema/type drift checks, BUILD, E2E TRIAL, A11Y, exact local deployment verification, and aggregate `QUALITY GATE` before the documentation promotion commit was created.
+- Screenshot filenames remain stable and one-frame-per-state so reviewers can inspect changes individually.
 
 ## Definition of market-ready
 
