@@ -22,9 +22,9 @@ The project follows these non-negotiable rules:
 2. **One canonical implementation.** Routes, navigation, domain rules, persistence contracts, runtime configuration, authorization, and state transitions each have one source of truth. Duplicate implementations are removed rather than synchronized.
 3. **Dependency direction points inward.** UI depends on application use cases; application depends on domain/repository contracts; infrastructure implements those contracts. Domain code must not import Supabase, Next.js, or presentation code.
 4. **Server authority for privileged state.** Tokens, XP, ranks, verification, moderation, restrictions, account tombstones, audit records, and administrative mutations are server/database authoritative and auditable. The browser never calculates or writes authoritative economic/security state.
-5. **RLS is mandatory, not decorative.** User-scoped data access is performed with the request-scoped Supabase client so Row Level Security evaluates the authenticated user. Service-role authority is reserved for narrowly scoped trusted system/admin operations.
+5. **Data API grants and RLS are both mandatory.** PostgreSQL grants define which Supabase/PostgREST objects and operations each API role can reach; RLS defines which rows an allowed caller can access. Column grants and trusted RPCs fence authoritative fields. The project does not rely on Supabase's implicit/default grants for application authority.
 6. **No silent demo fallback.** Tests may own fixtures. Production and development runtime must use real local/remote Supabase data. A backend failure renders a real error/empty/unavailable state, never invented consumer data.
-7. **Schema changes are migrations.** `supabase/migrations` is the database/security history. Dashboard-only schema edits are not accepted.
+7. **Schema changes are migrations.** `supabase/migrations` is the database/security history. Dashboard-only schema edits are not accepted. New public database objects are private to API roles until their owning migration explicitly grants the shipped surface.
 8. **Exact-head certification.** A release candidate is the exact commit that passed dependency audit, typecheck, lint, unit/component/security/navigation tests, production build, recovery drill, fresh-database E2E trial, accessibility smoke, and aggregate QUALITY GATE. Evidence from an earlier SHA is historical only.
 9. **Deployed revision truth.** A hosted release is not certified until the target reports an immutable deployed git revision and the repository deployment verifier confirms that revision and runtime contract.
 10. **Small modules, explicit contracts.** Avoid `any`, god services, mega-pages, implicit globals, and cross-surface imports. Prefer typed repositories, use cases, pure domain functions, and focused components.
@@ -34,6 +34,7 @@ The project follows these non-negotiable rules:
 
 - Next.js 16 App Router + React 19 + TypeScript
 - Supabase Auth + PostgreSQL + Row Level Security
+- Explicit PostgreSQL Data API grants owned by migrations
 - Supabase platform services only when a shipped feature owns their lifecycle contract
 - Repository interfaces under `src/repositories`
 - Supabase adapters under `src/infrastructure/supabase`
@@ -76,6 +77,18 @@ Forbidden dependencies include domain -> infrastructure, member -> admin UI, pub
 
 Production code must not contain consumer-facing mock/demo/sample records. Fixtures belong in test-only modules or database seed tooling. Placeholder routes must not be linked as shipped features. Placeholder image hosts or arbitrary URL metadata are not production media storage.
 
+## Supabase Data API authority
+
+Surrogate Network owns its Data API privilege surface in migrations rather than inheriting provider defaults.
+
+- `anon` may reach only the intentionally public projection(s) required by the shipped public experience.
+- `authenticated` receives explicit relation/operation grants for current member flows; RLS still filters rows.
+- authoritative lifecycle/status/reputation/account fields remain protected by column ACLs and trusted RPC/trigger paths.
+- `service_role` remains server-only trusted authority and must never be shipped to browser code.
+- future `public` tables, functions, and sequences are private to API roles until their migration deliberately grants the required access.
+
+A green local runtime must therefore be reproducible on a fresh Supabase project regardless of the provider's project-era automatic grant defaults.
+
 ## Account lifecycle policy
 
 - Password recovery uses Supabase email + PKCE exchange and a recovery-session-gated password update.
@@ -115,7 +128,7 @@ Repository CI does **not** prove Supabase-managed Auth recovery, provider backup
 
 ## Consumer-trial readiness
 
-A consumer-trial candidate must have real authentication; explicit age/Terms/Privacy consent; real Need/Offer/Proposal/Surrogacy/Moment/Exchange/Feedback persistence; database-enforced member authority; blocking/reporting; an actionable admin moderation queue; suspension/self-deactivation/deletion boundaries; honest public/member navigation; privacy/safety surfaces; account recovery/export; runtime health; responsive/accessibility coverage; and exact-head CI certification of the canonical two-member journey on a freshly migrated database.
+A consumer-trial candidate must have real authentication; explicit age/Terms/Privacy consent; real Need/Offer/Proposal/Surrogacy/Moment/Exchange/Feedback persistence; explicit Data API grants plus database-enforced member authority; blocking/reporting; an actionable admin moderation queue; suspension/self-deactivation/deletion boundaries; honest public/member navigation; privacy/safety surfaces; account recovery/export; runtime health; responsive/accessibility coverage; and exact-head CI certification of the canonical two-member journey on a freshly migrated database.
 
 Features that are not complete enough for the trial must be absent from primary navigation rather than simulated. Messaging and Rewards may retain truthful non-primary routes while their production behavior remains incomplete.
 
