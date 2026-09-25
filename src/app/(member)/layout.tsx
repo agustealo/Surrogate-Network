@@ -1,9 +1,6 @@
 import type { Metadata } from 'next'
 import { redirect } from 'next/navigation'
-import { Toaster } from '@/components/ui/toaster'
-import { MemberNavigation } from '@/components/member/MemberNavigation'
-import { MemberHeader } from '@/components/member/MemberHeader'
-import { MobileNavigation } from '@/components/member/MobileNavigation'
+import { MemberShell } from '@/components/layout/MemberShell'
 import { createClient } from '@/infrastructure/supabase/server'
 import { routes } from '@/lib/routes'
 import { TRIAL_POLICY_VERSION } from '@/lib/trialPolicy'
@@ -37,15 +34,5 @@ export default async function MemberLayout({ children }: Readonly<{ children: Re
     && Boolean(profile.trial_age_confirmed_at)
   if (!hasCurrentConsent) redirect(routes.public.trialConsent)
 
-  return (
-    <div className="flex min-h-screen flex-col bg-background">
-      <MemberHeader />
-      <div className="flex flex-1">
-        <MemberNavigation />
-        <main className="flex-1 overflow-auto pb-16 md:pb-0">{children}</main>
-      </div>
-      <MobileNavigation />
-      <Toaster />
-    </div>
-  )
+  return <MemberShell>{children}</MemberShell>
 }
