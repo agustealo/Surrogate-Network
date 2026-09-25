@@ -300,8 +300,8 @@ test.describe('Consumer trial smoke @smoke', () => {
       await provider.goto('/settings')
       await expect(provider.getByRole('link', { name: 'Download my data' })).toBeVisible()
       await expect(provider.getByRole('button', { name: 'Delete account' })).toBeVisible()
-      await provider.getByText('Safety & privacy', { exact: true }).scrollIntoViewIfNeeded()
-      await provider.evaluate(() => window.scrollBy(0, -120))
+      await provider.getByText('Your data & account', { exact: true }).scrollIntoViewIfNeeded()
+      await provider.evaluate(() => window.scrollBy(0, -180))
       await captureVisualEvidence(provider, '13-account-privacy-controls.png')
 
       const downloadPromise = provider.waitForEvent('download')
