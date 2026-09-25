@@ -2,17 +2,19 @@
 
 ## Current status
 
-**Current production line:** `master@2355e23d5a2833843c5f7c2378ba5ae4c962161a`
+**Mutable launch-certification truth lives in issue #11, “Launch certification: hosted verification and operating controls.”** That tracker owns the current production SHA, latest exact-head/post-merge evidence, and the state of external launch gates.
 
-**Latest post-merge evidence:** Surrogate Network CI run **#336** completed successfully on September 25, 2026.
+This sprint sheet records durable product/architecture state and immutable milestone evidence. It deliberately does **not** hardcode “the current master SHA” or “the latest CI run,” because a status-only merge would immediately make those self-referential fields stale.
 
-That run passed the full repository quality rail on the exact merge commit, including immutable workflow dependency verification, logical application-data recovery, SECURITY, zero schema/type drift, BUILD, the canonical two-member E2E trial, 16-frame runtime visual-evidence generation/upload, deployment-verifier proof, A11Y, and QUALITY GATE.
+Immutable release milestones:
 
-PR **#13**, “Refresh premium runtime screenshot evidence,” merged from exact green head `1f7954bd26773f98028ff32755add95430c7ad6a` after run **#335** passed the same full release rail. The slice expanded the runtime evidence contract to 16 real product states and closed screenshot-discovered presentation defects without changing canonical authorization authority. There are currently no open code PRs.
+- PR **#13**, “Refresh premium runtime screenshot evidence,” merged after exact-head run **#335** passed the complete release rail and established the 16-frame real-runtime visual evidence contract.
+- PR **#14**, “Refresh launch status after premium visual evidence merge,” passed exact-head run **#337** and exposed the need to remove mutable SHA ownership from this file.
+- PR **#15**, “Prove recovered credentials invalidate the old password,” passed exact-head run **#341** and merged the canonical recovery assertion that the old credential is rejected after recovery while the replacement credential authenticates.
 
-The remaining unrestricted-launch blockers are tracked in **issue #11, “Launch certification: hosted verification and operating controls.”** They are deployment, provider, repository-governance, and human-operations gates rather than missing core application architecture.
+At the time of this governance correction, post-merge run **#342** passed the full repository quality rail on the PR #15 merge commit, including dependency audit, logical application-data recovery, SECURITY, zero schema/type drift, BUILD, canonical E2E trial, 16-frame runtime visual-evidence verification/upload, local deployment-verifier proof, A11Y, and QUALITY GATE. Treat that as immutable historical evidence, not as a forever-current pointer.
 
-This file is the current engineering status sheet. Historical candidate SHAs remain useful evidence, but a superseded SHA is never used to certify a newer candidate.
+The remaining unrestricted-launch blockers are deployment, provider, repository-governance, and human-operations gates rather than missing core application architecture. Their live state belongs in issue #11.
 
 ## Product objective
 
@@ -53,6 +55,7 @@ The engineering rule remains strict: visible controls execute real persisted beh
 ### Account lifecycle
 
 - Password recovery uses real Supabase email + PKCE callback exchange in the local integration rail.
+- The canonical recovery smoke proves the original credential is rejected after recovery and the replacement credential authenticates.
 - Password update is recovery-session gated.
 - Members can download a machine-readable data export.
 - Reversible deactivation is separate from permanent deletion.
@@ -141,6 +144,7 @@ Every release candidate must pass on the exact candidate SHA:
 9. BUILD
 10. E2E TRIAL
     - canonical two-member consumer lifecycle
+    - password recovery with previous-credential rejection
     - 16-frame source screenshot evidence generation
     - visual-evidence file assertions/upload
     - real member report -> moderation queue path
@@ -170,22 +174,27 @@ The remaining launch work is tracked by **issue #11** and should not be converte
 - Record the production origin, workflow run, and exact deployed SHA.
 - Ensure the runtime exposes release provenance through `SURROGATE_RELEASE_SHA`, `VERCEL_GIT_COMMIT_SHA`, or `GITHUB_SHA`.
 
-**Current state:** repository metadata still has no homepage, GitHub Pages is disabled, and no canonical production origin was surfaced by external discovery. No hosted verification claim is being made.
+**Current state:** repository metadata still has no homepage, GitHub Pages is disabled, and no canonical production origin is certified. The connected Vercel session currently exposes no accessible teams/projects, so hosted deployment identity remains unresolved rather than assumed absent. No hosted verification claim is being made.
 
 ### 3. Real production password-recovery delivery
+
+Repository/local-provider behavior is already proven by the canonical E2E rail, including rejection of the old credential after recovery. The remaining gate is specifically production-provider delivery and callback evidence:
 
 - Use an approved production smoke account.
 - Prove provider-delivered recovery email receipt.
 - Complete the production callback/PKCE exchange and password change.
-- Prove the old credential no longer authenticates.
+- Confirm the old credential no longer authenticates in production.
 - Keep tokens/recovery links out of public logs and documentation.
 
 ### 4. Provider recovery
 
-- Record the production Supabase backup retention/PITR policy.
-- Perform a provider-level restore rehearsal into an isolated recovery project.
+- Identify the actual production Supabase project and record its backup retention/PITR policy.
+- Perform a provider-level restore rehearsal into an isolated recovery target.
 - Validate managed Auth plus application-owned relational data.
+- Separately account for non-database resources/settings that are not restored with the database recovery path.
 - Record measured RPO/RTO and provider limits.
+
+**Current state:** the connected Supabase session currently exposes no accessible projects, so project-specific provider recovery evidence cannot yet be certified.
 
 ### 5. Operating organization
 
@@ -221,6 +230,7 @@ Do not add these systems merely to make the product look larger.
 10. Public/member/admin surface separation remains enforced.
 11. Documentation must move with runtime/architecture truth.
 12. Product screenshots used by documentation must originate from real runtime evidence and be reviewed before durable promotion.
+13. Mutable release truth belongs in the launch tracker; durable sprint documentation records architecture and immutable milestones rather than self-referential “latest SHA” fields.
 
 ## Next engineering decision
 
