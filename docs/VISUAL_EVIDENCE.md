@@ -1,6 +1,6 @@
 # Visual Evidence and Brand Assets
 
-Surrogate Network documentation uses two classes of visual asset, and they must never be confused.
+Surrogate Network documentation separates brand artwork from runtime product evidence. The two must never be confused.
 
 ## Brand assets
 
@@ -11,51 +11,140 @@ Canonical documentation identity lives in `docs/assets/`:
 
 These assets use the same brand colors already defined by the application UI: royal violet (`#A049DF`), vibrant pink (`#F25A99`), supporting violet (`#CC99E6`), and the neutral product background (`#F9F9FB`).
 
-## Runtime screenshots
+## Runtime screenshot authority
 
-The source evidence is generated only by the real Playwright consumer-trial runtime. It is not a mockup, design comp, seeded marketing render, or manually fabricated screen.
+The screenshot source of truth is the real Playwright consumer-trial runtime in `e2e/smoke.spec.ts`. The capture path signs in real synthetic trial members, writes to the fresh Supabase database, traverses the shipped member/admin surfaces, and captures the browser after the relevant state exists.
 
-The capture contract is embedded in `e2e/smoke.spec.ts` and currently produces 16 PNG evidence frames:
+The committed documentation screenshots are now the **exact PNG frames from that runtime artifact**. They are not a stitched showcase, design comp, manually fabricated screen, browserless render, or recompressed derivative.
 
-1. `01-public-home.png` — public entry surface.
-2. `02-published-need.png` — a persisted Need after real creation.
-3. `03-incoming-proposal.png` — a persisted incoming Proposal between two real trial accounts.
-4. `04-completed-exchange.png` — the Surrogacy lifecycle after Moment completion and submitted Feedback.
-5. `05-how-it-works.png` — public product explanation.
-6. `06-safety.png` — public Safety surface.
-7. `07-member-dashboard.png` — authenticated member dashboard.
-8. `08-discovery-marketplace.png` — live Discovery marketplace populated by the trial journey.
-9. `09-published-offer.png` — a persisted Offer after real creation.
-10. `10-proposal-composer.png` — proposal composer populated against real Need/Offer records.
-11. `11-member-profile-safety.png` — authenticated member profile with real report/block controls.
-12. `12-active-surrogacy.png` — active Surrogacy/Connection after proposal acceptance.
-13. `13-account-privacy-controls.png` — real export, deletion, deactivation, and privacy controls.
-14. `14-admin-console.png` — authorized Admin Console operational dashboard.
-15. `15-moderation-reports.png` — moderation queue containing the report created through the member flow.
-16. `16-community-principles.png` — Community Principles / Co-op Charter.
+Current provenance:
 
-CI fails if required source screenshots are absent or empty. The E2E workflow uploads the complete PNG set as the `consumer-visual-evidence` artifact so the exact-head runtime can be reviewed before publication.
+- Git revision: `be859bca5a0639c7f8d2472faaa46c2732bad442`
+- GitHub Actions run: **#357** (`36179582230`)
+- Artifact: `consumer-visual-evidence`
+- Artifact digest: `sha256:c5f352d8143479f6a76e4345345906262989ed7108b9e3b13a1f2a03446e061d`
+- Result: complete post-merge CI including SECURITY, BUILD, E2E TRIAL, A11Y, recovery, schema/type drift checks, local deployment verification, and aggregate `QUALITY GATE` passed.
 
-## Reviewed documentation derivatives
+## The 16 real product frames
 
-Repository documentation intentionally promotes a smaller set of WebP derivatives rather than duplicating the entire CI artifact:
+Each file is deliberately standalone so a reader can understand the product state without decoding a collage.
 
-- `01-public-home.webp`
-- `02-published-need.webp`
-- `03-incoming-proposal.webp`
-- `04-completed-exchange.webp`
-- `05-showcase-grid.webp` — a compact reviewed gallery covering Discovery, member safety, account controls, Admin Console, moderation reports, and Community Principles.
+### Public product understanding
 
-The WebP files are documentation derivatives of reviewed runtime captures, not a separate screenshot source of truth. The GitHub Actions artifact remains the authoritative exact-capture evidence for the run that produced them.
+**01 — Public home**
 
-The current showcase grid was promoted from the fully green run **#334** artifact generated from `a67f0252d5a57f460716a7107ff0aed74901d739`. That run passed the complete `QUALITY GATE`, including SECURITY, BUILD, E2E TRIAL, A11Y, recovery, schema/type drift checks, and exact local deployment verification. The subsequent documentation commit must earn its own exact-head gate before merge.
+![Public home](screenshots/01-public-home.png)
 
-## Documentation usage
+The unauthenticated entry surface introduces the needs-based relationship model and sends people into the real sign-up/sign-in journey.
 
-Use the banner once at the top of the README or a long-form project manuscript. Use screenshots only where they explain a real product state or workflow. Do not repeat screenshots decoratively and do not use a screenshot to imply a feature that is not actually exercised by the exact E2E path that produced it.
+**05 — How it works**
 
-For release or manuscript publication, prefer repository-committed WebP derivatives tied to a reviewed green E2E run. If the UI changes materially, regenerate the source PNGs, review them, and promote new derivatives rather than retaining stale visuals.
+![How it works](screenshots/05-how-it-works.png)
+
+The public lifecycle explanation shows the product flow from Need/Offer through Surrogacy and Exchange.
+
+**06 — Safety**
+
+![Safety](screenshots/06-safety.png)
+
+The public safety surface explains consent, boundaries, reporting, and protection expectations.
+
+**16 — Community principles**
+
+![Community principles](screenshots/16-community-principles.png)
+
+The Co-op Charter presents the product's connection principles in the actual public UI.
+
+### Member marketplace and lifecycle
+
+**07 — Member dashboard**
+
+![Member dashboard](screenshots/07-member-dashboard.png)
+
+The authenticated dashboard shows live Need, Offer, and active Surrogacy counts for the trial member.
+
+**08 — Discovery marketplace**
+
+![Discovery marketplace](screenshots/08-discovery-marketplace.png)
+
+Discovery displays persisted Needs and Offers created during the same real trial journey.
+
+**02 — Published Need**
+
+![Published Need](screenshots/02-published-need.png)
+
+A Need is shown after real database creation, including the member shell and persisted state confirmation.
+
+**09 — Published Offer**
+
+![Published Offer](screenshots/09-published-offer.png)
+
+A complementary Offer is shown after real persistence.
+
+**10 — Proposal composer**
+
+![Proposal composer](screenshots/10-proposal-composer.png)
+
+The composer is populated against the real Need and Offer records used by the trial journey.
+
+**03 — Incoming Proposal**
+
+![Incoming Proposal](screenshots/03-incoming-proposal.png)
+
+This is the actual browser page after Proposal persistence. Its intentionally compact card is the shipped UI state, not a rendered substitute. The visible Accept / Decline / Counter actions belong to the real proposal flow.
+
+**12 — Active Surrogacy**
+
+![Active Surrogacy](screenshots/12-active-surrogacy.png)
+
+The accepted Proposal has been promoted into an active Surrogacy/Connection with the real Moment scheduling surface.
+
+**04 — Completed Exchange**
+
+![Completed Exchange](screenshots/04-completed-exchange.png)
+
+The relationship flow is shown after Moment completion and submitted Feedback, proving the lifecycle beyond proposal acceptance.
+
+### Safety, account, and operations
+
+**11 — Member profile safety controls**
+
+![Member profile safety](screenshots/11-member-profile-safety.png)
+
+The authenticated member profile exposes the real report/block controls used by the trial.
+
+**13 — Account privacy controls**
+
+![Account privacy controls](screenshots/13-account-privacy-controls.png)
+
+The account surface exposes real export, deactivation, deletion, Terms, and Privacy controls.
+
+**14 — Admin Console**
+
+![Admin Console](screenshots/14-admin-console.png)
+
+The separate authorized admin surface shows live operational counts without leaking admin controls into the member shell.
+
+**15 — Moderation reports**
+
+![Moderation reports](screenshots/15-moderation-reports.png)
+
+The moderation queue contains the report created through the member flow and exposes the real moderator action surface.
+
+## Capture and promotion contract
+
+CI must fail if any required source screenshot is absent or empty. The E2E workflow uploads the complete 16-frame set as `consumer-visual-evidence` so the exact-head runtime can be inspected before documentation promotion.
+
+Promotion rules:
+
+1. Capture only through the real Playwright/Supabase trial journey.
+2. Inspect each individual source frame at readable size.
+3. Promote the actual source PNG, not a stitched grid or manually reconstructed derivative.
+4. Keep filenames stable so README, manifest, and visual-evidence references remain reviewable.
+5. Replace stale individual frames when the UI materially changes.
+6. Never use screenshots to imply behavior that the producing E2E path did not exercise.
+7. Any commit that changes promoted screenshots or documentation references must pass the normal exact-head `QUALITY GATE` before merge.
 
 ## Privacy and safety boundary
 
-Screenshot capture must use synthetic trial identities only. Do not capture production member data, secrets, service-role configuration, recovery links, raw tokens, internal error payloads, or provider credentials. Public documentation screenshots should show product behavior, not operational secrets.
+Screenshot capture uses synthetic trial identities only. Do not capture production member data, secrets, service-role configuration, recovery links, raw tokens, internal error payloads, or provider credentials. Public documentation screenshots show product behavior, not operational secrets.
