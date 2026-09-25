@@ -73,7 +73,6 @@ export async function reportMemberAction(input: unknown): Promise<ActionResult<{
         type: values.type,
         severity: values.severity,
         description: values.description,
-        status: 'pending',
       })
       .select('id')
       .single()
