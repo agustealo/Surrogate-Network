@@ -136,12 +136,13 @@ describe('Trial action rate-limit security', () => {
         offer_id: offerA.id,
         proposing_user_id: memberA.user.id,
         receiving_user_id: memberB.user.id,
-        status: 'pending',
-      }))
+      }).select('id,status').single())
     )
 
-    expect(proposalAttempts.filter((result) => !result.error)).toHaveLength(30)
+    const successfulProposals = proposalAttempts.filter((result) => !result.error)
+    expect(successfulProposals).toHaveLength(30)
     expect(proposalAttempts.filter((result) => result.error)).toHaveLength(1)
+    expect(successfulProposals.every((result) => result.data?.status === 'pending')).toBe(true)
 
     const reportAttempts = await Promise.all(
       Array.from({ length: 11 }, (_, index) => clientA.from('reports').insert({
@@ -150,12 +151,13 @@ describe('Trial action rate-limit security', () => {
         type: 'other',
         severity: 'low',
         description: `Rate-limit report fixture ${index} with enough detail for validation.`,
-        status: 'pending',
-      }))
+      }).select('id,status').single())
     )
 
-    expect(reportAttempts.filter((result) => !result.error)).toHaveLength(10)
+    const successfulReports = reportAttempts.filter((result) => !result.error)
+    expect(successfulReports).toHaveLength(10)
     expect(reportAttempts.filter((result) => result.error)).toHaveLength(1)
+    expect(successfulReports.every((result) => result.data?.status === 'pending')).toBe(true)
   })
 
   it('keeps budgets per-member and does not throttle trusted service work', async () => {
