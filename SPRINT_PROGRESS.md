@@ -2,13 +2,13 @@
 
 ## Current status
 
-**Current production line:** `master@926c862393bcb12a5b258c02ed159a7604ad6570`
+**Current production line:** `master@2355e23d5a2833843c5f7c2378ba5ae4c962161a`
 
-**Latest post-merge evidence:** GitHub Actions run **#308** completed successfully on September 24, 2026.
+**Latest post-merge evidence:** Surrogate Network CI run **#336** completed successfully on September 25, 2026.
 
-That run passed the full repository quality rail on the exact merge commit, including immutable workflow dependency verification, logical application-data recovery, SECURITY, zero schema/type drift, BUILD, the canonical two-member E2E trial, runtime visual-evidence generation, deployment-verifier proof, A11Y, and QUALITY GATE.
+That run passed the full repository quality rail on the exact merge commit, including immutable workflow dependency verification, logical application-data recovery, SECURITY, zero schema/type drift, BUILD, the canonical two-member E2E trial, 16-frame runtime visual-evidence generation/upload, deployment-verifier proof, A11Y, and QUALITY GATE.
 
-PR **#10** merged from exact green head `45036cc3a3c3e5dedbc217e680beb51b4a7a56e8` after run **#307** passed the same release rail. There are currently no open code PRs.
+PR **#13**, “Refresh premium runtime screenshot evidence,” merged from exact green head `1f7954bd26773f98028ff32755add95430c7ad6a` after run **#335** passed the same full release rail. The slice expanded the runtime evidence contract to 16 real product states and closed screenshot-discovered presentation defects without changing canonical authorization authority. There are currently no open code PRs.
 
 The remaining unrestricted-launch blockers are tracked in **issue #11, “Launch certification: hosted verification and operating controls.”** They are deployment, provider, repository-governance, and human-operations gates rather than missing core application architecture.
 
@@ -48,6 +48,7 @@ The engineering rule remains strict: visible controls execute real persisted beh
 - Admin moderation is a separate authorized surface.
 - Restrictions/suspension, audit evidence, and moderation outcomes use canonical trusted authority.
 - Trial action rate limits are database-backed.
+- Public/member profile safety actions render inside the correct product shell and provide visible success feedback.
 
 ### Account lifecycle
 
@@ -105,11 +106,13 @@ This tooling does **not** claim a production environment has been verified until
 
 - Canonical brand assets live under `docs/assets/`.
 - The README includes the branded Surrogate Network header/banner.
-- Real product screenshots originate from the same Playwright consumer-trial lifecycle used for release proof.
-- Source PNG captures are generated and uploaded during E2E for review.
-- Reviewed, web-optimized WebP derivatives are committed under `docs/screenshots/` for README/manuscript use.
-- Screenshot capture uses synthetic trial identities and excludes production member data/secrets.
-- The first evidence review also exposed and removed false member-header affordances and user-facing brand drift before publication.
+- Real product screenshots originate from the same Playwright + Supabase consumer-trial lifecycle used for release proof.
+- The runtime capture contract now produces 16 real frames covering public entry, How It Works, Safety, Community Principles, member dashboard, Discovery, Need detail, Offer detail, proposal composition, incoming proposal, member profile safety/reporting, active Surrogacy, completed Exchange/Feedback, account privacy/data controls, Admin Console, and moderation reports.
+- The moderation screenshot is backed by a report submitted through the real member flow; admin capture runs only in the disposable local CI station with synthetic identities.
+- Source PNG captures are uploaded as the `consumer-visual-evidence` artifact for exact-run review.
+- Reviewed, web-optimized WebP derivatives are committed under `docs/screenshots/` for README/manuscript use, including a compact showcase grid for the wider product tour.
+- Screenshot capture excludes production member data, provider credentials, service-role configuration, recovery links, and secrets.
+- The visual burn exposed and closed false admin search chrome, duplicate Admin Console heading ownership, shell-less profile presentation, missing report-success feedback, stale brand metadata, and account-control framing defects before publication.
 
 ### Media cleanup
 
@@ -138,8 +141,10 @@ Every release candidate must pass on the exact candidate SHA:
 9. BUILD
 10. E2E TRIAL
     - canonical two-member consumer lifecycle
-    - source screenshot evidence generation
+    - 16-frame source screenshot evidence generation
     - visual-evidence file assertions/upload
+    - real member report -> moderation queue path
+    - disposable local Admin Console proof
     - local production deployment-verifier proof
 11. A11Y
 12. QUALITY GATE
@@ -165,7 +170,7 @@ The remaining launch work is tracked by **issue #11** and should not be converte
 - Record the production origin, workflow run, and exact deployed SHA.
 - Ensure the runtime exposes release provenance through `SURROGATE_RELEASE_SHA`, `VERCEL_GIT_COMMIT_SHA`, or `GITHUB_SHA`.
 
-**Current state:** no canonical production origin is recorded in repository metadata/docs or surfaced by the external discovery pass, so no hosted verification claim is being made.
+**Current state:** repository metadata still has no homepage, GitHub Pages is disabled, and no canonical production origin was surfaced by external discovery. No hosted verification claim is being made.
 
 ### 3. Real production password-recovery delivery
 
