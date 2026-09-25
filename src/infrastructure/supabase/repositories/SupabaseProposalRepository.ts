@@ -50,7 +50,6 @@ export class SupabaseProposalRepository implements ProposalRepository {
         frequency: input.frequency,
         location_method: input.locationMethod,
         message: input.message,
-        status: 'pending',
       })
       .select('*')
       .single()
