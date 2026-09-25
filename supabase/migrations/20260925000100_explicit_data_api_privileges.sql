@@ -108,9 +108,22 @@ GRANT UPDATE (
   user_name, user_avatar
 ) ON TABLE public.offers TO authenticated;
 
-GRANT INSERT ON TABLE public.proposals TO authenticated;
+-- Proposal workflow state and counter ownership are database-owned. Clients may
+-- provide only composition/linkage fields; status/timestamps use trusted
+-- defaults/transitions.
+GRANT INSERT (
+  need_id, offer_id, proposing_user_id, receiving_user_id, message,
+  proposed_date, duration, frequency, location_method
+) ON TABLE public.proposals TO authenticated;
+
 GRANT INSERT, DELETE ON TABLE public.blocks TO authenticated;
-GRANT INSERT ON TABLE public.reports TO authenticated;
+
+-- Report workflow fields are moderation authority. Members supply only the
+-- evidence envelope; status/resolution/action fields are database/admin-owned.
+GRANT INSERT (
+  reported_user_id, reporter_user_id, type, severity, description
+) ON TABLE public.reports TO authenticated;
+
 GRANT INSERT ON TABLE public.command_idempotency TO authenticated;
 
 GRANT UPDATE (
@@ -142,10 +155,18 @@ BEGIN
     RAISE EXCEPTION 'Offer Data API privilege contract is invalid';
   END IF;
 
-  IF NOT has_table_privilege('authenticated', 'public.proposals', 'INSERT')
+  IF NOT has_column_privilege('authenticated', 'public.proposals', 'need_id', 'INSERT')
+     OR has_column_privilege('authenticated', 'public.proposals', 'status', 'INSERT')
      OR has_table_privilege('authenticated', 'public.proposals', 'UPDATE')
      OR has_table_privilege('authenticated', 'public.proposals', 'DELETE') THEN
     RAISE EXCEPTION 'Proposal Data API privilege contract is invalid';
+  END IF;
+
+  IF NOT has_column_privilege('authenticated', 'public.reports', 'description', 'INSERT')
+     OR has_column_privilege('authenticated', 'public.reports', 'status', 'INSERT')
+     OR has_column_privilege('authenticated', 'public.reports', 'action_taken', 'INSERT')
+     OR has_table_privilege('authenticated', 'public.reports', 'UPDATE') THEN
+    RAISE EXCEPTION 'Report Data API privilege contract is invalid';
   END IF;
 
   IF NOT has_column_privilege('authenticated', 'public.profiles', 'name', 'UPDATE')
