@@ -122,7 +122,7 @@ test.describe('Consumer trial smoke @smoke', () => {
     await captureVisualEvidence(page, '06-safety.png', { fullPage: true })
   })
 
-  test('password recovery exchanges a real PKCE email link and changes the credential', async ({ browser }) => {
+  test('password recovery exchanges a real PKCE email link, invalidates the old credential, and accepts the replacement', async ({ browser }) => {
     const runId = `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`
     const member: TrialMember = {
       name: 'Recovery Test Member',
@@ -132,8 +132,9 @@ test.describe('Consumer trial smoke @smoke', () => {
     const newPassword = 'Recovery-Changed-456!'
     const setupContext = await browser.newContext()
     const recoveryContext = await browser.newContext()
-    const loginContext = await browser.newContext()
-    const contexts = [setupContext, recoveryContext, loginContext]
+    const oldCredentialContext = await browser.newContext()
+    const newCredentialContext = await browser.newContext()
+    const contexts = [setupContext, recoveryContext, oldCredentialContext, newCredentialContext]
 
     try {
       await signUp(await setupContext.newPage(), member)
@@ -152,9 +153,14 @@ test.describe('Consumer trial smoke @smoke', () => {
       await recovery.getByRole('button', { name: 'Update password' }).click()
       await recovery.waitForURL(/\/home$/, { timeout: 20_000 })
 
-      const login = await loginContext.newPage()
-      await signIn(login, { ...member, password: newPassword })
-      await login.waitForURL(/\/home$/, { timeout: 20_000 })
+      const oldCredentialLogin = await oldCredentialContext.newPage()
+      await signIn(oldCredentialLogin, member)
+      await expect(oldCredentialLogin.getByRole('alert')).toBeVisible({ timeout: 20_000 })
+      await expect(oldCredentialLogin).toHaveURL(/\/login$/)
+
+      const newCredentialLogin = await newCredentialContext.newPage()
+      await signIn(newCredentialLogin, { ...member, password: newPassword })
+      await newCredentialLogin.waitForURL(/\/home$/, { timeout: 20_000 })
     } finally {
       await dispose(contexts)
     }
