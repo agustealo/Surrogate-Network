@@ -160,9 +160,9 @@ describe('Authenticated actor ownership boundary', () => {
       offer_id: offer.id,
       proposing_user_id: memberA.user.id,
       receiving_user_id: memberB.user.id,
-      status: 'pending',
-    }).select('id').single()
+    }).select('id,status').single()
     if (proposalError || !proposal) throw proposalError ?? new Error('Unable to seed proposal')
+    expect(proposal.status).toBe('pending')
 
     const proposerAttempt = await clientA.rpc('accept_proposal_for_trial', {
       p_proposal_id: proposal.id,
@@ -200,9 +200,9 @@ describe('Authenticated actor ownership boundary', () => {
       type: 'other',
       severity: 'medium',
       description: 'Authority-boundary moderation report with enough detail.',
-      status: 'pending',
-    }).select('id').single()
+    }).select('id,status').single()
     if (reportError || !report) throw reportError ?? new Error('Unable to seed report')
+    expect(report.status).toBe('pending')
 
     const nonAdminAttempt = await clientA.rpc('moderate_report_for_trial', {
       p_report_id: report.id,
