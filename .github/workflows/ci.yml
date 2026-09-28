@@ -134,9 +134,10 @@ jobs:
       - name: Start Supabase and export runtime credentials
         run: |
           supabase start
+          npm run local:config
           supabase status -o env | sed 's/^ANON_KEY=/NEXT_PUBLIC_SUPABASE_ANON_KEY=/' | sed 's/^API_URL=/NEXT_PUBLIC_SUPABASE_URL=/' | sed 's/^SERVICE_ROLE_KEY=/SUPABASE_SERVICE_ROLE_KEY=/' | sed 's/="\(.*\)"$/=\1/' >> "$GITHUB_ENV"
       - name: Apply migrations from a clean database
-        run: supabase db reset --no-seed
+        run: supabase db reset --local --no-seed
       - name: Prove logical application-data recovery
         run: bash scripts/recovery-drill.sh
       - name: Run security regression tests
@@ -188,13 +189,16 @@ jobs:
           cache: npm
       - name: Install dependencies
         run: npm ci
-      - name: Build application
+      - name: Install Supabase CLI
+        run: npm install -g supabase@2.117.0
+      - name: Start canonical local Supabase runtime
+        run: |
+          supabase start
+          npm run local:config
+      - name: Build application against real local configuration
         run: npm run build
         env:
           NODE_ENV: production
-          NEXT_PUBLIC_SUPABASE_URL: http://127.0.0.1:54321
-          NEXT_PUBLIC_SUPABASE_ANON_KEY: build-only-local-key
-          SUPABASE_SERVICE_ROLE_KEY: build-only-local-service-key
       - name: Upload build artifacts
         uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6
         with:
@@ -221,9 +225,10 @@ jobs:
       - name: Start fresh Supabase runtime
         run: |
           supabase start
+          npm run local:config
           supabase status -o env | sed 's/^ANON_KEY=/NEXT_PUBLIC_SUPABASE_ANON_KEY=/' | sed 's/^API_URL=/NEXT_PUBLIC_SUPABASE_URL=/' | sed 's/^SERVICE_ROLE_KEY=/SUPABASE_SERVICE_ROLE_KEY=/' | sed 's/="\(.*\)"$/=\1/' >> "$GITHUB_ENV"
       - name: Rebuild database from migrations
-        run: supabase db reset --no-seed
+        run: supabase db reset --local --no-seed
       - name: Build against the exact trial runtime
         run: npm run build
         env:
@@ -311,9 +316,10 @@ jobs:
       - name: Start fresh Supabase runtime
         run: |
           supabase start
+          npm run local:config
           supabase status -o env | sed 's/^ANON_KEY=/NEXT_PUBLIC_SUPABASE_ANON_KEY=/' | sed 's/^API_URL=/NEXT_PUBLIC_SUPABASE_URL=/' | sed 's/^SERVICE_ROLE_KEY=/SUPABASE_SERVICE_ROLE_KEY=/' | sed 's/="\(.*\)"$/=\1/' >> "$GITHUB_ENV"
       - name: Rebuild database from migrations
-        run: supabase db reset --no-seed
+        run: supabase db reset --local --no-seed
       - name: Build against the exact accessibility runtime
         run: npm run build
         env:
