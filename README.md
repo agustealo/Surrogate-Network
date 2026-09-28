@@ -86,12 +86,13 @@ Eight additional standalone runtime frames cover How It Works, Safety, the membe
 - Moment scheduling and completion.
 - Exchange recording.
 - Exchange-bound Feedback.
+- Rewards, rank, achievements, and XP-ledger history.
 - Member blocking and safety reporting.
 - Account settings and reversible trial deactivation.
 - Machine-readable account export.
 - Password-confirmed permanent account deletion with retained tombstone/history boundaries.
 
-Messaging and Rewards are intentionally absent from primary member navigation until their production behavior is complete. Existing non-primary routes must remain truthful about their availability rather than simulate data.
+Messaging is not part of the current consumer product surface. There is no placeholder messaging route or simulated conversation data; it must return as a complete persisted, access-controlled, abuse-aware feature rather than as a dead-end screen.
 
 ### Admin
 
@@ -105,7 +106,7 @@ Messaging and Rewards are intentionally absent from primary member navigation un
 - **Framework:** Next.js 16, React 19, TypeScript.
 - **Data/Auth:** Supabase Auth + PostgreSQL + Row Level Security.
 - **Data API authority:** explicit PostgreSQL grants owned by migrations, with RLS and column authority layered on top.
-- **Storage/Realtime:** not a generic requirement. A future shipped feature must own an explicit object/realtime lifecycle before adopting these services.
+- **Storage/Realtime/Edge Runtime:** disabled in the repository-owned local Supabase configuration because no shipped consumer feature owns those lifecycles.
 - **Domain:** `src/domain`.
 - **Application orchestration:** `src/application`.
 - **Repository contracts:** `src/repositories`.
@@ -119,7 +120,7 @@ Messaging and Rewards are intentionally absent from primary member navigation un
 - **Tests:** Jest, Testing Library, Playwright.
 - **Release gate:** GitHub Actions.
 
-Firebase and Genkit are not part of the current architecture. Production runtime must not fall back to mock, demo, sample, or invented consumer data.
+Firebase and Genkit are not part of the current architecture. Production runtime must not fall back to mock, demo, sample, seeded, or invented consumer data.
 
 ## Local development
 
@@ -130,32 +131,22 @@ Firebase and Genkit are not part of the current architecture. Production runtime
 - Docker.
 - Supabase CLI for the local database/auth stack.
 
-### Start with a real local Supabase runtime
+### Start with the canonical local Supabase runtime
 
 ```bash
 npm ci
-supabase start
-cp .env.example .env.local
-```
-
-Populate `.env.local` with the values reported by the local Supabase runtime:
-
-```env
-NEXT_PUBLIC_SUPABASE_URL=...
-NEXT_PUBLIC_SUPABASE_ANON_KEY=...
-SUPABASE_SERVICE_ROLE_KEY=...
-```
-
-Then rebuild the local database from canonical migrations and start Next.js:
-
-```bash
-supabase db reset --no-seed
+npm run local:up
+npm run local:reset
 npm run dev
 ```
+
+`npm run local:up` starts the repository-owned Supabase stack and generates `.env.local` directly from `supabase status -o env`. The generated file is local-only, gitignored, and permission-restricted. `npm run local:reset` rebuilds the local database from canonical migrations without seed data and refreshes the local runtime configuration.
 
 The application listens on `http://localhost:9002` in development.
 
 `SUPABASE_SERVICE_ROLE_KEY` is server-only. Never expose it to client components, browser bundles, public logs, screenshots, or committed files.
+
+`supabase/config.toml` and `supabase/migrations/` are the repository-owned Supabase configuration and schema authority. Dashboard-only schema/config changes are not part of the project methodology.
 
 See [`STARTUP.md`](STARTUP.md) for the startup sequence and failure checks.
 
@@ -196,6 +187,8 @@ The CI quality rail includes:
 - E2E TRIAL
 - A11Y
 - QUALITY GATE
+
+BUILD, SECURITY, E2E TRIAL, and A11Y use a real repository-configured local Supabase runtime. The build gate does not substitute invented Supabase credentials.
 
 SECURITY starts a fresh Supabase runtime, replays all migrations, runs the logical application-data recovery drill, runs security regressions, regenerates canonical database types, and rejects schema/type drift.
 
@@ -239,19 +232,18 @@ This records independently verified parent evidence. The documentation/screensho
 
 ## Readiness boundary
 
-The repository covers the core consumer lifecycle, account recovery/export/deletion, structured runtime error observability, request correlation, runtime configuration ownership, liveness/readiness, logical application-data recovery, and exact-head CI.
+The repository covers the core consumer lifecycle, rewards/progression visibility, account recovery/export/deletion, structured runtime error observability, request correlation, repository-owned runtime configuration, liveness/readiness, logical application-data recovery, and exact-head CI.
 
 Remaining unrestricted-launch work is primarily deployment/governance/operations-specific:
 
 - protect the default branch and require the aggregate `QUALITY GATE` before merge;
 - run Deployment Verification against the actual hosted production target and exact release revision;
-- record the real Supabase backup/PITR policy and perform a provider-level restore rehearsal;
+- record the real production database/Auth backup and recovery policy and perform a provider-level restore rehearsal;
 - verify real outbound password-recovery email delivery/domain configuration;
 - assign external alerting, on-call/support, moderation, and incident ownership;
-- complete any organization-specific privacy/compliance/support process;
-- complete Messaging and Rewards before promoting them into primary product navigation.
+- complete any organization-specific privacy/compliance/support process.
 
-The dormant media metadata subsystem was deliberately removed rather than presented as a production Storage feature. A future media feature must begin with an explicit private object ownership/access/deletion/recovery contract.
+Future messaging or media features must begin with explicit persistence, ownership, access, abuse/safety, deletion, and recovery contracts. They must not exist as hidden or placeholder consumer routes before those contracts are implemented.
 
 ## Repository structure
 
@@ -266,8 +258,9 @@ src/
   repositories/        persistence interfaces
   __tests__/           security and regression coverage
 supabase/
+  config.toml           canonical local Supabase service configuration
   migrations/          canonical database/security history
-scripts/                recovery, workflow-integrity, and deployment-verification tooling
+scripts/                local runtime, recovery, workflow-integrity, and deployment-verification tooling
 e2e/                   Playwright trial and accessibility coverage
 docs/                  architecture, operations, recovery, development, visual evidence, and manifest docs
 ```
@@ -275,8 +268,10 @@ docs/                  architecture, operations, recovery, development, visual e
 ## Project rules
 
 - Real runtime logic only. No silent demo fallback.
+- No seeded consumer data in the canonical runtime.
 - One canonical implementation per responsibility.
 - Privileged state is server/database authoritative.
+- Supabase service configuration and schema authority live in the repository; secrets remain local and uncommitted.
 - Data API grants, column authority, and RLS are enforced, not decorative.
 - Schema changes are migrations.
 - Public, member, and admin concerns remain separated.
