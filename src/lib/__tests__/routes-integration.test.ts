@@ -11,13 +11,14 @@ describe('Route registry integration', () => {
     expect(routes.public.accountDeleted).toBe('/account-deleted')
   })
 
-  it('contains the implemented member routes', () => {
+  it('contains only implemented member routes', () => {
     expect(routes.member.home).toBe('/home')
     expect(routes.member.discover).toBe('/discover')
-    expect(routes.member.messages).toBe('/messages')
+    expect(routes.member.rewards).toBe('/rewards')
     expect(routes.member.needsCreate).toBe('/needs/create')
     expect(routes.member.offersCreate).toBe('/offers/create')
     expect(routes.member.accountExport).toBe('/account/export')
+    expect('messages' in routes.member).toBe(false)
   })
 
   it('contains the implemented admin routes', () => {
