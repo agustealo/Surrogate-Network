@@ -26,8 +26,6 @@ export async function GET() {
       feedback,
       blocks,
       reports,
-      notifications,
-      tokenTransactions,
       xpTransactions,
       progression,
     ] = await Promise.all([
@@ -39,8 +37,6 @@ export async function GET() {
       service.from('feedback').select('*').or(`from_user_id.eq.${user.id},to_user_id.eq.${user.id}`).order('created_at'),
       service.from('blocks').select('id,blocked_user_id,created_at').eq('blocker_user_id', user.id).order('created_at'),
       service.from('reports').select('id,reported_user_id,type,severity,description,status,created_at,resolved_at').eq('reporter_user_id', user.id).order('created_at'),
-      service.from('notifications').select('*').eq('user_id', user.id).order('created_at'),
-      service.from('token_transactions').select('*').eq('user_id', user.id).order('created_at'),
       service.from('xp_transactions').select('*').eq('user_id', user.id).order('created_at'),
       service.from('member_progression').select('*').eq('user_id', user.id).maybeSingle(),
     ])
@@ -54,8 +50,6 @@ export async function GET() {
       ['feedback', feedback.error],
       ['blocks', blocks.error],
       ['reports', reports.error],
-      ['notifications', notifications.error],
-      ['token transactions', tokenTransactions.error],
       ['xp transactions', xpTransactions.error],
       ['progression', progression.error],
     ] as const
@@ -75,7 +69,7 @@ export async function GET() {
 
     const generatedAt = new Date().toISOString()
     const payload = {
-      export_version: '2026-09-20',
+      export_version: '2026-09-28',
       generated_at: generatedAt,
       account: {
         id: user.id,
@@ -93,8 +87,6 @@ export async function GET() {
       feedback: feedback.data ?? [],
       blocks_created: blocks.data ?? [],
       reports_filed: reports.data ?? [],
-      notifications: notifications.data ?? [],
-      token_transactions: tokenTransactions.data ?? [],
       xp_transactions: xpTransactions.data ?? [],
       progression: progression.data,
       retention_note: 'Internal moderation, anti-abuse, audit, and security records are not included in this member export. Shared relationship records may be retained after account deletion in redacted or tombstoned form.',
