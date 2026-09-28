@@ -1,12 +1,14 @@
 # Local Startup
 
-This project does not use a demo runtime or fake Supabase credentials. Local development should run against a real local Supabase stack or an explicitly configured hosted Supabase project.
+Surrogate Network uses one repository-owned local configuration path for development and release verification. The application does not fall back to demo data, fake Supabase credentials, or dashboard-only configuration.
+
+The local Supabase stack is for development and CI verification only. Do not expose it directly to public traffic. A public deployment must use a production-hardened database/Auth deployment while preserving the repository-owned schema, grants, policies, and configuration contract.
 
 ## Prerequisites
 
 - Node.js 22 or newer
 - npm
-- Docker
+- Docker-compatible container runtime
 - Supabase CLI
 
 ## 1. Install dependencies
@@ -15,42 +17,36 @@ This project does not use a demo runtime or fake Supabase credentials. Local dev
 npm ci
 ```
 
-## 2. Start local Supabase
+## 2. Start the canonical local runtime
 
 ```bash
-supabase start
+npm run local:up
 ```
 
-Use the values reported by the Supabase CLI for the local API URL, anon key, and service-role key.
+This command starts Supabase from `supabase/config.toml` and generates `.env.local` from the values reported by the running local stack. The generator rejects non-loopback Supabase URLs, writes only the application runtime values it owns, and stores `.env.local` with restricted file permissions.
 
-## 3. Create local environment configuration
+Do not copy provider keys into the repository and do not hand-edit `.env.local` as a second configuration authority.
+
+## 3. Rebuild from canonical migrations
 
 ```bash
-cp .env.example .env.local
+npm run local:reset
 ```
 
-Populate `.env.local` with real values from the Supabase runtime:
+The command explicitly targets the local database, replays `supabase/migrations/` without seed data, and refreshes `.env.local` afterward.
 
-```env
-NEXT_PUBLIC_SUPABASE_URL=...
-NEXT_PUBLIC_SUPABASE_ANON_KEY=...
-SUPABASE_SERVICE_ROLE_KEY=...
-```
+The repository intentionally has no `supabase/seed.sql`. Product behavior must be exercised with records created through the real application or explicit test setup, never with synthetic consumer records that silently appear during startup.
 
-`SUPABASE_SERVICE_ROLE_KEY` is privileged server-only material. Never expose it in client components, browser code, screenshots, logs, or committed files.
-
-## 4. Rebuild the database from canonical migrations
-
-```bash
-supabase db reset --no-seed
-```
-
-The source of truth for schema and authority changes is `supabase/migrations/`. Do not rely on dashboard-only schema edits.
-
-## 5. Start Next.js
+## 4. Start Next.js
 
 ```bash
 npm run dev
+```
+
+Or perform steps 2 and 4 together:
+
+```bash
+npm run dev:local
 ```
 
 Development URL:
@@ -59,9 +55,26 @@ Development URL:
 http://localhost:9002
 ```
 
+## Local configuration ownership
+
+The canonical Supabase service configuration is `supabase/config.toml`.
+
+The shipped application currently requires PostgreSQL/Data API and Auth. Storage, Realtime, Edge Runtime, analytics, and Studio AI integration are disabled because no current consumer feature owns those service lifecycles.
+
+`.env.local` is generated from `supabase status -o env` and is gitignored. It contains:
+
+- `NEXT_PUBLIC_SUPABASE_URL`
+- `NEXT_PUBLIC_SUPABASE_ANON_KEY`
+- `SUPABASE_SERVICE_ROLE_KEY`
+- `MAILPIT_URL` when reported by the local stack
+
+`SUPABASE_SERVICE_ROLE_KEY` is privileged server-only material. Never expose it in client components, browser code, screenshots, logs, or committed files.
+
+Schema and authorization changes belong in `supabase/migrations/`. Do not rely on dashboard-only schema edits, manually remembered grants, or provider-side defaults.
+
 ## Validate the local runtime
 
-Before treating a local checkout as healthy, run:
+Before treating a checkout as healthy, run:
 
 ```bash
 npm run typecheck
@@ -80,41 +93,39 @@ npm run test:e2e:smoke
 npm run test:a11y
 ```
 
-The CI pipeline performs the stronger release proof by starting fresh Supabase runtimes for SECURITY, E2E TRIAL, and A11Y.
-
-## Hosted Supabase development
-
-A hosted project may be used instead of local Supabase when intentionally configured. Use the hosted project URL and keys in `.env.local`, keep the service-role key server-only, and apply schema changes through the repository migration process.
-
-Do not substitute placeholder URLs, dummy keys, in-memory fixtures, or browser demo data when the backend is unavailable. A broken backend should fail visibly.
+The CI pipeline starts fresh local Supabase runtimes for SECURITY, BUILD, E2E TRIAL, and A11Y. BUILD therefore compiles against real local Supabase credentials instead of invented build-only values.
 
 ## Common failures
 
-### Missing required environment variable
+### Local configuration is missing
 
-The server deliberately throws when one of the required Supabase variables is absent. Verify `.env.local` contains:
+Run:
 
-- `NEXT_PUBLIC_SUPABASE_URL`
-- `NEXT_PUBLIC_SUPABASE_ANON_KEY`
-- `SUPABASE_SERVICE_ROLE_KEY`
+```bash
+npm run local:up
+```
 
-Then restart the Next.js process.
+If Supabase is already running, regenerate only the local application environment:
+
+```bash
+npm run local:config
+```
 
 ### Local database schema is stale
 
 Rebuild from migrations:
 
 ```bash
-supabase db reset --no-seed
+npm run local:reset
 ```
 
 ### Local Supabase is not running
 
-Check Docker, then restart Supabase:
+Check Docker, then restart the local stack:
 
 ```bash
 supabase stop
-supabase start
+npm run local:up
 ```
 
 ### Consumer workflow behaves differently from CI
@@ -122,7 +133,7 @@ supabase start
 Recreate the same clean-database assumption used by CI:
 
 ```bash
-supabase db reset --no-seed
+npm run local:reset
 npm run build
 npm run test:e2e:smoke
 ```
@@ -138,4 +149,4 @@ For every repository candidate:
 - treat evidence from older SHAs as historical only;
 - use GitHub issue #11, **Launch certification: hosted verification and operating controls**, as the mutable ledger for the current unrestricted-launch state.
 
-Repository CI does not certify a hosted deployment. A public release additionally requires the manual **Deployment Verification** workflow against the real HTTPS production origin and the same immutable deployed revision.
+Repository CI certifies the repository-owned local runtime contract and exact application build. It does not by itself certify an internet-facing deployment. A public release additionally requires deployment verification against the real HTTPS production origin and the same immutable deployed revision.
