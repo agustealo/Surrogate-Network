@@ -21,6 +21,18 @@ describe('consumer release contract', () => {
     expect(config).not.toContain('openai_api_key')
   })
 
+  it('retires dormant notifications and token economy without removing active XP progression', () => {
+    const retirement = read('supabase/migrations/20260928000100_retire_dormant_notification_token_surface.sql')
+    expect(retirement).toContain('DROP TABLE IF EXISTS public.notifications')
+    expect(retirement).toContain('DROP TABLE IF EXISTS public.token_transactions')
+    expect(retirement).toContain('DROP COLUMN IF EXISTS token_balance')
+    expect(retirement).toContain('DROP FUNCTION IF EXISTS public.update_token_balance')
+    expect(retirement).toContain('DELETE FROM public.xp_transactions')
+    expect(retirement).toContain('DELETE FROM public.member_progression')
+    expect(retirement).not.toContain('DROP TABLE IF EXISTS public.xp_transactions')
+    expect(retirement).not.toContain('DROP TABLE IF EXISTS public.member_progression')
+  })
+
   it('never compiles the release build with invented Supabase credentials', () => {
     const workflow = read('.github/workflows/ci.yml')
     expect(workflow).not.toContain('build-only-local-key')
