@@ -17,6 +17,7 @@ export const routes = {
     signup: '/signup',
     forgotPassword: '/forgot-password',
     resetPassword: '/reset-password',
+    authConfirm: '/auth/confirm',
     authRecovery: '/auth/recovery',
   },
 
