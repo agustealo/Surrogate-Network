@@ -30,6 +30,8 @@ enabled = false
 enabled = true
 site_url = "http://localhost:9002"
 additional_redirect_urls = [
+  "http://localhost:9002/auth/confirm",
+  "http://127.0.0.1:9002/auth/confirm",
   "http://localhost:9002/auth/recovery",
   "http://127.0.0.1:9002/auth/recovery"
 ]
@@ -37,9 +39,13 @@ jwt_expiry = 3600
 
 [auth.email]
 enable_signup = true
-enable_confirmations = false
+enable_confirmations = true
 double_confirm_changes = true
 max_frequency = "1m"
+
+[auth.email.template.confirmation]
+subject = "Confirm your Surrogate Network email"
+content_path = "./supabase/templates/confirmation.html"
 
 [edge_runtime]
 enabled = false
