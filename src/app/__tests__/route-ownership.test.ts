@@ -10,7 +10,6 @@ describe('member route ownership', () => {
     expect(fs.existsSync(appPath('(member)', 'layout.tsx'))).toBe(true)
     expect(fs.existsSync(appPath('(member)', 'home', 'page.tsx'))).toBe(true)
     expect(fs.existsSync(appPath('(member)', 'discover', 'page.tsx'))).toBe(true)
-    expect(fs.existsSync(appPath('(member)', 'messages', 'page.tsx'))).toBe(true)
     expect(fs.existsSync(appPath('(member)', 'needs', 'page.tsx'))).toBe(true)
     expect(fs.existsSync(appPath('(member)', 'offers', 'page.tsx'))).toBe(true)
     expect(fs.existsSync(appPath('(member)', 'profile', 'page.tsx'))).toBe(true)
@@ -18,6 +17,10 @@ describe('member route ownership', () => {
     expect(fs.existsSync(appPath('(member)', 'settings', 'page.tsx'))).toBe(true)
     expect(fs.existsSync(appPath('(member)', 'surrogacies', 'page.tsx'))).toBe(true)
     expect(fs.existsSync(appPath('(member)', 'account', 'export', 'route.ts'))).toBe(true)
+  })
+
+  it('does not ship unfinished messaging as a consumer route', () => {
+    expect(fs.existsSync(appPath('(member)', 'messages', 'page.tsx'))).toBe(false)
   })
 
   it('keeps recovery and terminal account surfaces outside the member shell', () => {
