@@ -16,6 +16,7 @@ describe('consumer release contract', () => {
     const config = read('supabase/config.toml')
     expect(config).toContain('project_id = "Surrogate-Network"')
     expect(config).toContain('[db.seed]\nenabled = false')
+    expect(config).toContain('[studio]\nenabled = false')
     expect(config).toContain('[storage]\nenabled = false')
     expect(config).toContain('[realtime]\nenabled = false')
     expect(config).toContain('[edge_runtime]\nenabled = false')
