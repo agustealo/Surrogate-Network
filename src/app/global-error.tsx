@@ -14,10 +14,10 @@ export default function GlobalError({
           <section className="w-full rounded-lg border p-8 shadow-sm" aria-labelledby="global-error-title">
             <p className="text-sm font-medium">Unexpected application error</p>
             <h1 id="global-error-title" className="mt-2 text-3xl font-semibold tracking-tight">
-              Surrogate Companion could not finish this request
+              Surrogate Network could not finish this request
             </h1>
             <p className="mt-4 text-sm">
-              The application hit an unrecoverable rendering error. Retry the request, or return later if the problem continues.
+              The application hit an unrecoverable rendering error. Try the request again. If the problem continues, use the error reference below when contacting support.
             </p>
             {error.digest ? (
               <p className="mt-3 font-mono text-xs">Error reference: {error.digest}</p>
