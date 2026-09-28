@@ -13,6 +13,11 @@ DROP FUNCTION IF EXISTS public.admin_update_profile(
 DROP TABLE IF EXISTS public.notifications;
 DROP TABLE IF EXISTS public.token_transactions;
 
+-- This pre-column-ACL policy came from the old profile authority model and
+-- references token_balance. Column grants are now the hard edit boundary.
+DROP POLICY IF EXISTS "Users can update their own non-authoritative profile fields"
+  ON public.profiles;
+
 ALTER TABLE public.profiles
   DROP COLUMN IF EXISTS token_balance;
 
