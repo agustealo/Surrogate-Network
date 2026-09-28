@@ -3,12 +3,13 @@
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { HeartHandshake, User } from 'lucide-react';
+import { HeartHandshake, Trophy, User } from 'lucide-react';
 import { createClient } from '@/infrastructure/supabase/browser';
 import { Button } from '@/components/ui/button';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { BRAND_NAME } from '@/lib/brand';
+import { routes } from '@/lib/routes';
 
 type HeaderIdentity = { name: string; email: string; avatarUrl?: string };
 
@@ -43,7 +44,7 @@ export function MemberHeader() {
 
   async function logout() {
     await createClient().auth.signOut();
-    router.replace('/login');
+    router.replace(routes.public.login);
     router.refresh();
   }
 
@@ -52,7 +53,7 @@ export function MemberHeader() {
   return (
     <header className="sticky top-0 z-40 w-full border-b bg-background/95 backdrop-blur">
       <div className="container mx-auto flex h-16 items-center justify-between px-4 sm:px-6 lg:px-8">
-        <Link href="/home" className="flex items-center gap-2">
+        <Link href={routes.member.home} className="flex items-center gap-2">
           <HeartHandshake className="h-6 w-6 text-primary" />
           <span className="font-bold">{BRAND_NAME}</span>
         </Link>
@@ -73,9 +74,12 @@ export function MemberHeader() {
             </DropdownMenuLabel>
             <DropdownMenuSeparator />
             <DropdownMenuItem asChild>
-              <Link href="/profile" className="cursor-pointer"><User className="mr-2 h-4 w-4" />Profile</Link>
+              <Link href={routes.member.profile} className="cursor-pointer"><User className="mr-2 h-4 w-4" />Profile</Link>
             </DropdownMenuItem>
-            <DropdownMenuItem asChild><Link href="/settings" className="cursor-pointer">Settings</Link></DropdownMenuItem>
+            <DropdownMenuItem asChild>
+              <Link href={routes.member.rewards} className="cursor-pointer"><Trophy className="mr-2 h-4 w-4" />Rewards & Progress</Link>
+            </DropdownMenuItem>
+            <DropdownMenuItem asChild><Link href={routes.member.settings} className="cursor-pointer">Settings</Link></DropdownMenuItem>
             <DropdownMenuSeparator />
             <DropdownMenuItem className="text-destructive" onSelect={() => void logout()}>Sign out</DropdownMenuItem>
           </DropdownMenuContent>
