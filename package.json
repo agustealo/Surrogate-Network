@@ -6,6 +6,10 @@
   },
   "scripts": {
     "dev": "next dev -p 9002",
+    "dev:local": "npm run local:up && npm run dev",
+    "local:config": "node scripts/write-local-env.mjs",
+    "local:up": "supabase start && npm run local:config",
+    "local:reset": "supabase db reset --local --no-seed && npm run local:config",
     "build": "next build",
     "start": "next start -p 9002",
     "lint": "eslint src --ext .ts,.tsx",
