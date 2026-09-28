@@ -513,54 +513,6 @@ export type Database = {
           },
         ]
       }
-      notifications: {
-        Row: {
-          body: string
-          created_at: string | null
-          data: Json | null
-          id: string
-          read: boolean | null
-          title: string
-          type: Database["public"]["Enums"]["notification_type"]
-          user_id: string
-        }
-        Insert: {
-          body: string
-          created_at?: string | null
-          data?: Json | null
-          id?: string
-          read?: boolean | null
-          title: string
-          type: Database["public"]["Enums"]["notification_type"]
-          user_id: string
-        }
-        Update: {
-          body?: string
-          created_at?: string | null
-          data?: Json | null
-          id?: string
-          read?: boolean | null
-          title?: string
-          type?: Database["public"]["Enums"]["notification_type"]
-          user_id?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "notifications_user_id_fkey"
-            columns: ["user_id"]
-            isOneToOne: false
-            referencedRelation: "profiles"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "notifications_user_id_fkey"
-            columns: ["user_id"]
-            isOneToOne: false
-            referencedRelation: "public_profiles"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
       offers: {
         Row: {
           boundaries: Database["public"]["Enums"]["boundary"][]
@@ -686,7 +638,6 @@ export type Database = {
           location: string | null
           name: string
           rank: number | null
-          token_balance: number | null
           trial_age_confirmed_at: string | null
           trial_deactivated_at: string | null
           trial_deleted_at: string | null
@@ -713,7 +664,6 @@ export type Database = {
           location?: string | null
           name: string
           rank?: number | null
-          token_balance?: number | null
           trial_age_confirmed_at?: string | null
           trial_deactivated_at?: string | null
           trial_deleted_at?: string | null
@@ -740,7 +690,6 @@ export type Database = {
           location?: string | null
           name?: string
           rank?: number | null
-          token_balance?: number | null
           trial_age_confirmed_at?: string | null
           trial_deactivated_at?: string | null
           trial_deleted_at?: string | null
@@ -1071,54 +1020,6 @@ export type Database = {
           },
         ]
       }
-      token_transactions: {
-        Row: {
-          amount: number
-          created_at: string | null
-          id: string
-          reason: string
-          reference_id: string | null
-          reference_type: Database["public"]["Enums"]["reference_type"] | null
-          type: Database["public"]["Enums"]["transaction_type"]
-          user_id: string
-        }
-        Insert: {
-          amount: number
-          created_at?: string | null
-          id?: string
-          reason: string
-          reference_id?: string | null
-          reference_type?: Database["public"]["Enums"]["reference_type"] | null
-          type: Database["public"]["Enums"]["transaction_type"]
-          user_id: string
-        }
-        Update: {
-          amount?: number
-          created_at?: string | null
-          id?: string
-          reason?: string
-          reference_id?: string | null
-          reference_type?: Database["public"]["Enums"]["reference_type"] | null
-          type?: Database["public"]["Enums"]["transaction_type"]
-          user_id?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "token_transactions_user_id_fkey"
-            columns: ["user_id"]
-            isOneToOne: false
-            referencedRelation: "profiles"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "token_transactions_user_id_fkey"
-            columns: ["user_id"]
-            isOneToOne: false
-            referencedRelation: "public_profiles"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
       trial_action_rate_limits: {
         Row: {
           action_count: number
@@ -1264,56 +1165,6 @@ export type Database = {
       accept_proposal_for_trial_trusted: {
         Args: { p_actor_id: string; p_proposal_id: string }
         Returns: string
-      }
-      admin_update_profile: {
-        Args: {
-          p_availability?: string
-          p_avatar_url?: string
-          p_bio?: string
-          p_boundaries?: Database["public"]["Enums"]["boundary"][]
-          p_email?: string
-          p_id: string
-          p_is_suspended?: boolean
-          p_location?: string
-          p_name?: string
-          p_rank?: number
-          p_token_balance?: number
-          p_verification_status?: Database["public"]["Enums"]["verification_status"]
-          p_xp?: number
-        }
-        Returns: {
-          availability: string | null
-          avatar_url: string | null
-          bio: string
-          boundaries: Database["public"]["Enums"]["boundary"][] | null
-          created_at: string | null
-          email: string
-          id: string
-          is_admin: boolean | null
-          is_suspended: boolean | null
-          location: string | null
-          name: string
-          rank: number | null
-          token_balance: number | null
-          trial_age_confirmed_at: string | null
-          trial_deactivated_at: string | null
-          trial_deleted_at: string | null
-          trial_privacy_accepted_at: string | null
-          trial_privacy_version: string | null
-          trial_terms_accepted_at: string | null
-          trial_terms_version: string | null
-          updated_at: string | null
-          verification_status:
-            | Database["public"]["Enums"]["verification_status"]
-            | null
-          xp: number | null
-        }
-        SetofOptions: {
-          from: "*"
-          to: "profiles"
-          isOneToOne: true
-          isSetofReturn: false
-        }
       }
       are_users_blocked: {
         Args: { p_user_a: string; p_user_b: string }
@@ -1463,30 +1314,6 @@ export type Database = {
         }
         Returns: Database["public"]["Enums"]["proposal_status"]
       }
-      update_token_balance: {
-        Args: {
-          p_amount: number
-          p_reason: string
-          p_transaction_type: Database["public"]["Enums"]["transaction_type"]
-          p_user_id: string
-        }
-        Returns: {
-          amount: number
-          created_at: string | null
-          id: string
-          reason: string
-          reference_id: string | null
-          reference_type: Database["public"]["Enums"]["reference_type"] | null
-          type: Database["public"]["Enums"]["transaction_type"]
-          user_id: string
-        }
-        SetofOptions: {
-          from: "*"
-          to: "token_transactions"
-          isOneToOne: true
-          isSetofReturn: false
-        }
-      }
       update_user_xp: {
         Args: {
           p_amount: number
@@ -1528,18 +1355,6 @@ export type Database = {
         | "cancelled"
         | "missed"
       need_status: "active" | "fulfilled" | "paused" | "expired"
-      notification_type:
-        | "message"
-        | "proposal"
-        | "surrogacy"
-        | "schedule"
-        | "media"
-        | "feedback"
-        | "token"
-        | "rank"
-        | "reward"
-        | "moderation"
-        | "system"
       offer_status: "active" | "paused" | "full"
       proposal_status:
         | "pending"
@@ -1547,7 +1362,6 @@ export type Database = {
         | "declined"
         | "countered"
         | "withdrawn"
-      reference_type: "exchange" | "feedback" | "proposal" | "grant" | "penalty"
       report_status: "pending" | "investigating" | "resolved" | "dismissed"
       report_type:
         | "harassment"
@@ -1564,7 +1378,6 @@ export type Database = {
       severity: "low" | "medium" | "high"
       surrogacy_status: "active" | "paused" | "ended" | "completed"
       surrogate_category: "personal" | "utilitarian_business" | "casual"
-      transaction_type: "earned" | "spent" | "granted" | "penalty"
       urgency: "low" | "medium" | "high"
       verification_status:
         | "unverified"
@@ -1728,19 +1541,6 @@ export const Constants = {
         "missed",
       ],
       need_status: ["active", "fulfilled", "paused", "expired"],
-      notification_type: [
-        "message",
-        "proposal",
-        "surrogacy",
-        "schedule",
-        "media",
-        "feedback",
-        "token",
-        "rank",
-        "reward",
-        "moderation",
-        "system",
-      ],
       offer_status: ["active", "paused", "full"],
       proposal_status: [
         "pending",
@@ -1749,7 +1549,6 @@ export const Constants = {
         "countered",
         "withdrawn",
       ],
-      reference_type: ["exchange", "feedback", "proposal", "grant", "penalty"],
       report_status: ["pending", "investigating", "resolved", "dismissed"],
       report_type: [
         "harassment",
@@ -1768,7 +1567,6 @@ export const Constants = {
       severity: ["low", "medium", "high"],
       surrogacy_status: ["active", "paused", "ended", "completed"],
       surrogate_category: ["personal", "utilitarian_business", "casual"],
-      transaction_type: ["earned", "spent", "granted", "penalty"],
       urgency: ["low", "medium", "high"],
       verification_status: [
         "unverified",
@@ -1789,4 +1587,3 @@ export const Constants = {
     },
   },
 } as const
-
