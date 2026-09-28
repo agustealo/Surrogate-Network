@@ -19,17 +19,16 @@ describe('Navigation Registry', () => {
     expect(adminNavigation[1]).toMatchObject({ id: 'reports', href: routes.admin.reports })
   })
 
-  it('contains the consumer-trial member destinations', () => {
+  it('contains every shipped consumer member destination that belongs in primary navigation', () => {
     const ids = memberNavigation.filter((item) => 'href' in item).map((item) => item.id)
-    ;['home', 'discover', 'proposals', 'needs', 'offers', 'connections', 'profile', 'settings']
+    ;['home', 'discover', 'proposals', 'needs', 'offers', 'connections', 'rewards', 'profile', 'settings']
       .forEach((id) => expect(ids).toContain(id))
   })
 
-  it('does not advertise incomplete Messaging or Rewards surfaces', () => {
+  it('does not retain an unfinished messaging destination', () => {
     const ids = memberNavigation.filter((item) => 'href' in item).map((item) => item.id)
     expect(ids).not.toContain('messages')
-    expect(ids).not.toContain('rewards')
-    expect(routes.member.messages).toBe('/messages')
+    expect('messages' in routes.member).toBe(false)
     expect(routes.member.rewards).toBe('/rewards')
   })
 
@@ -55,6 +54,7 @@ describe('Navigation Registry', () => {
     const grouped = groupNavigationBySection(filterNavigationItems(memberNavigation, 'member', 'desktop'))
     expect(grouped.General).toBeDefined()
     expect(grouped['My Activity']).toBeDefined()
+    expect(grouped['My Activity'].some((item) => item.id === 'rewards')).toBe(true)
     expect(grouped.Account).toBeDefined()
   })
 
