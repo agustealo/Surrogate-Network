@@ -132,8 +132,27 @@ describe('Terminal account deletion authority', () => {
     expect(redactedNeed).toMatchObject({ title: 'Deleted member need', description: '', user_name: 'Deleted member', status: 'paused' })
     expect(redactedOffer).toMatchObject({ title: 'Deleted member offer', description: '', user_name: 'Deleted member', status: 'paused' })
 
-    const rewriteProfile = await client.from('profiles').update({ bio: 'stale session rewrite' }).eq('id', member.id)
-    expect(rewriteProfile.error).toBeTruthy()
+    // PostgREST may report an RLS-filtered UPDATE as a successful request that
+    // affects zero rows. Prove the security invariant from returned rows and
+    // authoritative persisted state instead of relying on transport semantics.
+    const rewriteProfile = await client
+      .from('profiles')
+      .update({ bio: 'stale session rewrite' })
+      .eq('id', member.id)
+      .select('id,bio')
+    expect(rewriteProfile.error).toBeNull()
+    expect(rewriteProfile.data ?? []).toHaveLength(0)
+
+    const { data: tombstoneAfterRewrite, error: tombstoneReadError } = await service
+      .from('profiles')
+      .select('bio,name,trial_deleted_at')
+      .eq('id', member.id)
+      .single()
+    expect(tombstoneReadError).toBeNull()
+    expect(tombstoneAfterRewrite?.bio).toBe('')
+    expect(tombstoneAfterRewrite?.name).toBe('Deleted member')
+    expect(tombstoneAfterRewrite?.trial_deleted_at).toBeTruthy()
+
     const recreateNeed = await client.from('needs').insert({
       title: 'Stale session attempt',
       description: 'Must be rejected after deletion preparation.',
