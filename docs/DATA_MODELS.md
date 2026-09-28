@@ -31,7 +31,7 @@ Not every profile column is safe for cross-user reads.
 
 Cross-user/public discovery uses a restricted `public_profiles` database projection rather than the full base profile row.
 
-Private or authority-sensitive fields such as email, admin/suspension state, trial-consent state, XP/tokens, and similar account metadata must not be exposed through public profile reads.
+Private or authority-sensitive fields such as email, admin/suspension state, trial-consent state, XP, and similar account metadata must not be exposed through public profile reads.
 
 ### Profile authority
 
@@ -169,24 +169,24 @@ Privileged/important transitions create audit evidence. Some transactional flows
 
 Audit records are designed to preserve system history even when an actor relationship changes or an account is removed where schema rules allow.
 
-## Progression/economic models
+## Rewards and progression
 
-The schema/domain includes progression/economic concepts such as:
+The shipped progression model is deliberately narrow:
 
-- token transactions;
-- XP events/transactions;
-- member progression/rank data;
-- notifications.
+- XP transactions preserve the reason/source of progression changes;
+- member progression stores rank, total XP, level, and achievements;
+- the member Rewards & Progress surface renders this persisted authority;
+- lifecycle actions revalidate progression after eligible Exchange/Feedback outcomes.
 
-These are protected state. Client UI may render them, but authoritative mutation belongs to trusted server/database paths.
+XP/progression mutation belongs to trusted server/database paths. It is not a direct client-editable profile preference.
 
-Rewards/economic UX is not currently a primary trial navigation surface.
+The earlier token economy and notification schema have been retired because no complete consumer workflow owned them. Historical migrations may show their origin, but they are not part of the final runtime contract.
 
-## Media/permission models
+## Retired media model
 
-The broader schema/domain includes media permission/grant concepts. Their existence in the schema does not imply that every media-management workflow is a primary trial feature.
+The original metadata-only media tables were retired by migration because the application had no canonical Storage bucket, object ownership, upload, access-grant, deletion, or recovery lifecycle. Storage remains disabled in local configuration until a complete media feature owns those contracts.
 
-Production media/storage lifecycle remains part of broader market-readiness hardening.
+Historical migrations are history, not current feature inventory. Current generated database types define the final relation/function surface.
 
 ## Database vs domain types
 
@@ -205,11 +205,11 @@ Do not cast between database rows and domain objects without an explicit adapter
 
 For every database model change:
 
-1. add a migration under `supabase/migrations/`;
-2. replay from a clean database:
+1. create a migration using the Supabase CLI so migration identity stays canonical;
+2. replay from a clean local database:
 
 ```bash
-supabase db reset --no-seed
+supabase db reset --local --no-seed
 ```
 
 3. regenerate canonical database types:
@@ -230,8 +230,9 @@ Do not add:
 
 - Firestore DTOs;
 - Firebase timestamps;
-- speculative “Phase 1” replacement models for entities that already exist;
+- speculative replacement models for entities that already exist;
 - duplicate handwritten database schemas;
-- planned fields presented as current runtime contract.
+- planned fields presented as current runtime contract;
+- retired historical tables presented as shipped product features.
 
 For exact columns/functions/enums, read the current migration chain and generated database types.
