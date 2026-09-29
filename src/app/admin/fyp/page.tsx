@@ -1,4 +1,5 @@
 import { updateFypExperimentPolicyAction } from '@/application/actions/fypExperimentActions'
+import { FypExperimentGuardrailService } from '@/application/services/FypExperimentGuardrailService'
 import { FypExperimentPolicyService } from '@/application/services/FypExperimentPolicyService'
 import { ShadowRankingEvaluationService } from '@/application/services/ShadowRankingEvaluationService'
 import { Badge } from '@/components/ui/badge'
@@ -8,19 +9,20 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 
 export default async function FypExperimentAdminPage() {
-  const [policy, report] = await Promise.all([
+  const [policy, report, guardrails] = await Promise.all([
     new FypExperimentPolicyService().currentPolicy(),
     new ShadowRankingEvaluationService().evaluateGlobal(),
+    new FypExperimentGuardrailService().evaluateLive(),
   ])
 
   return (
-    <div className="container mx-auto max-w-5xl space-y-6 px-4 py-8">
+    <div className="container mx-auto max-w-6xl space-y-6 px-4 py-8">
       <div>
         <h1 className="text-3xl font-bold">FYP Experiment Control</h1>
         <p className="text-muted-foreground">Governed activation for the shadow candidate ranker. Consumer traffic remains baseline unless shadow graduation and cohort policy both authorize candidate delivery.</p>
       </div>
 
-      <div className="grid gap-4 md:grid-cols-2">
+      <div className="grid gap-4 lg:grid-cols-3">
         <Card>
           <CardHeader>
             <CardTitle>Current policy</CardTitle>
@@ -52,6 +54,30 @@ export default async function FypExperimentAdminPage() {
             <p>Net outcome rank gain: {report.evaluation.netOutcomeRankGain}</p>
             {report.graduation.reasons.length > 0 && (
               <div className="text-muted-foreground">{report.graduation.reasons.join(' · ')}</div>
+            )}
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle>Live guardrails</CardTitle>
+            <CardDescription>Safety evidence is immediate. Outcome rates only use recommendations that have matured for {guardrails.outcomeMaturationHours} hours, so fresh impressions are never counted as failed conversions. Rollback is persisted automatically when a guardrail breaches.</CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-3 text-sm">
+            <Badge variant={guardrails.decision.action === 'rollback' ? 'destructive' : guardrails.decision.action === 'continue' ? 'default' : 'secondary'}>
+              {guardrails.decision.action.replace('_', ' ')}
+            </Badge>
+            <p>Matured control exposures: {guardrails.input.controlExposureCount}</p>
+            <p>Matured candidate exposures: {guardrails.input.candidateExposureCount}</p>
+            <p>Candidate safety exposures: {guardrails.input.candidateSafetyExposureCount}</p>
+            <p>Control outcome rate: {(guardrails.decision.controlOutcomeRate * 100).toFixed(2)}%</p>
+            <p>Candidate outcome rate: {(guardrails.decision.candidateOutcomeRate * 100).toFixed(2)}%</p>
+            <p>Candidate safety incident rate: {(guardrails.decision.candidateSafetyIncidentRate * 100).toFixed(2)}%</p>
+            {guardrails.malformedEvidenceCount > 0 && (
+              <p className="text-muted-foreground">Ignored malformed evidence: {guardrails.malformedEvidenceCount}</p>
+            )}
+            {guardrails.decision.reasons.length > 0 && (
+              <div className="text-muted-foreground">{guardrails.decision.reasons.join(' · ')}</div>
             )}
           </CardContent>
         </Card>

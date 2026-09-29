@@ -1,5 +1,6 @@
 import 'server-only'
 
+import type { SupabaseClient } from '@supabase/supabase-js'
 import {
   FYP_LIMITED_EXPERIMENT_VERSION,
   type FypExperimentPolicy,
@@ -8,8 +9,8 @@ import {
   FYP_SHADOW_GRADUATION_THRESHOLDS,
   type ShadowGraduationDecision,
 } from '@/domain/recommendations/shadowEvaluation'
-import type { Json } from '@/infrastructure/supabase/database.types'
-import { createClient } from '@/infrastructure/supabase/server'
+import type { Database, Json } from '@/infrastructure/supabase/database.types'
+import { createClient, createServiceClient } from '@/infrastructure/supabase/server'
 
 export const FYP_EXPERIMENT_POLICY_ACTION = 'fyp.experiment_policy' as const
 const POLICY_TARGET_TYPE = 'fyp_experiment'
@@ -19,6 +20,14 @@ export type PersistedFypExperimentPolicy = FypExperimentPolicy & {
   changedAt: string | null
   changedBy: string | null
   changeReason: string
+}
+
+type PolicyWriteInput = {
+  enabled: boolean
+  killSwitch: boolean
+  requestedTrafficPercent: number
+  graduation: ShadowGraduationDecision
+  reason: string
 }
 
 const defaultGraduation = (): ShadowGraduationDecision => ({
@@ -70,8 +79,14 @@ function parseGraduation(value: unknown): ShadowGraduationDecision {
 }
 
 export class FypExperimentPolicyService {
-  async currentPolicy(): Promise<PersistedFypExperimentPolicy> {
-    const supabase = await createClient()
+  async currentPolicy(options?: { privileged?: boolean }): Promise<PersistedFypExperimentPolicy> {
+    const supabase = options?.privileged ? createServiceClient() : await createClient()
+    return this.currentPolicyWithClient(supabase)
+  }
+
+  private async currentPolicyWithClient(
+    supabase: SupabaseClient<Database>,
+  ): Promise<PersistedFypExperimentPolicy> {
     const { data, error } = await supabase
       .from('audit_events')
       .select('id,actor_id,after,reason,timestamp')
@@ -104,17 +119,23 @@ export class FypExperimentPolicyService {
     }
   }
 
-  async appendPolicy(input: {
-    adminId: string
-    enabled: boolean
-    killSwitch: boolean
-    requestedTrafficPercent: number
-    graduation: ShadowGraduationDecision
-    reason: string
-  }): Promise<void> {
+  async appendPolicy(input: PolicyWriteInput & { adminId: string }): Promise<void> {
     const supabase = await createClient()
+    await this.appendPolicyWithClient(supabase, input.adminId, input)
+  }
+
+  async appendSystemRollback(input: PolicyWriteInput): Promise<void> {
+    const supabase = createServiceClient()
+    await this.appendPolicyWithClient(supabase, null, input)
+  }
+
+  private async appendPolicyWithClient(
+    supabase: SupabaseClient<Database>,
+    actorId: string | null,
+    input: PolicyWriteInput,
+  ): Promise<void> {
     const { error } = await supabase.from('audit_events').insert({
-      actor_id: input.adminId,
+      actor_id: actorId,
       action: FYP_EXPERIMENT_POLICY_ACTION,
       target_type: POLICY_TARGET_TYPE,
       target_id: FYP_LIMITED_EXPERIMENT_VERSION,
