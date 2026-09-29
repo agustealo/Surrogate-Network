@@ -3,6 +3,7 @@
 import { revalidatePath } from 'next/cache'
 import { z } from 'zod'
 import { actionFailure, requireActiveMember, type ActionResult } from '@/application/actions/memberContext'
+import { FypExperimentService } from '@/application/services/FypExperimentService'
 import {
   FYP_EVENT_ACTIONS,
   RecommendationEventService,
@@ -16,7 +17,7 @@ const impressionSchema = z.object({
     subjectId: z.string().uuid(),
     rankingVersion: z.string().trim().min(1).max(80),
     rankPosition: z.number().int().min(0).max(200),
-    score: z.number().int().min(0).max(100),
+    score: z.number().min(0).max(100),
   })).max(48),
 })
 
@@ -32,14 +33,25 @@ const openSchema = z.object({
   sessionId: z.string().trim().min(1).max(160).optional(),
   rankingVersion: z.string().trim().min(1).max(80).optional(),
   rankPosition: z.number().int().min(0).max(200).optional(),
-  score: z.number().int().min(0).max(100).optional(),
+  score: z.number().min(0).max(100).optional(),
 })
 
 export async function recordRecommendationImpressionsAction(input: unknown): Promise<ActionResult> {
   try {
     const actor = await requireActiveMember()
     const values = impressionSchema.parse(input)
-    await new RecommendationEventService().recordImpressions(actor.id, values.sessionId, values.items)
+    const eventService = new RecommendationEventService()
+    await eventService.recordImpressions(actor.id, values.sessionId, values.items)
+
+    const experimentService = new FypExperimentService()
+    const assignment = await experimentService.assignmentForActor(actor.id)
+    await experimentService.recordExposure({
+      actorId: actor.id,
+      sessionId: values.sessionId,
+      assignment,
+      items: values.items,
+    })
+
     return { ok: true, data: undefined }
   } catch (error) {
     return actionFailure(error)
