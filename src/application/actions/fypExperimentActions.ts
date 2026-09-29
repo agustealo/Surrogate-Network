@@ -12,47 +12,40 @@ const schema = z.object({
   reason: z.string().trim().min(3).max(240),
 })
 
-export type FypExperimentAdminResult = { ok: true } | { ok: false; error: string }
+export async function updateFypExperimentPolicyAction(formData: FormData): Promise<void> {
+  const admin = await requireAdmin()
+  const values = schema.parse({
+    mode: formData.get('mode'),
+    requestedTrafficPercent: formData.get('requestedTrafficPercent') ?? 5,
+    reason: formData.get('reason'),
+  })
 
-export async function updateFypExperimentPolicyAction(formData: FormData): Promise<FypExperimentAdminResult> {
-  try {
-    const admin = await requireAdmin()
-    const values = schema.parse({
-      mode: formData.get('mode'),
-      requestedTrafficPercent: formData.get('requestedTrafficPercent') ?? 5,
-      reason: formData.get('reason'),
-    })
-
-    const report = await new ShadowRankingEvaluationService().evaluateGlobal()
-    if ((values.mode === 'enable' || values.mode === 'resume') && !report.graduation.eligibleForLimitedExperiment) {
-      return { ok: false, error: `Shadow graduation is not authorized: ${report.graduation.reasons.join(', ')}` }
-    }
-
-    const current = await new FypExperimentPolicyService().currentPolicy()
-    const enabled = values.mode === 'enable' || values.mode === 'resume'
-      ? true
-      : values.mode === 'disable'
-        ? false
-        : current.enabled
-    const killSwitch = values.mode === 'kill'
-      ? true
-      : values.mode === 'resume' || values.mode === 'enable'
-        ? false
-        : current.killSwitch
-
-    await new FypExperimentPolicyService().appendPolicy({
-      adminId: admin.id,
-      enabled,
-      killSwitch,
-      requestedTrafficPercent: enabled ? values.requestedTrafficPercent : 0,
-      graduation: report.graduation,
-      reason: values.reason,
-    })
-
-    revalidatePath('/admin/fyp')
-    revalidatePath('/discover')
-    return { ok: true }
-  } catch (error) {
-    return { ok: false, error: error instanceof Error ? error.message : 'Failed to update FYP experiment policy.' }
+  const report = await new ShadowRankingEvaluationService().evaluateGlobal()
+  if ((values.mode === 'enable' || values.mode === 'resume') && !report.graduation.eligibleForLimitedExperiment) {
+    throw new Error(`Shadow graduation is not authorized: ${report.graduation.reasons.join(', ')}`)
   }
+
+  const current = await new FypExperimentPolicyService().currentPolicy()
+  const enabled = values.mode === 'enable' || values.mode === 'resume'
+    ? true
+    : values.mode === 'disable'
+      ? false
+      : current.enabled
+  const killSwitch = values.mode === 'kill'
+    ? true
+    : values.mode === 'resume' || values.mode === 'enable'
+      ? false
+      : current.killSwitch
+
+  await new FypExperimentPolicyService().appendPolicy({
+    adminId: admin.id,
+    enabled,
+    killSwitch,
+    requestedTrafficPercent: enabled ? values.requestedTrafficPercent : 0,
+    graduation: report.graduation,
+    reason: values.reason,
+  })
+
+  revalidatePath('/admin/fyp')
+  revalidatePath('/discover')
 }
