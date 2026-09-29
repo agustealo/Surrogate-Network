@@ -31,14 +31,24 @@ export default async function DiscoverPage() {
     <div className="container mx-auto max-w-7xl space-y-8 px-4 py-8">
       <div className="flex flex-wrap items-end justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-bold">For You</h1>
-          <p className="text-muted-foreground">Active Needs and Offers ranked from your explicit profile and marketplace intent.</p>
+          <h1 className="text-3xl font-bold">Discover</h1>
+          <p className="text-muted-foreground">For You recommendations ranked from your explicit profile and marketplace intent.</p>
         </div>
         <div className="flex gap-2">
           <Button asChild variant="outline"><Link href="/needs/create">Create Need</Link></Button>
           <Button asChild><Link href="/offers/create">Create Offer</Link></Button>
         </div>
       </div>
+
+      {(feed.ownNeedIds.length > 0 || feed.ownOfferIds.length > 0) && (
+        <section className="space-y-3" aria-labelledby="your-active-listings">
+          <h2 id="your-active-listings" className="text-lg font-semibold">Your active listings</h2>
+          <div className="flex flex-wrap gap-2">
+            {feed.ownNeedIds.map((id) => <Button key={id} asChild size="sm" variant="outline"><Link href={routes.memberDynamic.need(id)}>View Need</Link></Button>)}
+            {feed.ownOfferIds.map((id) => <Button key={id} asChild size="sm" variant="outline"><Link href={routes.memberDynamic.offer(id)}>View Offer</Link></Button>)}
+          </div>
+        </section>
+      )}
 
       <section className="space-y-4">
         <h2 className="flex items-center gap-2 text-xl font-semibold"><Heart className="h-5 w-5" />Recommended Needs</h2>
