@@ -3,7 +3,10 @@
 import { revalidatePath } from 'next/cache'
 import { z } from 'zod'
 import { actionFailure, requireActiveMember, type ActionResult } from '@/application/actions/memberContext'
-import { RecommendationEventService } from '@/application/services/RecommendationEventService'
+import {
+  RecommendationEventService,
+  type FypSafetyExposure,
+} from '@/application/services/RecommendationEventService'
 import { createClient } from '@/infrastructure/supabase/server'
 
 const reportSchema = z.object({
@@ -13,22 +16,40 @@ const reportSchema = z.object({
   description: z.string().trim().min(10, 'Please provide enough detail for moderation.').max(4000),
 })
 
+function logFypSafetyAttributionFailure(incidentType: 'block' | 'report', error: unknown): void {
+  console.error(JSON.stringify({
+    level: 'error',
+    event: 'fyp_safety_attribution_failed',
+    timestamp: new Date().toISOString(),
+    incidentType,
+    errorName: error instanceof Error ? error.name : 'NonErrorThrown',
+  }))
+}
+
+async function resolveFypSafetyExposure(input: {
+  actorId: string
+  targetUserId: string
+  incidentType: 'block' | 'report'
+}): Promise<FypSafetyExposure | null> {
+  try {
+    return await new RecommendationEventService().resolveSafetyExposureForMember(input)
+  } catch (error) {
+    logFypSafetyAttributionFailure(input.incidentType, error)
+    return null
+  }
+}
+
 async function recordFypSafetySignal(input: {
   actorId: string
   targetUserId: string
   incidentType: 'block' | 'report'
   severity?: 'low' | 'medium' | 'high'
+  exposure: FypSafetyExposure | null
 }): Promise<void> {
   try {
-    await new RecommendationEventService().recordSafetyIncidentForExposedMember(input)
+    await new RecommendationEventService().recordSafetyIncidentFromExposure(input)
   } catch (error) {
-    console.error(JSON.stringify({
-      level: 'error',
-      event: 'fyp_safety_attribution_failed',
-      timestamp: new Date().toISOString(),
-      incidentType: input.incidentType,
-      errorName: error instanceof Error ? error.name : 'NonErrorThrown',
-    }))
+    logFypSafetyAttributionFailure(input.incidentType, error)
   }
 }
 
@@ -37,6 +58,15 @@ export async function blockMemberAction(targetUserId: string): Promise<ActionRes
     const actor = await requireActiveMember()
     const targetId = z.string().uuid().parse(targetUserId)
     if (targetId === actor.id) throw new Error('You cannot block your own account.')
+
+    // Resolve recommendation provenance while the target's marketplace records
+    // are still visible. The block RLS policy hides them immediately after the
+    // block is persisted, so attribution must be captured before that boundary.
+    const exposure = await resolveFypSafetyExposure({
+      actorId: actor.id,
+      targetUserId: targetId,
+      incidentType: 'block',
+    })
 
     const supabase = await createClient()
     const { error } = await supabase.from('blocks').upsert(
@@ -49,6 +79,7 @@ export async function blockMemberAction(targetUserId: string): Promise<ActionRes
       actorId: actor.id,
       targetUserId: targetId,
       incidentType: 'block',
+      exposure,
     })
 
     revalidatePath('/discover')
@@ -90,6 +121,12 @@ export async function reportMemberAction(input: unknown): Promise<ActionResult<{
     const values = reportSchema.parse(input)
     if (values.reportedUserId === actor.id) throw new Error('You cannot report your own account.')
 
+    const exposure = await resolveFypSafetyExposure({
+      actorId: actor.id,
+      targetUserId: values.reportedUserId,
+      incidentType: 'report',
+    })
+
     const supabase = await createClient()
     const { data, error } = await supabase
       .from('reports')
@@ -110,6 +147,7 @@ export async function reportMemberAction(input: unknown): Promise<ActionResult<{
       targetUserId: values.reportedUserId,
       incidentType: 'report',
       severity: values.severity,
+      exposure,
     })
 
     revalidatePath(`/profile/${values.reportedUserId}`)
