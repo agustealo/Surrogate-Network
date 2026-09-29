@@ -1,4 +1,4 @@
-import type { NeedIntent, OfferIntent, ViewerIntent } from '@/domain/recommendations/scoring'
+import type { ViewerIntent } from '@/domain/recommendations/scoring'
 import type { SurrogateCategory } from '@/domain/types'
 
 export const FYP_RECENT_POOL_LIMIT = 100 as const
@@ -16,6 +16,11 @@ export function preferredOfferCategories(viewer: ViewerIntent): SurrogateCategor
   return uniqueCategories(viewer.needs.map((need) => need.category))
 }
 
+export function intentPoolLimitPerCategory(categoryCount: number): number {
+  if (categoryCount <= 0) return 0
+  return Math.max(1, Math.floor(FYP_INTENT_POOL_LIMIT / categoryCount))
+}
+
 export function mergeCandidatePools<T extends { id: string }>(...pools: T[][]): T[] {
   const merged = new Map<string, T>()
   for (const pool of pools) {
@@ -25,6 +30,3 @@ export function mergeCandidatePools<T extends { id: string }>(...pools: T[][]): 
   }
   return [...merged.values()]
 }
-
-export type NeedRetrievalIntent = Pick<NeedIntent, 'category'>
-export type OfferRetrievalIntent = Pick<OfferIntent, 'category'>

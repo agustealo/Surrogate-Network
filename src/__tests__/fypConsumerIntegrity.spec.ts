@@ -14,8 +14,19 @@ describe('FYP consumer-integrity wiring', () => {
     expect(service).toContain('preferredNeedCategories(viewer)')
     expect(service).toContain('preferredOfferCategories(viewer)')
     expect(service).toContain('mergeCandidatePools(')
-    expect(service).toContain(".in('category', categories)")
     expect(service).not.toContain('const CANDIDATE_WINDOW = 100')
+  })
+
+  it('balances the bounded intent pool across each explicit preferred category', () => {
+    const service = source('src/application/services/FypRecommendationService.ts')
+    const retrieval = source('src/domain/recommendations/retrieval.ts')
+
+    expect(service).toContain('intentPoolLimitPerCategory(categories.length)')
+    expect(service).toContain('categories.map(async (category) =>')
+    expect(service).toContain(".eq('category', category)")
+    expect(service).toContain('.limit(perCategoryLimit)')
+    expect(service).toContain('.slice(0, FYP_INTENT_POOL_LIMIT)')
+    expect(retrieval).toContain('Math.floor(FYP_INTENT_POOL_LIMIT / categoryCount)')
   })
 
   it('does not invent a viewer location-mode preference in the recommendation service', () => {

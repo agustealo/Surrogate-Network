@@ -13,6 +13,7 @@ import {
 import {
   FYP_INTENT_POOL_LIMIT,
   FYP_RECENT_POOL_LIMIT,
+  intentPoolLimitPerCategory,
   mergeCandidatePools,
   preferredNeedCategories,
   preferredOfferCategories,
@@ -195,15 +196,19 @@ export class FypRecommendationService {
     categories: SurrogateCategory[],
   ): Promise<NeedRow[]> {
     if (!categories.length) return []
-    const { data, error } = await supabase
-      .from('needs')
-      .select('id,title,description,category,tags,location_mode,timing,boundaries,urgency,user_id,user_name,created_at')
-      .eq('status', 'active')
-      .in('category', categories)
-      .order('created_at', { ascending: false })
-      .limit(FYP_INTENT_POOL_LIMIT)
-    if (error) throw new Error(`Failed to load intent-aligned candidate Needs: ${error.message}`)
-    return (data ?? []).map((row) => row as NeedRow)
+    const perCategoryLimit = intentPoolLimitPerCategory(categories.length)
+    const pools = await Promise.all(categories.map(async (category) => {
+      const { data, error } = await supabase
+        .from('needs')
+        .select('id,title,description,category,tags,location_mode,timing,boundaries,urgency,user_id,user_name,created_at')
+        .eq('status', 'active')
+        .eq('category', category)
+        .order('created_at', { ascending: false })
+        .limit(perCategoryLimit)
+      if (error) throw new Error(`Failed to load ${category} intent-aligned candidate Needs: ${error.message}`)
+      return (data ?? []).map((row) => row as NeedRow)
+    }))
+    return mergeCandidatePools(...pools).slice(0, FYP_INTENT_POOL_LIMIT)
   }
 
   private async loadIntentOffers(
@@ -211,15 +216,19 @@ export class FypRecommendationService {
     categories: SurrogateCategory[],
   ): Promise<OfferRow[]> {
     if (!categories.length) return []
-    const { data, error } = await supabase
-      .from('offers')
-      .select('id,title,description,category,location_mode,timing,boundaries,capacity,current_capacity,user_id,user_name,rating,review_count,created_at')
-      .eq('status', 'active')
-      .in('category', categories)
-      .order('created_at', { ascending: false })
-      .limit(FYP_INTENT_POOL_LIMIT)
-    if (error) throw new Error(`Failed to load intent-aligned candidate Offers: ${error.message}`)
-    return (data ?? []).map((row) => row as OfferRow)
+    const perCategoryLimit = intentPoolLimitPerCategory(categories.length)
+    const pools = await Promise.all(categories.map(async (category) => {
+      const { data, error } = await supabase
+        .from('offers')
+        .select('id,title,description,category,location_mode,timing,boundaries,capacity,current_capacity,user_id,user_name,rating,review_count,created_at')
+        .eq('status', 'active')
+        .eq('category', category)
+        .order('created_at', { ascending: false })
+        .limit(perCategoryLimit)
+      if (error) throw new Error(`Failed to load ${category} intent-aligned candidate Offers: ${error.message}`)
+      return (data ?? []).map((row) => row as OfferRow)
+    }))
+    return mergeCandidatePools(...pools).slice(0, FYP_INTENT_POOL_LIMIT)
   }
 
   private asCandidateRanking<T extends { id: string }>(
