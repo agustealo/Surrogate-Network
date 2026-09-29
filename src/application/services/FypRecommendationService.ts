@@ -13,6 +13,7 @@ import type { Boundary, SurrogateCategory } from '@/domain/types'
 
 const CANDIDATE_WINDOW = 100
 const FEED_LIMIT = 24
+const UNKNOWN_CREATED_AT = '1970-01-01T00:00:00.000Z'
 
 type NeedRow = {
   id: string
@@ -26,7 +27,7 @@ type NeedRow = {
   urgency: 'low' | 'medium' | 'high' | null
   user_id: string
   user_name: string
-  created_at: string
+  created_at: string | null
 }
 
 type OfferRow = {
@@ -43,7 +44,7 @@ type OfferRow = {
   user_name: string
   rating: number | null
   review_count: number | null
-  created_at: string
+  created_at: string | null
 }
 
 export type FypNeed = NeedRow & { recommendation: RecommendationCandidate<NeedIntent>['recommendation'] }
@@ -115,7 +116,7 @@ export class FypRecommendationService {
     boundaries: Boundary[] | null
     urgency: 'low' | 'medium' | 'high' | null
     user_id: string
-    created_at: string
+    created_at: string | null
   }): NeedIntent {
     return {
       id: row.id,
@@ -126,7 +127,7 @@ export class FypRecommendationService {
       timing: row.timing ?? undefined,
       boundaries: row.boundaries ?? [],
       urgency: row.urgency ?? undefined,
-      createdAt: row.created_at,
+      createdAt: row.created_at ?? UNKNOWN_CREATED_AT,
     }
   }
 
@@ -141,7 +142,7 @@ export class FypRecommendationService {
     rating: number | null
     review_count: number | null
     user_id: string
-    created_at: string
+    created_at: string | null
   }): OfferIntent {
     return {
       id: row.id,
@@ -154,7 +155,7 @@ export class FypRecommendationService {
       currentCapacity: row.current_capacity ?? undefined,
       rating: row.rating ?? undefined,
       reviewCount: row.review_count ?? undefined,
-      createdAt: row.created_at,
+      createdAt: row.created_at ?? UNKNOWN_CREATED_AT,
     }
   }
 }
