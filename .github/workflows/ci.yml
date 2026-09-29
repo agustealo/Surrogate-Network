@@ -145,7 +145,7 @@ jobs:
         env:
           CI: true
       - name: Generate canonical Supabase database types
-        run: supabase gen types typescript --local > generated-database.types.ts
+        run: supabase gen types typescript --local | sed '${/^$/d;}' > generated-database.types.ts
       - name: Upload generated database type snapshot
         uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6
         with:
