@@ -99,10 +99,11 @@ describe('FYP controlled experiment governance', () => {
     expect(assignment.reasons).toContain('insufficient_outcome_samples:12/50')
   })
 
-  it('does not judge outcome performance before enough candidate exposure exists', () => {
+  it('does not judge matured outcome performance before enough candidate exposure exists', () => {
     const decision = evaluateFypExperimentGuardrails({
       controlExposureCount: 1000,
       candidateExposureCount: 99,
+      candidateSafetyExposureCount: 100,
       controlOutcomeCount: 150,
       candidateOutcomeCount: 1,
       candidateSafetyIncidentCount: 0,
@@ -112,10 +113,11 @@ describe('FYP controlled experiment governance', () => {
     expect(decision.reasons).toContain('insufficient_candidate_exposures:99/100')
   })
 
-  it('does not compare candidate outcomes against an undersized control sample', () => {
+  it('does not compare candidate outcomes against an undersized matured control sample', () => {
     const decision = evaluateFypExperimentGuardrails({
       controlExposureCount: 99,
       candidateExposureCount: 100,
+      candidateSafetyExposureCount: 100,
       controlOutcomeCount: 30,
       candidateOutcomeCount: 1,
       candidateSafetyIncidentCount: 0,
@@ -125,10 +127,11 @@ describe('FYP controlled experiment governance', () => {
     expect(decision.reasons).toContain('insufficient_control_exposures:99/100')
   })
 
-  it('orders rollback when candidate outcome performance materially regresses', () => {
+  it('orders rollback when matured candidate outcome performance materially regresses', () => {
     const decision = evaluateFypExperimentGuardrails({
       controlExposureCount: 1000,
       candidateExposureCount: 100,
+      candidateSafetyExposureCount: 100,
       controlOutcomeCount: 200,
       candidateOutcomeCount: 10,
       candidateSafetyIncidentCount: 0,
@@ -138,23 +141,40 @@ describe('FYP controlled experiment governance', () => {
     expect(decision.reasons).toContain('candidate_outcome_rate_regression:0.1')
   })
 
-  it('orders rollback when candidate safety incidents breach the guardrail', () => {
+  it('orders immediate safety rollback even before outcome exposure has matured', () => {
     const decision = evaluateFypExperimentGuardrails({
-      controlExposureCount: 1000,
-      candidateExposureCount: 100,
-      controlOutcomeCount: 120,
-      candidateOutcomeCount: 12,
+      controlExposureCount: 0,
+      candidateExposureCount: 0,
+      candidateSafetyExposureCount: 100,
+      controlOutcomeCount: 0,
+      candidateOutcomeCount: 0,
       candidateSafetyIncidentCount: 2,
     })
 
     expect(decision.action).toBe('rollback')
+    expect(decision.candidateSafetyIncidentRate).toBe(0.02)
     expect(decision.reasons).toContain('candidate_safety_incident_rate:0.02')
   })
 
-  it('continues only when minimum evidence and both guardrails are satisfied', () => {
+  it('waits for safety sample volume when no other guardrail is evaluable', () => {
+    const decision = evaluateFypExperimentGuardrails({
+      controlExposureCount: 0,
+      candidateExposureCount: 0,
+      candidateSafetyExposureCount: 99,
+      controlOutcomeCount: 0,
+      candidateOutcomeCount: 0,
+      candidateSafetyIncidentCount: 2,
+    })
+
+    expect(decision.action).toBe('insufficient_evidence')
+    expect(decision.reasons).toContain('insufficient_candidate_safety_exposures:99/100')
+  })
+
+  it('continues only when safety and matured outcome evidence are sufficient and healthy', () => {
     const decision = evaluateFypExperimentGuardrails({
       controlExposureCount: 1000,
       candidateExposureCount: 100,
+      candidateSafetyExposureCount: 125,
       controlOutcomeCount: 120,
       candidateOutcomeCount: 13,
       candidateSafetyIncidentCount: 0,
