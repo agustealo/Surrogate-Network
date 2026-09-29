@@ -1,9 +1,6 @@
 import 'server-only'
 
-import {
-  FYP_EVENT_ACTIONS,
-  type RecommendationSubjectType,
-} from '@/application/services/RecommendationEventService'
+import { FYP_EVENT_ACTIONS } from '@/application/services/RecommendationEventService'
 import {
   FypExperimentPolicyService,
   type PersistedFypExperimentPolicy,
@@ -19,6 +16,8 @@ import type { Json } from '@/infrastructure/supabase/database.types'
 import { createServiceClient } from '@/infrastructure/supabase/server'
 
 const LIVE_GUARDRAIL_WINDOW_MS = 30 * 86_400_000
+export const FYP_OUTCOME_MATURATION_HOURS = 24 as const
+const OUTCOME_MATURATION_MS = FYP_OUTCOME_MATURATION_HOURS * 60 * 60 * 1000
 
 const outcomeActions = new Set<string>([
   FYP_EVENT_ACTIONS.proposalAccepted,
@@ -35,10 +34,16 @@ type AuditRow = {
   after: Json | null
 }
 
+type ExposureEvidence = {
+  cohort: FypExperimentCohort
+  timestamp: string
+}
+
 export type FypExperimentGuardrailReport = {
   policyEventId: string | null
   windowStart: string
   windowEnd: string
+  outcomeMaturationHours: number
   input: FypExperimentGuardrailInput
   decision: FypExperimentGuardrailDecision
   malformedEvidenceCount: number
@@ -148,9 +153,10 @@ export class FypExperimentGuardrailService {
     windowStart: Date,
     windowEnd: Date,
   ): FypExperimentGuardrailReport {
-    const exposures = new Map<string, FypExperimentCohort>()
+    const exposures = new Map<string, ExposureEvidence>()
     const outcomes = new Map<string, FypExperimentCohort>()
     const safetyIncidents = new Map<string, FypExperimentCohort>()
+    const outcomeMaturityCutoff = windowEnd.getTime() - OUTCOME_MATURATION_MS
     let malformedEvidenceCount = 0
 
     for (const row of rows) {
@@ -166,12 +172,16 @@ export class FypExperimentGuardrailService {
       }
 
       if (row.action === FYP_EVENT_ACTIONS.experimentImpression) {
-        const existing = exposures.get(key)
-        if (existing && existing !== cohort) {
+        if (!row.timestamp || !Number.isFinite(new Date(row.timestamp).getTime())) {
           malformedEvidenceCount += 1
           continue
         }
-        exposures.set(key, cohort)
+        const existing = exposures.get(key)
+        if (existing) {
+          if (existing.cohort !== cohort) malformedEvidenceCount += 1
+          continue
+        }
+        exposures.set(key, { cohort, timestamp: row.timestamp })
         continue
       }
 
@@ -187,21 +197,28 @@ export class FypExperimentGuardrailService {
 
     let controlExposureCount = 0
     let candidateExposureCount = 0
+    let candidateSafetyExposureCount = 0
     let controlOutcomeCount = 0
     let candidateOutcomeCount = 0
     let candidateSafetyIncidentCount = 0
 
-    for (const cohort of exposures.values()) {
-      if (cohort === 'control') controlExposureCount += 1
+    for (const exposure of exposures.values()) {
+      if (exposure.cohort === 'candidate') candidateSafetyExposureCount += 1
+      if (new Date(exposure.timestamp).getTime() > outcomeMaturityCutoff) continue
+      if (exposure.cohort === 'control') controlExposureCount += 1
       else candidateExposureCount += 1
     }
+
     for (const [key, cohort] of outcomes) {
-      if (exposures.get(key) !== cohort) continue
+      const exposure = exposures.get(key)
+      if (!exposure || exposure.cohort !== cohort) continue
+      if (new Date(exposure.timestamp).getTime() > outcomeMaturityCutoff) continue
       if (cohort === 'control') controlOutcomeCount += 1
       else candidateOutcomeCount += 1
     }
+
     for (const [key, cohort] of safetyIncidents) {
-      if (cohort === 'candidate' && exposures.get(key) === 'candidate') {
+      if (cohort === 'candidate' && exposures.get(key)?.cohort === 'candidate') {
         candidateSafetyIncidentCount += 1
       }
     }
@@ -209,6 +226,7 @@ export class FypExperimentGuardrailService {
     const input: FypExperimentGuardrailInput = {
       controlExposureCount,
       candidateExposureCount,
+      candidateSafetyExposureCount,
       controlOutcomeCount,
       candidateOutcomeCount,
       candidateSafetyIncidentCount,
@@ -218,6 +236,7 @@ export class FypExperimentGuardrailService {
       policyEventId,
       windowStart: windowStart.toISOString(),
       windowEnd: windowEnd.toISOString(),
+      outcomeMaturationHours: FYP_OUTCOME_MATURATION_HOURS,
       input,
       decision: evaluateFypExperimentGuardrails(input),
       malformedEvidenceCount,
