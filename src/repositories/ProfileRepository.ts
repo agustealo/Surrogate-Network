@@ -18,7 +18,6 @@ export interface Profile {
   boundaries?: Boundary[]
   rank?: number
   xp?: number
-  tokenBalance?: number
   verificationStatus: VerificationStatus
   isSuspended?: boolean
   createdAt: string
@@ -27,7 +26,7 @@ export interface Profile {
 
 /**
  * Member-editable profile fields only. Email belongs to auth identity; rank,
- * XP, token balance, verification and suspension belong to trusted authority.
+ * XP, verification and suspension belong to trusted authority.
  */
 export interface UpdateProfileDto {
   name?: string

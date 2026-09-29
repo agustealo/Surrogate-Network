@@ -28,6 +28,46 @@ async function captureVisualEvidence(page: Page, filename: string, options: Visu
   })
 }
 
+function normalizeMailText(value: string): string {
+  return value
+    .replace(/=\r?\n/g, '')
+    .replace(/=3D/gi, '=')
+    .replace(/&amp;/g, '&')
+}
+
+async function mailLinkFor(email: string, predicate: (candidate: string) => boolean, proofName: string): Promise<string> {
+  const mailpitUrl = process.env.MAILPIT_URL
+  if (!mailpitUrl) throw new Error(`MAILPIT_URL is required for ${proofName}`)
+
+  let link = ''
+  await expect.poll(async () => {
+    const response = await fetch(`${mailpitUrl}/view/latest.txt?query=${encodeURIComponent(`to:${email}`)}`)
+    if (!response.ok) return ''
+    const text = normalizeMailText(await response.text())
+    const candidates = text.match(/https?:\/\/[^\s<>"']+/g) ?? []
+    link = candidates.find(predicate) ?? ''
+    return link
+  }, { timeout: 20_000, intervals: [250, 500, 1000] }).not.toBe('')
+
+  return link
+}
+
+async function confirmationLinkFor(email: string): Promise<string> {
+  return mailLinkFor(
+    email,
+    (candidate) => candidate.includes('/auth/confirm?') && candidate.includes('token_hash='),
+    'signup email confirmation proof',
+  )
+}
+
+async function recoveryLinkFor(email: string): Promise<string> {
+  return mailLinkFor(
+    email,
+    (candidate) => candidate.includes('/auth/v1/verify?'),
+    'password recovery proof',
+  )
+}
+
 async function signUp(page: Page, member: TrialMember) {
   await page.goto('/signup')
   await page.getByLabel('Full Name').fill(member.name)
@@ -36,7 +76,11 @@ async function signUp(page: Page, member: TrialMember) {
   await page.getByLabel('Confirm Password').fill(member.password)
   await page.getByRole('checkbox').check()
   await page.getByRole('button', { name: 'Create Account' }).click()
-  await page.waitForURL(/\/profile\//, { timeout: 20_000 })
+  await expect(page.getByText('Check your email', { exact: true })).toBeVisible({ timeout: 20_000 })
+
+  const confirmationLink = await confirmationLinkFor(member.email)
+  await page.goto(confirmationLink)
+  await page.waitForURL(/\/profile\/create$/, { timeout: 20_000 })
 }
 
 async function signIn(page: Page, member: TrialMember) {
@@ -71,30 +115,6 @@ async function createOffer(page: Page, title: string): Promise<string> {
 
 async function dispose(contexts: BrowserContext[]) {
   await Promise.allSettled(contexts.map((context) => context.close()))
-}
-
-function normalizeMailText(value: string): string {
-  return value
-    .replace(/=\r?\n/g, '')
-    .replace(/=3D/gi, '=')
-    .replace(/&amp;/g, '&')
-}
-
-async function recoveryLinkFor(email: string): Promise<string> {
-  const mailpitUrl = process.env.MAILPIT_URL
-  if (!mailpitUrl) throw new Error('MAILPIT_URL is required for password recovery proof')
-
-  let link = ''
-  await expect.poll(async () => {
-    const response = await fetch(`${mailpitUrl}/view/latest.txt?query=${encodeURIComponent(`to:${email}`)}`)
-    if (!response.ok) return ''
-    const text = normalizeMailText(await response.text())
-    const candidates = text.match(/https?:\/\/[^\s<>"']+/g) ?? []
-    link = candidates.find((candidate) => candidate.includes('/auth/v1/verify?')) ?? ''
-    return link
-  }, { timeout: 20_000, intervals: [250, 500, 1000] }).not.toBe('')
-
-  return link
 }
 
 async function downloadText(download: Download): Promise<string> {
@@ -246,7 +266,9 @@ test.describe('Consumer trial smoke @smoke', () => {
 
       await requester.goto('/home')
       await expect(requester.getByRole('heading', { name: 'Your network' })).toBeVisible()
-      await expect(requester.getByText('Active Surrogacies')).toBeVisible()
+      const activeConnectionsCard = requester.getByText('Active Connections', { exact: true }).locator('..').locator('..')
+      await expect(activeConnectionsCard.getByText('1', { exact: true })).toBeVisible()
+      await expect(activeConnectionsCard.getByRole('link', { name: 'View' })).toHaveAttribute('href', '/surrogacies')
       await requester.evaluate(() => window.scrollTo(0, 0))
       await captureVisualEvidence(requester, '07-member-dashboard.png')
 

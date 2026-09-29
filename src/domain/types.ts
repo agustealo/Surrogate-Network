@@ -17,12 +17,11 @@ export interface Profile extends BaseProfile {
   boundaries?: Boundary[];
   rank?: number;
   xp?: number;
-  tokenBalance?: number;
   verificationStatus: VerificationStatus;
   isSuspended?: boolean;
 }
 
-export type VerificationStatus = 
+export type VerificationStatus =
   | 'unverified'
   | 'email_verified'
   | 'phone_verified'
@@ -136,28 +135,6 @@ export interface Feedback {
   createdAt: string;
 }
 
-export interface MediaGrant {
-  id: string;
-  mediaId: string;
-  fromUserId: string;
-  toUserId: string;
-  status: 'pending' | 'granted' | 'denied' | 'expired';
-  requestedAt: string;
-  respondedAt?: string;
-  expiresAt?: string;
-}
-
-export interface TokenTransaction {
-  id: string;
-  userId: string;
-  amount: number;
-  type: 'earned' | 'spent' | 'granted' | 'penalty';
-  reason: string;
-  referenceId?: string;
-  referenceType?: 'exchange' | 'feedback' | 'proposal' | 'grant' | 'penalty';
-  createdAt: string;
-}
-
 export interface XPEvent {
   id: string;
   userId: string;
@@ -179,7 +156,6 @@ export interface Achievement {
   };
   reward: {
     xp: number;
-    tokens?: number;
     rankUnlocks?: string[];
   };
 }
@@ -190,17 +166,6 @@ export interface Rank {
   xpRequired: number;
   unlockedFeatures: string[];
   color?: string;
-}
-
-export interface Notification {
-  id: string;
-  userId: string;
-  type: 'message' | 'proposal' | 'surrogacy' | 'schedule' | 'media' | 'feedback' | 'token' | 'rank' | 'reward' | 'moderation' | 'system';
-  title: string;
-  body: string;
-  data?: Record<string, unknown>;
-  read: boolean;
-  createdAt: string;
 }
 
 export interface Report {
@@ -229,7 +194,6 @@ export type Capability =
   | 'suspend_members'
   | 'view_reports'
   | 'moderate_content'
-  | 'manage_tokens'
   | 'view_ledger'
   | 'edit_settings'
   | 'view_audit'
@@ -238,7 +202,7 @@ export type Capability =
 
 export interface AuditLog {
   id: string;
-  actorId?: string | null; // Made nullable to preserve audit history when actor is deleted
+  actorId?: string | null;
   action: string;
   targetId?: string;
   targetType?: string;

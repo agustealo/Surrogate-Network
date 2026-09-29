@@ -18,7 +18,6 @@ type ProfileRow = Pick<
   | 'boundaries'
   | 'rank'
   | 'xp'
-  | 'token_balance'
   | 'verification_status'
   | 'is_suspended'
   | 'created_at'
@@ -35,7 +34,7 @@ export class SupabaseProfileRepository implements ProfileRepository {
     const supabase = await createSupabaseClient()
     const { data, error } = await supabase
       .from('profiles')
-      .select('id,name,email,avatar_url,bio,location,availability,boundaries,rank,xp,token_balance,verification_status,is_suspended,created_at,updated_at')
+      .select('id,name,email,avatar_url,bio,location,availability,boundaries,rank,xp,verification_status,is_suspended,created_at,updated_at')
       .eq('id', id)
       .single()
 
@@ -56,10 +55,10 @@ export class SupabaseProfileRepository implements ProfileRepository {
         boundaries: profile.boundaries,
       })
       .eq('id', id)
-      .select('id,name,email,avatar_url,bio,location,availability,boundaries,rank,xp,token_balance,verification_status,is_suspended,created_at,updated_at')
+      .select('id,name,email,avatar_url,bio,location,availability,boundaries,rank,xp,verification_status,is_suspended,created_at,updated_at')
       .single()
 
-    if (error) throw new Error(`Failed to update profile: ${error.message}`)
+    if (error || !data) throw new Error(`Failed to update profile: ${error?.message ?? 'no row returned'}`)
     return this.mapToProfile(data)
   }
 
@@ -75,7 +74,6 @@ export class SupabaseProfileRepository implements ProfileRepository {
       boundaries: data.boundaries ?? undefined,
       rank: data.rank ?? undefined,
       xp: data.xp ?? undefined,
-      tokenBalance: data.token_balance ?? undefined,
       verificationStatus: required(data.verification_status, 'verification_status'),
       isSuspended: data.is_suspended ?? undefined,
       createdAt: required(data.created_at, 'created_at'),

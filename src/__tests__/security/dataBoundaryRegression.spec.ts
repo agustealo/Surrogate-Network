@@ -65,33 +65,26 @@ describe('Consumer-trial data boundaries', () => {
     if (error) throw error
   })
 
-  it('keeps token and XP mutation functions out of member and anonymous authority', async () => {
+  it('keeps XP mutation functions out of member and anonymous authority', async () => {
     const member = await clientFor(memberA)
     const anonymous = createClient(url, anonKey, {
       auth: { persistSession: false, autoRefreshToken: false },
     })
 
-    const tokenAttempt = await member.rpc('update_token_balance', {
-      p_user_id: memberA.user.id,
-      p_amount: 500,
-      p_reason: 'boundary regression',
-      p_transaction_type: 'earned',
-    })
-    const xpAttempt = await member.rpc('update_user_xp', {
+    const memberAttempt = await member.rpc('update_user_xp', {
       p_user_id: memberA.user.id,
       p_amount: 500,
       p_source: 'login',
       p_description: 'boundary regression',
     })
-    const anonymousAttempt = await anonymous.rpc('update_token_balance', {
+    const anonymousAttempt = await anonymous.rpc('update_user_xp', {
       p_user_id: memberA.user.id,
       p_amount: 1,
-      p_reason: 'anonymous boundary regression',
-      p_transaction_type: 'earned',
+      p_source: 'login',
+      p_description: 'anonymous boundary regression',
     })
 
-    expect(tokenAttempt.error).toBeTruthy()
-    expect(xpAttempt.error).toBeTruthy()
+    expect(memberAttempt.error).toBeTruthy()
     expect(anonymousAttempt.error).toBeTruthy()
   })
 
@@ -122,7 +115,6 @@ describe('Consumer-trial data boundaries', () => {
     expect(publicRead.error).toBeNull()
     expect(publicRead.data?.id).toBe(memberB.user.id)
     expect(publicRead.data).not.toHaveProperty('email')
-    expect(publicRead.data).not.toHaveProperty('token_balance')
     expect(publicRead.data).not.toHaveProperty('xp')
     expect(publicRead.data).not.toHaveProperty('is_admin')
     expect(publicRead.data).not.toHaveProperty('is_suspended')
@@ -134,7 +126,6 @@ describe('Consumer-trial data boundaries', () => {
     for (const mutation of [
       { rank: 999 },
       { xp: 999999 },
-      { token_balance: 999999 },
       { verification_status: 'fully_verified' },
       { is_suspended: false },
     ]) {
@@ -277,7 +268,7 @@ describe('Consumer-trial data boundaries', () => {
     await service.from('profiles').update({ is_suspended: false }).eq('id', memberC.user.id)
   })
 
-  it('keeps report resolution and notification content authoritative', async () => {
+  it('keeps report resolution authoritative', async () => {
     const clientA = await clientFor(memberA)
     const { data: report, error: reportError } = await clientA.from('reports').insert({
       reporter_user_id: memberA.user.id,
@@ -294,37 +285,27 @@ describe('Consumer-trial data boundaries', () => {
       .update({ status: 'dismissed', action_taken: 'forged result' })
       .eq('id', report.id)
     expect(reportMutation.error).toBeTruthy()
-
-    const { data: notification, error: notificationError } = await service.from('notifications').insert({
-      user_id: memberA.user.id,
-      type: 'system',
-      title: 'Original title',
-      body: 'Original body',
-      read: false,
-    }).select('id').single()
-    if (notificationError || !notification) throw notificationError ?? new Error('Unable to seed notification')
-
-    const markRead = await clientA.from('notifications').update({ read: true }).eq('id', notification.id)
-    const rewrite = await clientA.from('notifications').update({ title: 'Forged title' }).eq('id', notification.id)
-    expect(markRead.error).toBeNull()
-    expect(rewrite.error).toBeTruthy()
   })
 
-  it('requires verified admin authority for authoritative profile changes', async () => {
+  it('allows trusted server authority but not members to change protected profile progression', async () => {
     const clientA = await clientFor(memberA)
-    const nonAdminAttempt = await clientA.rpc('admin_update_profile', {
-      p_id: memberB.user.id,
-      p_name: 'Unauthorized admin change',
-    })
-    expect(nonAdminAttempt.error).toBeTruthy()
+    const memberAttempt = await clientA
+      .from('profiles')
+      .update({ xp: 100 })
+      .eq('id', memberA.user.id)
+    expect(memberAttempt.error).toBeTruthy()
 
-    const adminClient = await clientFor(admin)
-    const adminAttempt = await adminClient.rpc('admin_update_profile', {
-      p_id: memberB.user.id,
-      p_name: 'Boundary B',
-      p_xp: 100,
-    })
-    expect(adminAttempt.error).toBeNull()
+    const trustedAttempt = await service
+      .from('profiles')
+      .update({ xp: 100 })
+      .eq('id', memberB.user.id)
+    expect(trustedAttempt.error).toBeNull()
+
+    const descriptiveAttempt = await clientA
+      .from('profiles')
+      .update({ name: 'Boundary A Updated' })
+      .eq('id', memberA.user.id)
+    expect(descriptiveAttempt.error).toBeNull()
   })
 
   it('preserves audit evidence after the actor account is deleted', async () => {
