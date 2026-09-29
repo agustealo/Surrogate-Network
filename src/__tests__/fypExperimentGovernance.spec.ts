@@ -35,11 +35,23 @@ describe('FYP experiment governance wiring', () => {
     expect(experiment).toContain("input.assignment.cohort === 'candidate'")
     expect(experiment).toContain('evaluateAndRollback()')
     expect(events).toContain("safetyIncident: 'fyp.safety_incident'")
-    expect(events).toContain('recordSafetyIncidentForExposedMember')
+    expect(events).toContain('resolveSafetyExposureForMember')
+    expect(events).toContain('recordSafetyIncidentFromExposure')
     expect(events).toContain('hasExperimentProvenance')
     expect(events).toContain('evaluateAndRollback()')
     expect(safety).toContain("incidentType: 'block'")
     expect(safety).toContain("incidentType: 'report'")
+  })
+
+  it('captures block provenance before block RLS hides the target marketplace records', () => {
+    const safety = source('src/application/actions/safetyActions.ts')
+    const resolveIndex = safety.indexOf('const exposure = await resolveFypSafetyExposure({')
+    const blockIndex = safety.indexOf("supabase.from('blocks').upsert(")
+    const recordIndex = safety.indexOf('await recordFypSafetySignal({')
+
+    expect(resolveIndex).toBeGreaterThan(-1)
+    expect(blockIndex).toBeGreaterThan(resolveIndex)
+    expect(recordIndex).toBeGreaterThan(blockIndex)
   })
 
   it('surfaces current live guardrail state in the admin control plane', () => {
