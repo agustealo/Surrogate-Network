@@ -10,7 +10,6 @@ export type RecommendationReason = {
     | 'LOCATION_MATCH'
     | 'CATEGORY_MATCH'
     | 'TIMING_MATCH'
-    | 'TAG_MATCH'
     | 'FRESH_LISTING'
     | 'TRUST_SIGNAL'
     | 'URGENT_NEED'
@@ -72,7 +71,6 @@ export type RecommendationCandidate<T> = {
 }
 
 const clamp01 = (value: number) => Math.max(0, Math.min(1, value))
-
 const roundScore = (value: number) => Math.round(clamp01(value) * 100)
 
 const normalizeText = (value?: string) =>
@@ -195,7 +193,7 @@ function scoreOfferForProfile(offer: OfferIntent, profile: ViewerProfileIntent) 
 function bestCompatibility<T>(items: T[], scorer: (item: T) => { score: number; reasons: RecommendationReason[] }, fallback: { score: number; reasons: RecommendationReason[] }) {
   return items.reduce((best, item) => {
     const current = scorer(item)
-    return current.score > best.score ? current : best
+    return current.score >= best.score ? current : best
   }, fallback)
 }
 
