@@ -1,5 +1,6 @@
 import 'server-only'
 
+import { FYP_LIMITED_EXPERIMENT_VERSION } from '@/domain/recommendations/experiment'
 import type { Json } from '@/infrastructure/supabase/database.types'
 import { createClient } from '@/infrastructure/supabase/server'
 
@@ -7,6 +8,7 @@ export const FYP_EVENT_ACTIONS = {
   impression: 'fyp.impression',
   shadowImpression: 'fyp.shadow_impression',
   experimentImpression: 'fyp.experiment_impression',
+  safetyIncident: 'fyp.safety_incident',
   open: 'fyp.open',
   save: 'fyp.save',
   unsave: 'fyp.unsave',
@@ -40,6 +42,7 @@ export type RecommendationHistory = {
 
 const keyFor = (subjectType: RecommendationSubjectType, subjectId: string) => `${subjectType}:${subjectId}`
 const EXPERIMENT_OUTCOME_WINDOW_MS = 30 * 86_400_000
+const EMPTY_UUID = '00000000-0000-0000-0000-000000000000'
 
 function asRecord(value: Json | null | undefined): Record<string, unknown> | null {
   return value !== null && typeof value === 'object' && !Array.isArray(value)
@@ -212,6 +215,94 @@ export class RecommendationEventService {
     return { notInterested, saved, recentImpressionCounts }
   }
 
+  async recordSafetyIncidentForExposedMember(input: {
+    actorId: string
+    targetUserId: string
+    incidentType: 'block' | 'report'
+    severity?: 'low' | 'medium' | 'high'
+  }): Promise<void> {
+    const supabase = await createClient()
+    const windowStart = new Date(Date.now() - EXPERIMENT_OUTCOME_WINDOW_MS).toISOString()
+    const { data: exposures, error: exposureError } = await supabase
+      .from('audit_events')
+      .select('target_type,target_id,timestamp,after')
+      .eq('actor_id', input.actorId)
+      .eq('action', FYP_EVENT_ACTIONS.experimentImpression)
+      .gte('timestamp', windowStart)
+      .order('timestamp', { ascending: false })
+
+    if (exposureError) throw new Error(`Failed to read FYP safety attribution history: ${exposureError.message}`)
+    if (!exposures?.length) return
+
+    const needIds = exposures
+      .filter((row) => row.target_type === 'need' && row.target_id)
+      .map((row) => row.target_id as string)
+    const offerIds = exposures
+      .filter((row) => row.target_type === 'offer' && row.target_id)
+      .map((row) => row.target_id as string)
+
+    const [{ data: needs, error: needsError }, { data: offers, error: offersError }] = await Promise.all([
+      supabase.from('needs').select('id,user_id').in('id', needIds.length ? needIds : [EMPTY_UUID]),
+      supabase.from('offers').select('id,user_id').in('id', offerIds.length ? offerIds : [EMPTY_UUID]),
+    ])
+    if (needsError || offersError) {
+      throw new Error(`Failed to resolve FYP safety attribution ownership: ${needsError?.message ?? offersError?.message}`)
+    }
+
+    const ownerBySubject = new Map<string, string>()
+    for (const need of needs ?? []) ownerBySubject.set(keyFor('need', need.id), need.user_id)
+    for (const offer of offers ?? []) ownerBySubject.set(keyFor('offer', offer.id), offer.user_id)
+
+    const exposure = exposures.find((row) => (
+      (row.target_type === 'need' || row.target_type === 'offer')
+      && row.target_id
+      && ownerBySubject.get(keyFor(row.target_type, row.target_id)) === input.targetUserId
+    ))
+    if (!exposure || (exposure.target_type !== 'need' && exposure.target_type !== 'offer') || !exposure.target_id) return
+
+    const after = asRecord(exposure.after)
+    const metadata = asRecord(after?.metadata as Json | undefined)
+    const experimentVersion = metadata?.experimentVersion
+    const experimentCohort = metadata?.experimentCohort
+    if (
+      experimentVersion !== FYP_LIMITED_EXPERIMENT_VERSION
+      || (experimentCohort !== 'control' && experimentCohort !== 'candidate')
+    ) return
+
+    const reason = `${input.incidentType}:${input.targetUserId}`
+    const { data: existing, error: existingError } = await supabase
+      .from('audit_events')
+      .select('id')
+      .eq('actor_id', input.actorId)
+      .eq('action', FYP_EVENT_ACTIONS.safetyIncident)
+      .eq('target_type', exposure.target_type)
+      .eq('target_id', exposure.target_id)
+      .eq('reason', reason)
+      .limit(1)
+
+    if (existingError) throw new Error(`Failed to deduplicate FYP safety incident: ${existingError.message}`)
+    if (existing?.length) return
+
+    await this.recordWithClient(supabase, {
+      actorId: input.actorId,
+      action: FYP_EVENT_ACTIONS.safetyIncident,
+      subjectType: exposure.target_type,
+      subjectId: exposure.target_id,
+      sessionId: reason,
+      metadata: {
+        experimentVersion,
+        experimentCohort,
+        incidentType: input.incidentType,
+        incidentSeverity: input.severity ?? null,
+        exposedMemberId: input.targetUserId,
+        excludedFromShadowEvaluation: true,
+      },
+    })
+
+    const { FypExperimentGuardrailService } = await import('@/application/services/FypExperimentGuardrailService')
+    await new FypExperimentGuardrailService().evaluateAndRollback()
+  }
+
   async recordRelationshipOutcome(input: {
     actorId: string
     surrogacyId: string
@@ -251,7 +342,7 @@ export class RecommendationEventService {
     const experimentMetadata = asRecord(experimentAfter?.metadata as Json | undefined)
     const experimentVersion = experimentMetadata?.experimentVersion
     const experimentCohort = experimentMetadata?.experimentCohort
-    const hasExperimentProvenance = typeof experimentVersion === 'string'
+    const hasExperimentProvenance = experimentVersion === FYP_LIMITED_EXPERIMENT_VERSION
       && (experimentCohort === 'control' || experimentCohort === 'candidate')
 
     await this.recordWithClient(supabase, {
@@ -268,6 +359,11 @@ export class RecommendationEventService {
         } : {}),
       },
     })
+
+    if (hasExperimentProvenance) {
+      const { FypExperimentGuardrailService } = await import('@/application/services/FypExperimentGuardrailService')
+      await new FypExperimentGuardrailService().evaluateAndRollback()
+    }
   }
 }
 
