@@ -52,5 +52,10 @@ export class FypExperimentService {
         },
       })),
     )
+
+    if (input.assignment.cohort === 'candidate') {
+      const { FypExperimentGuardrailService } = await import('@/application/services/FypExperimentGuardrailService')
+      await new FypExperimentGuardrailService().evaluateAndRollback()
+    }
   }
 }
