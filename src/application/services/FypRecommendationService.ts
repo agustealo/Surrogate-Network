@@ -11,6 +11,11 @@ import {
   type ViewerIntent,
 } from '@/domain/recommendations/scoring'
 import {
+  FYP_SHADOW_RANKING_VERSION,
+  buildShadowRanking,
+  compareShadowRanking,
+} from '@/domain/recommendations/shadow'
+import {
   RecommendationEventService,
   recommendationSubjectKey,
 } from '@/application/services/RecommendationEventService'
@@ -76,13 +81,14 @@ export class FypRecommendationService {
     const { data: { user }, error: authError } = await supabase.auth.getUser()
     if (authError || !user) throw new Error('You must be signed in to discover recommendations.')
 
+    const eventService = new RecommendationEventService()
     const [profileResult, ownNeedsResult, ownOffersResult, needsResult, offersResult, history] = await Promise.all([
       supabase.from('profiles').select('id,boundaries,availability').eq('id', user.id).single(),
       supabase.from('needs').select('id,category,tags,location_mode,timing,boundaries,urgency,user_id,created_at').eq('user_id', user.id).eq('status', 'active').limit(25),
       supabase.from('offers').select('id,category,location_mode,timing,boundaries,capacity,current_capacity,rating,review_count,user_id,created_at').eq('user_id', user.id).eq('status', 'active').limit(25),
       supabase.from('needs').select('id,title,description,category,tags,location_mode,timing,boundaries,urgency,user_id,user_name,created_at').eq('status', 'active').order('created_at', { ascending: false }).limit(CANDIDATE_WINDOW),
       supabase.from('offers').select('id,title,description,category,location_mode,timing,boundaries,capacity,current_capacity,user_id,user_name,rating,review_count,created_at').eq('status', 'active').order('created_at', { ascending: false }).limit(CANDIDATE_WINDOW),
-      new RecommendationEventService().historyFor(user.id, now),
+      eventService.historyFor(user.id, now),
     ])
 
     if (profileResult.error || !profileResult.data) throw new Error('Your profile is unavailable for recommendation ranking.')
@@ -106,9 +112,20 @@ export class FypRecommendationService {
     const offerRows = new Map((offersResult.data ?? []).map((row) => [row.id, row as OfferRow]))
     const eligibleNeeds = (needsResult.data ?? []).filter((row) => this.isEligible('need', row.id, history))
     const eligibleOffers = (offersResult.data ?? []).filter((row) => this.isEligible('offer', row.id, history))
-    const rankedNeeds = rankNeedsForViewer(viewer, eligibleNeeds.map((row) => this.toNeedIntent(row as NeedRow)), now).slice(0, FEED_LIMIT)
-    const rankedOffers = rankOffersForViewer(viewer, eligibleOffers.map((row) => this.toOfferIntent(row as OfferRow)), now).slice(0, FEED_LIMIT)
+    const allRankedNeeds = rankNeedsForViewer(viewer, eligibleNeeds.map((row) => this.toNeedIntent(row as NeedRow)), now)
+    const allRankedOffers = rankOffersForViewer(viewer, eligibleOffers.map((row) => this.toOfferIntent(row as OfferRow)), now)
+    const rankedNeeds = allRankedNeeds.slice(0, FEED_LIMIT)
+    const rankedOffers = allRankedOffers.slice(0, FEED_LIMIT)
     const sessionId = `${FYP_RANKING_VERSION}:${user.id}:${now.toISOString().slice(0, 10)}`
+
+    await this.recordShadowRanking({
+      actorId: user.id,
+      sessionId,
+      baselineNeeds: allRankedNeeds,
+      baselineOffers: allRankedOffers,
+      history,
+      eventService,
+    })
 
     return {
       sessionId,
@@ -130,6 +147,53 @@ export class FypRecommendationService {
       }),
       ownNeedIds: (ownNeedsResult.data ?? []).map((row) => row.id),
       ownOfferIds: (ownOffersResult.data ?? []).map((row) => row.id),
+    }
+  }
+
+  private async recordShadowRanking(input: {
+    actorId: string
+    sessionId: string
+    baselineNeeds: RecommendationCandidate<NeedIntent>[]
+    baselineOffers: RecommendationCandidate<OfferIntent>[]
+    history: Awaited<ReturnType<RecommendationEventService['historyFor']>>
+    eventService: RecommendationEventService
+  }): Promise<void> {
+    try {
+      const shadowSessionId = `${input.sessionId}:${FYP_SHADOW_RANKING_VERSION}`
+      const shadowNeeds = buildShadowRanking({
+        actorId: input.actorId,
+        sessionId: shadowSessionId,
+        ranked: input.baselineNeeds,
+        recentImpressionCountFor: (subjectId) => input.history.recentImpressionCounts.get(recommendationSubjectKey('need', subjectId)) ?? 0,
+      })
+      const shadowOffers = buildShadowRanking({
+        actorId: input.actorId,
+        sessionId: shadowSessionId,
+        ranked: input.baselineOffers,
+        recentImpressionCountFor: (subjectId) => input.history.recentImpressionCounts.get(recommendationSubjectKey('offer', subjectId)) ?? 0,
+      })
+      const needComparisons = compareShadowRanking({ subjectType: 'need', baseline: input.baselineNeeds, shadow: shadowNeeds, limit: FEED_LIMIT })
+      const offerComparisons = compareShadowRanking({ subjectType: 'offer', baseline: input.baselineOffers, shadow: shadowOffers, limit: FEED_LIMIT })
+
+      await input.eventService.recordShadowImpressions(
+        input.actorId,
+        shadowSessionId,
+        [...needComparisons, ...offerComparisons].map((comparison) => ({
+          subjectType: comparison.subjectType,
+          subjectId: comparison.subjectId,
+          rankingVersion: comparison.rankingVersion,
+          rankPosition: comparison.shadowPosition,
+          score: comparison.shadowScore,
+          metadata: {
+            controlRankingVersion: FYP_RANKING_VERSION,
+            baselinePosition: comparison.baselinePosition,
+            baselineScore: comparison.baselineScore,
+            rankDelta: comparison.rankDelta,
+          },
+        })),
+      )
+    } catch {
+      // Shadow ranking is observational only. Its failure must never degrade the consumer feed.
     }
   }
 

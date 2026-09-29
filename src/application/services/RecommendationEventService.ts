@@ -5,6 +5,7 @@ import { createClient } from '@/infrastructure/supabase/server'
 
 export const FYP_EVENT_ACTIONS = {
   impression: 'fyp.impression',
+  shadowImpression: 'fyp.shadow_impression',
   open: 'fyp.open',
   save: 'fyp.save',
   unsave: 'fyp.unsave',
@@ -78,13 +79,44 @@ export class RecommendationEventService {
       score: number
     }>,
   ): Promise<void> {
+    await this.recordImpressionBatch(actorId, sessionId, FYP_EVENT_ACTIONS.impression, items)
+  }
+
+  async recordShadowImpressions(
+    actorId: string,
+    sessionId: string,
+    items: Array<{
+      subjectType: RecommendationSubjectType
+      subjectId: string
+      rankingVersion: string
+      rankPosition: number
+      score: number
+      metadata?: Record<string, Json | undefined>
+    }>,
+  ): Promise<void> {
+    await this.recordImpressionBatch(actorId, sessionId, FYP_EVENT_ACTIONS.shadowImpression, items)
+  }
+
+  private async recordImpressionBatch(
+    actorId: string,
+    sessionId: string,
+    action: typeof FYP_EVENT_ACTIONS.impression | typeof FYP_EVENT_ACTIONS.shadowImpression,
+    items: Array<{
+      subjectType: RecommendationSubjectType
+      subjectId: string
+      rankingVersion: string
+      rankPosition: number
+      score: number
+      metadata?: Record<string, Json | undefined>
+    }>,
+  ): Promise<void> {
     if (!items.length) return
     const supabase = await createClient()
     const { data: existing, error: existingError } = await supabase
       .from('audit_events')
       .select('target_type,target_id')
       .eq('actor_id', actorId)
-      .eq('action', FYP_EVENT_ACTIONS.impression)
+      .eq('action', action)
       .eq('reason', sessionId)
 
     if (existingError) throw new Error(`Failed to read recommendation impressions: ${existingError.message}`)
@@ -92,7 +124,7 @@ export class RecommendationEventService {
     const rows = items
       .filter((item) => !existingKeys.has(keyFor(item.subjectType, item.subjectId)))
       .map((item) => ({
-        action: FYP_EVENT_ACTIONS.impression,
+        action,
         actor_id: actorId,
         target_type: item.subjectType,
         target_id: item.subjectId,
@@ -101,6 +133,7 @@ export class RecommendationEventService {
           rankingVersion: item.rankingVersion,
           rankPosition: item.rankPosition,
           score: item.score,
+          metadata: item.metadata ?? {},
         } as Json,
       }))
 
