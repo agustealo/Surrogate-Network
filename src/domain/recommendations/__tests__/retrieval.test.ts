@@ -1,4 +1,6 @@
 import {
+  FYP_INTENT_POOL_LIMIT,
+  intentPoolLimitPerCategory,
   mergeCandidatePools,
   preferredNeedCategories,
   preferredOfferCategories,
@@ -37,6 +39,14 @@ describe('FYP candidate retrieval policy', () => {
     }))
 
     expect(result).toEqual(['utilitarian_business'])
+  })
+
+  it('splits the bounded intent budget fairly across preferred categories', () => {
+    expect(intentPoolLimitPerCategory(0)).toBe(0)
+    expect(intentPoolLimitPerCategory(1)).toBe(FYP_INTENT_POOL_LIMIT)
+    expect(intentPoolLimitPerCategory(2)).toBe(50)
+    expect(intentPoolLimitPerCategory(3)).toBe(33)
+    expect(intentPoolLimitPerCategory(3) * 3).toBeLessThanOrEqual(FYP_INTENT_POOL_LIMIT)
   })
 
   it('deduplicates candidates while preserving retrieval priority', () => {
