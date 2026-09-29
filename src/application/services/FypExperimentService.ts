@@ -5,6 +5,7 @@ import {
   type FypExperimentAssignment,
   type FypExperimentPolicy,
 } from '@/domain/recommendations/experiment'
+import { FypExperimentPolicyService } from '@/application/services/FypExperimentPolicyService'
 import {
   RecommendationEventService,
   type RecommendationSubjectType,
@@ -21,6 +22,11 @@ export type FypExperimentExposure = {
 export class FypExperimentService {
   assignmentFor(actorId: string, policy: FypExperimentPolicy): FypExperimentAssignment {
     return assignFypExperimentCohort({ actorId, policy })
+  }
+
+  async assignmentForActor(actorId: string): Promise<FypExperimentAssignment> {
+    const policy = await new FypExperimentPolicyService().currentPolicy()
+    return this.assignmentFor(actorId, policy)
   }
 
   async recordExposure(input: {
