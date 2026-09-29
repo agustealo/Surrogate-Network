@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
+import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { Bookmark, BookmarkCheck, Loader2, ThumbsDown } from 'lucide-react'
 import {
@@ -55,7 +56,7 @@ export function RecommendationControls({
   const router = useRouter()
   const { toast } = useToast()
   const [isSaved, setIsSaved] = useState(saved)
-  const [busy, setBusy] = useState<'save' | 'not_interested' | 'open' | null>(null)
+  const [busy, setBusy] = useState<'save' | 'not_interested' | null>(null)
 
   async function toggleSave() {
     setBusy('save')
@@ -89,9 +90,8 @@ export function RecommendationControls({
     router.refresh()
   }
 
-  async function openRecommendation() {
-    setBusy('open')
-    await recordRecommendationOpenAction({
+  function recordOpen() {
+    void recordRecommendationOpenAction({
       subjectType,
       subjectId,
       sessionId,
@@ -99,14 +99,12 @@ export function RecommendationControls({
       rankPosition,
       score,
     })
-    router.push(href)
   }
 
   return (
     <div className="flex flex-wrap gap-2">
-      <Button type="button" variant="outline" onClick={openRecommendation} disabled={busy !== null}>
-        {busy === 'open' && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-        View {subjectType === 'need' ? 'Need' : 'Offer'}
+      <Button asChild variant="outline">
+        <Link href={href} onClick={recordOpen}>View {subjectType === 'need' ? 'Need' : 'Offer'}</Link>
       </Button>
       <Button type="button" variant="ghost" size="sm" onClick={toggleSave} disabled={busy !== null} aria-pressed={isSaved}>
         {busy === 'save' ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : isSaved ? <BookmarkCheck className="mr-2 h-4 w-4" /> : <Bookmark className="mr-2 h-4 w-4" />}
