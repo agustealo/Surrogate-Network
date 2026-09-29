@@ -1,4 +1,5 @@
 import {
+  authorizeLimitedExperimentAllocation,
   decideShadowGraduation,
   evaluateShadowOutcomes,
   type ShadowOutcomeSignal,
@@ -80,5 +81,34 @@ describe('shadow outcome evaluation', () => {
 
     expect(decision.eligibleForLimitedExperiment).toBe(false)
     expect(decision.reasons).toContain('data_integrity_violations:1')
+  })
+
+  it('authorizes only a capped first experiment after graduation evidence passes', () => {
+    const decision = decideShadowGraduation(evaluateShadowOutcomes(Array.from({ length: 500 }, (_, index) => signal({
+      subjectId: `offer-${index}`,
+      rankDelta: index < 50 ? 1 : 0,
+      outcome: index < 50 ? 'exchangeCompleted' : null,
+    }))))
+
+    expect(authorizeLimitedExperimentAllocation(decision, 5)).toMatchObject({
+      authorized: true,
+      authorizedTrafficPercent: 5,
+      maximumTrafficPercent: 5,
+      reasons: [],
+    })
+    expect(authorizeLimitedExperimentAllocation(decision, 6)).toMatchObject({
+      authorized: false,
+      authorizedTrafficPercent: 0,
+      reasons: ['requested_traffic_exceeds_initial_cap:6/5'],
+    })
+  })
+
+  it('never allocates traffic when graduation itself is blocked', () => {
+    const blocked = decideShadowGraduation(evaluateShadowOutcomes([signal()]))
+    const allocation = authorizeLimitedExperimentAllocation(blocked, 1)
+
+    expect(allocation.authorized).toBe(false)
+    expect(allocation.authorizedTrafficPercent).toBe(0)
+    expect(allocation.reasons.length).toBeGreaterThan(0)
   })
 })
