@@ -23,6 +23,11 @@ import {
   buildShadowRanking,
   compareShadowRanking,
 } from '@/domain/recommendations/shadow'
+import {
+  FypFeedSnapshotService,
+  type FypFeedSessionSnapshot,
+  type FypFeedSnapshotItem,
+} from '@/application/services/FypFeedSnapshotService'
 import { FypExperimentService } from '@/application/services/FypExperimentService'
 import {
   RecommendationEventService,
@@ -33,6 +38,7 @@ import type { Boundary, SurrogateCategory } from '@/domain/types'
 const FEED_LIMIT = 24
 const REPEAT_IMPRESSION_LIMIT = 3
 const UNKNOWN_CREATED_AT = '1970-01-01T00:00:00.000Z'
+const EMPTY_UUID = '00000000-0000-0000-0000-000000000000'
 
 type NeedRow = {
   id: string
@@ -68,15 +74,19 @@ type OfferRow = {
 
 export type FypNeed = NeedRow & {
   recommendation: RecommendationCandidate<NeedIntent>['recommendation']
+  rankPosition: number
   saved: boolean
 }
 export type FypOffer = OfferRow & {
   recommendation: RecommendationCandidate<OfferIntent>['recommendation']
+  rankPosition: number
   saved: boolean
 }
 
 export type FypFeed = {
   sessionId: string
+  generatedAt: string
+  expiresAt: string
   needs: FypNeed[]
   offers: FypOffer[]
   ownNeedIds: string[]
@@ -91,12 +101,11 @@ export class FypRecommendationService {
 
     const eventService = new RecommendationEventService()
     const experimentService = new FypExperimentService()
-    const [profileResult, ownNeedsResult, ownOffersResult, recentNeedsResult, recentOffersResult, history, experimentAssignment] = await Promise.all([
+    const snapshotService = new FypFeedSnapshotService()
+    const [profileResult, ownNeedsResult, ownOffersResult, history, experimentAssignment] = await Promise.all([
       supabase.from('profiles').select('id,boundaries,availability').eq('id', user.id).single(),
       supabase.from('needs').select('id,category,tags,location_mode,timing,boundaries,urgency,user_id,created_at').eq('user_id', user.id).eq('status', 'active').limit(25),
       supabase.from('offers').select('id,category,location_mode,timing,boundaries,capacity,current_capacity,rating,review_count,user_id,created_at').eq('user_id', user.id).eq('status', 'active').limit(25),
-      supabase.from('needs').select('id,title,description,category,tags,location_mode,timing,boundaries,urgency,user_id,user_name,created_at').eq('status', 'active').order('created_at', { ascending: false }).limit(FYP_RECENT_POOL_LIMIT),
-      supabase.from('offers').select('id,title,description,category,location_mode,timing,boundaries,capacity,current_capacity,user_id,user_name,rating,review_count,created_at').eq('status', 'active').order('created_at', { ascending: false }).limit(FYP_RECENT_POOL_LIMIT),
       eventService.historyFor(user.id, now),
       experimentService.assignmentForActor(user.id),
     ])
@@ -104,6 +113,30 @@ export class FypRecommendationService {
     if (profileResult.error || !profileResult.data) throw new Error('Your profile is unavailable for recommendation ranking.')
     if (ownNeedsResult.error) throw new Error(`Failed to load your Needs: ${ownNeedsResult.error.message}`)
     if (ownOffersResult.error) throw new Error(`Failed to load your Offers: ${ownOffersResult.error.message}`)
+
+    const expectedRankingVersion = experimentAssignment.cohort === 'candidate'
+      ? FYP_SHADOW_RANKING_VERSION
+      : FYP_RANKING_VERSION
+    const existingSnapshot = await snapshotService.current({
+      actorId: user.id,
+      rankingVersion: expectedRankingVersion,
+      now,
+    })
+
+    if (existingSnapshot) {
+      return this.hydrateSnapshot({
+        supabase,
+        snapshot: existingSnapshot,
+        history,
+        ownNeedIds: (ownNeedsResult.data ?? []).map((row) => row.id),
+        ownOfferIds: (ownOffersResult.data ?? []).map((row) => row.id),
+      })
+    }
+
+    const [recentNeedsResult, recentOffersResult] = await Promise.all([
+      supabase.from('needs').select('id,title,description,category,tags,location_mode,timing,boundaries,urgency,user_id,user_name,created_at').eq('status', 'active').order('created_at', { ascending: false }).limit(FYP_RECENT_POOL_LIMIT),
+      supabase.from('offers').select('id,title,description,category,location_mode,timing,boundaries,capacity,current_capacity,user_id,user_name,rating,review_count,created_at').eq('status', 'active').order('created_at', { ascending: false }).limit(FYP_RECENT_POOL_LIMIT),
+    ])
     if (recentNeedsResult.error) throw new Error(`Failed to load recent candidate Needs: ${recentNeedsResult.error.message}`)
     if (recentOffersResult.error) throw new Error(`Failed to load recent candidate Offers: ${recentOffersResult.error.message}`)
 
@@ -130,19 +163,16 @@ export class FypRecommendationService {
       (recentOffersResult.data ?? []).map((row) => row as OfferRow),
       intentOffers,
     )
-
-    const needRows = new Map(candidateNeeds.map((row) => [row.id, row]))
-    const offerRows = new Map(candidateOffers.map((row) => [row.id, row]))
-    const eligibleNeeds = candidateNeeds.filter((row) => this.isEligible('need', row.id, history))
-    const eligibleOffers = candidateOffers.filter((row) => this.isEligible('offer', row.id, history))
+    const eligibleNeeds = candidateNeeds.filter((row) => this.isGenerationEligible('need', row.id, history))
+    const eligibleOffers = candidateOffers.filter((row) => this.isGenerationEligible('offer', row.id, history))
     const allRankedNeeds = rankNeedsForViewer(viewer, eligibleNeeds.map((row) => this.toNeedIntent(row)), now)
     const allRankedOffers = rankOffersForViewer(viewer, eligibleOffers.map((row) => this.toOfferIntent(row)), now)
-    const sessionId = `${FYP_RANKING_VERSION}:${user.id}:${now.toISOString().slice(0, 10)}`
 
+    const provisionalSessionId = crypto.randomUUID()
     const selectedNeeds = experimentAssignment.cohort === 'candidate'
       ? this.asCandidateRanking(buildShadowRanking({
           actorId: user.id,
-          sessionId: `${sessionId}:${FYP_SHADOW_RANKING_VERSION}`,
+          sessionId: `${provisionalSessionId}:${FYP_SHADOW_RANKING_VERSION}`,
           ranked: allRankedNeeds,
           recentImpressionCountFor: (subjectId) => history.recentImpressionCounts.get(recommendationSubjectKey('need', subjectId)) ?? 0,
         }))
@@ -150,45 +180,109 @@ export class FypRecommendationService {
     const selectedOffers = experimentAssignment.cohort === 'candidate'
       ? this.asCandidateRanking(buildShadowRanking({
           actorId: user.id,
-          sessionId: `${sessionId}:${FYP_SHADOW_RANKING_VERSION}`,
+          sessionId: `${provisionalSessionId}:${FYP_SHADOW_RANKING_VERSION}`,
           ranked: allRankedOffers,
           recentImpressionCountFor: (subjectId) => history.recentImpressionCounts.get(recommendationSubjectKey('offer', subjectId)) ?? 0,
         }))
       : allRankedOffers
 
-    const rankedNeeds = selectedNeeds.slice(0, FEED_LIMIT)
-    const rankedOffers = selectedOffers.slice(0, FEED_LIMIT)
+    const snapshot = await snapshotService.create({
+      actorId: user.id,
+      rankingVersion: expectedRankingVersion,
+      now,
+      needs: this.snapshotItems(selectedNeeds),
+      offers: this.snapshotItems(selectedOffers),
+    })
 
     await this.recordShadowRanking({
       actorId: user.id,
-      sessionId,
+      sessionId: snapshot.sessionId,
       baselineNeeds: allRankedNeeds,
       baselineOffers: allRankedOffers,
       history,
       eventService,
     })
 
-    return {
-      sessionId,
-      needs: rankedNeeds.flatMap(({ item, recommendation }) => {
-        const row = needRows.get(item.id)
-        return row ? [{
-          ...row,
-          recommendation,
-          saved: history.saved.has(recommendationSubjectKey('need', item.id)),
-        }] : []
-      }),
-      offers: rankedOffers.flatMap(({ item, recommendation }) => {
-        const row = offerRows.get(item.id)
-        return row ? [{
-          ...row,
-          recommendation,
-          saved: history.saved.has(recommendationSubjectKey('offer', item.id)),
-        }] : []
-      }),
+    return this.hydrateSnapshot({
+      supabase,
+      snapshot,
+      history,
       ownNeedIds: (ownNeedsResult.data ?? []).map((row) => row.id),
       ownOfferIds: (ownOffersResult.data ?? []).map((row) => row.id),
+    })
+  }
+
+  private async hydrateSnapshot(input: {
+    supabase: Awaited<ReturnType<typeof createClient>>
+    snapshot: FypFeedSessionSnapshot
+    history: Awaited<ReturnType<RecommendationEventService['historyFor']>>
+    ownNeedIds: string[]
+    ownOfferIds: string[]
+  }): Promise<FypFeed> {
+    const needIds = input.snapshot.needs.map((item) => item.subjectId)
+    const offerIds = input.snapshot.offers.map((item) => item.subjectId)
+    const [{ data: needs, error: needsError }, { data: offers, error: offersError }] = await Promise.all([
+      input.supabase
+        .from('needs')
+        .select('id,title,description,category,tags,location_mode,timing,boundaries,urgency,user_id,user_name,created_at')
+        .in('id', needIds.length ? needIds : [EMPTY_UUID])
+        .eq('status', 'active'),
+      input.supabase
+        .from('offers')
+        .select('id,title,description,category,location_mode,timing,boundaries,capacity,current_capacity,user_id,user_name,rating,review_count,created_at')
+        .in('id', offerIds.length ? offerIds : [EMPTY_UUID])
+        .eq('status', 'active'),
+    ])
+    if (needsError) throw new Error(`Failed to hydrate FYP Need snapshot: ${needsError.message}`)
+    if (offersError) throw new Error(`Failed to hydrate FYP Offer snapshot: ${offersError.message}`)
+
+    const needRows = new Map((needs ?? []).map((row) => [row.id, row as NeedRow]))
+    const offerRows = new Map((offers ?? []).map((row) => [row.id, row as OfferRow]))
+    const needsOut: FypNeed[] = []
+    const offersOut: FypOffer[] = []
+
+    for (const item of input.snapshot.needs) {
+      if (needsOut.length >= FEED_LIMIT) break
+      const row = needRows.get(item.subjectId)
+      if (!row || !this.isSnapshotEligible('need', item.subjectId, input.history)) continue
+      needsOut.push({
+        ...row,
+        recommendation: item.recommendation,
+        rankPosition: item.position,
+        saved: input.history.saved.has(recommendationSubjectKey('need', item.subjectId)),
+      })
     }
+    for (const item of input.snapshot.offers) {
+      if (offersOut.length >= FEED_LIMIT) break
+      const row = offerRows.get(item.subjectId)
+      if (!row || !this.isSnapshotEligible('offer', item.subjectId, input.history)) continue
+      offersOut.push({
+        ...row,
+        recommendation: item.recommendation,
+        rankPosition: item.position,
+        saved: input.history.saved.has(recommendationSubjectKey('offer', item.subjectId)),
+      })
+    }
+
+    return {
+      sessionId: input.snapshot.sessionId,
+      generatedAt: input.snapshot.generatedAt,
+      expiresAt: input.snapshot.expiresAt,
+      needs: needsOut,
+      offers: offersOut,
+      ownNeedIds: input.ownNeedIds,
+      ownOfferIds: input.ownOfferIds,
+    }
+  }
+
+  private snapshotItems<T extends NeedIntent | OfferIntent>(
+    ranked: RecommendationCandidate<T>[],
+  ): FypFeedSnapshotItem[] {
+    return ranked.map((candidate, position) => ({
+      subjectId: candidate.item.id,
+      position,
+      recommendation: candidate.recommendation,
+    }))
   }
 
   private async loadIntentNeeds(
@@ -291,7 +385,7 @@ export class FypRecommendationService {
     }
   }
 
-  private isEligible(
+  private isGenerationEligible(
     subjectType: 'need' | 'offer',
     subjectId: string,
     history: Awaited<ReturnType<RecommendationEventService['historyFor']>>,
@@ -300,6 +394,14 @@ export class FypRecommendationService {
     if (history.notInterested.has(key)) return false
     if (history.saved.has(key)) return true
     return (history.recentImpressionCounts.get(key) ?? 0) < REPEAT_IMPRESSION_LIMIT
+  }
+
+  private isSnapshotEligible(
+    subjectType: 'need' | 'offer',
+    subjectId: string,
+    history: Awaited<ReturnType<RecommendationEventService['historyFor']>>,
+  ): boolean {
+    return !history.notInterested.has(recommendationSubjectKey(subjectType, subjectId))
   }
 
   private toNeedIntent(row: {
