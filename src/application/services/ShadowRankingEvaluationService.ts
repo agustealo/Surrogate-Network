@@ -166,6 +166,9 @@ export class ShadowRankingEvaluationService {
 
       const outcome = outcomeName(row.action)
       if (!outcome) continue
+      const after = asRecord(row.after)
+      const metadata = asRecord(after?.metadata as Json | undefined)
+      if (metadata?.excludedFromShadowEvaluation === true) continue
       const outcomes = outcomesBySubject.get(key) ?? []
       outcomes.push({ timestampMs, outcome })
       outcomesBySubject.set(key, outcomes)
