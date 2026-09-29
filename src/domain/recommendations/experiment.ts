@@ -27,6 +27,7 @@ export type FypExperimentAssignment = {
 export type FypExperimentGuardrailInput = {
   controlExposureCount: number
   candidateExposureCount: number
+  candidateSafetyExposureCount: number
   controlOutcomeCount: number
   candidateOutcomeCount: number
   candidateSafetyIncidentCount: number
@@ -43,6 +44,7 @@ export type FypExperimentGuardrailDecision = {
 export const FYP_EXPERIMENT_GUARDRAILS = {
   minimumControlExposures: 100,
   minimumCandidateExposures: 100,
+  minimumCandidateSafetyExposures: 100,
   maximumOutcomeRateRegression: 0.05,
   maximumSafetyIncidentRate: 0.01,
 } as const
@@ -94,37 +96,57 @@ export function evaluateFypExperimentGuardrails(
 ): FypExperimentGuardrailDecision {
   const controlOutcomeRate = rate(input.controlOutcomeCount, input.controlExposureCount)
   const candidateOutcomeRate = rate(input.candidateOutcomeCount, input.candidateExposureCount)
-  const candidateSafetyIncidentRate = rate(input.candidateSafetyIncidentCount, input.candidateExposureCount)
-  const reasons: string[] = []
+  const candidateSafetyIncidentRate = rate(
+    input.candidateSafetyIncidentCount,
+    input.candidateSafetyExposureCount,
+  )
+  const rollbackReasons: string[] = []
 
-  if (input.controlExposureCount < FYP_EXPERIMENT_GUARDRAILS.minimumControlExposures) {
-    reasons.push(`insufficient_control_exposures:${input.controlExposureCount}/${FYP_EXPERIMENT_GUARDRAILS.minimumControlExposures}`)
+  const safetyEvidenceReady = input.candidateSafetyExposureCount >= FYP_EXPERIMENT_GUARDRAILS.minimumCandidateSafetyExposures
+  if (
+    safetyEvidenceReady
+    && candidateSafetyIncidentRate > FYP_EXPERIMENT_GUARDRAILS.maximumSafetyIncidentRate
+  ) {
+    rollbackReasons.push(`candidate_safety_incident_rate:${candidateSafetyIncidentRate}`)
   }
-  if (input.candidateExposureCount < FYP_EXPERIMENT_GUARDRAILS.minimumCandidateExposures) {
-    reasons.push(`insufficient_candidate_exposures:${input.candidateExposureCount}/${FYP_EXPERIMENT_GUARDRAILS.minimumCandidateExposures}`)
+
+  const outcomeEvidenceReady = (
+    input.controlExposureCount >= FYP_EXPERIMENT_GUARDRAILS.minimumControlExposures
+    && input.candidateExposureCount >= FYP_EXPERIMENT_GUARDRAILS.minimumCandidateExposures
+  )
+  if (
+    outcomeEvidenceReady
+    && controlOutcomeRate - candidateOutcomeRate > FYP_EXPERIMENT_GUARDRAILS.maximumOutcomeRateRegression
+  ) {
+    rollbackReasons.push(`candidate_outcome_rate_regression:${Math.round((controlOutcomeRate - candidateOutcomeRate) * 10_000) / 10_000}`)
   }
-  if (reasons.length) {
+
+  if (rollbackReasons.length) {
     return {
-      action: 'insufficient_evidence',
+      action: 'rollback',
       controlOutcomeRate,
       candidateOutcomeRate,
       candidateSafetyIncidentRate,
-      reasons,
+      reasons: rollbackReasons,
     }
   }
 
-  if (candidateSafetyIncidentRate > FYP_EXPERIMENT_GUARDRAILS.maximumSafetyIncidentRate) {
-    reasons.push(`candidate_safety_incident_rate:${candidateSafetyIncidentRate}`)
+  const evidenceReasons: string[] = []
+  if (!safetyEvidenceReady) {
+    evidenceReasons.push(`insufficient_candidate_safety_exposures:${input.candidateSafetyExposureCount}/${FYP_EXPERIMENT_GUARDRAILS.minimumCandidateSafetyExposures}`)
   }
-  if (controlOutcomeRate - candidateOutcomeRate > FYP_EXPERIMENT_GUARDRAILS.maximumOutcomeRateRegression) {
-    reasons.push(`candidate_outcome_rate_regression:${Math.round((controlOutcomeRate - candidateOutcomeRate) * 10_000) / 10_000}`)
+  if (input.controlExposureCount < FYP_EXPERIMENT_GUARDRAILS.minimumControlExposures) {
+    evidenceReasons.push(`insufficient_control_exposures:${input.controlExposureCount}/${FYP_EXPERIMENT_GUARDRAILS.minimumControlExposures}`)
+  }
+  if (input.candidateExposureCount < FYP_EXPERIMENT_GUARDRAILS.minimumCandidateExposures) {
+    evidenceReasons.push(`insufficient_candidate_exposures:${input.candidateExposureCount}/${FYP_EXPERIMENT_GUARDRAILS.minimumCandidateExposures}`)
   }
 
   return {
-    action: reasons.length ? 'rollback' : 'continue',
+    action: evidenceReasons.length ? 'insufficient_evidence' : 'continue',
     controlOutcomeRate,
     candidateOutcomeRate,
     candidateSafetyIncidentRate,
-    reasons,
+    reasons: evidenceReasons,
   }
 }
