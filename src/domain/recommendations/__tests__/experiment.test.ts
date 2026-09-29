@@ -112,6 +112,19 @@ describe('FYP controlled experiment governance', () => {
     expect(decision.reasons).toContain('insufficient_candidate_exposures:99/100')
   })
 
+  it('does not compare candidate outcomes against an undersized control sample', () => {
+    const decision = evaluateFypExperimentGuardrails({
+      controlExposureCount: 99,
+      candidateExposureCount: 100,
+      controlOutcomeCount: 30,
+      candidateOutcomeCount: 1,
+      candidateSafetyIncidentCount: 0,
+    })
+
+    expect(decision.action).toBe('insufficient_evidence')
+    expect(decision.reasons).toContain('insufficient_control_exposures:99/100')
+  })
+
   it('orders rollback when candidate outcome performance materially regresses', () => {
     const decision = evaluateFypExperimentGuardrails({
       controlExposureCount: 1000,
