@@ -61,14 +61,15 @@ export default async function FypExperimentAdminPage() {
         <Card>
           <CardHeader>
             <CardTitle>Live guardrails</CardTitle>
-            <CardDescription>Current policy-window comparison of control and candidate traffic. Rollback is persisted automatically when a guardrail breaches.</CardDescription>
+            <CardDescription>Safety evidence is immediate. Outcome rates only use recommendations that have matured for {guardrails.outcomeMaturationHours} hours, so fresh impressions are never counted as failed conversions. Rollback is persisted automatically when a guardrail breaches.</CardDescription>
           </CardHeader>
           <CardContent className="space-y-3 text-sm">
             <Badge variant={guardrails.decision.action === 'rollback' ? 'destructive' : guardrails.decision.action === 'continue' ? 'default' : 'secondary'}>
               {guardrails.decision.action.replace('_', ' ')}
             </Badge>
-            <p>Control exposures: {guardrails.input.controlExposureCount}</p>
-            <p>Candidate exposures: {guardrails.input.candidateExposureCount}</p>
+            <p>Matured control exposures: {guardrails.input.controlExposureCount}</p>
+            <p>Matured candidate exposures: {guardrails.input.candidateExposureCount}</p>
+            <p>Candidate safety exposures: {guardrails.input.candidateSafetyExposureCount}</p>
             <p>Control outcome rate: {(guardrails.decision.controlOutcomeRate * 100).toFixed(2)}%</p>
             <p>Candidate outcome rate: {(guardrails.decision.candidateOutcomeRate * 100).toFixed(2)}%</p>
             <p>Candidate safety incident rate: {(guardrails.decision.candidateSafetyIncidentRate * 100).toFixed(2)}%</p>
