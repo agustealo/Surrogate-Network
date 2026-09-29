@@ -54,11 +54,24 @@ describe('FYP experiment governance wiring', () => {
     expect(recordIndex).toBeGreaterThan(blockIndex)
   })
 
+  it('keeps safety immediate while outcome comparisons require matured exposure', () => {
+    const guardrails = source('src/application/services/FypExperimentGuardrailService.ts')
+    const policy = source('src/domain/recommendations/experiment.ts')
+
+    expect(guardrails).toContain('FYP_OUTCOME_MATURATION_HOURS = 24')
+    expect(guardrails).toContain('outcomeMaturityCutoff')
+    expect(guardrails).toContain('candidateSafetyExposureCount')
+    expect(policy).toContain('minimumCandidateSafetyExposures')
+    expect(policy).toContain('candidateSafetyExposureCount')
+  })
+
   it('surfaces current live guardrail state in the admin control plane', () => {
     const adminPage = source('src/app/admin/fyp/page.tsx')
 
     expect(adminPage).toContain('FypExperimentGuardrailService')
     expect(adminPage).toContain('Live guardrails')
+    expect(adminPage).toContain('Matured control exposures')
+    expect(adminPage).toContain('Candidate safety exposures')
     expect(adminPage).toContain('Candidate safety incident rate')
     expect(adminPage).toContain('Rollback is persisted automatically')
   })
