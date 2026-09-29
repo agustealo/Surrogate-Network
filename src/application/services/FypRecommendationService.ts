@@ -11,6 +11,13 @@ import {
   type ViewerIntent,
 } from '@/domain/recommendations/scoring'
 import {
+  FYP_INTENT_POOL_LIMIT,
+  FYP_RECENT_POOL_LIMIT,
+  mergeCandidatePools,
+  preferredNeedCategories,
+  preferredOfferCategories,
+} from '@/domain/recommendations/retrieval'
+import {
   FYP_SHADOW_RANKING_VERSION,
   buildShadowRanking,
   compareShadowRanking,
@@ -22,7 +29,6 @@ import {
 } from '@/application/services/RecommendationEventService'
 import type { Boundary, SurrogateCategory } from '@/domain/types'
 
-const CANDIDATE_WINDOW = 100
 const FEED_LIMIT = 24
 const REPEAT_IMPRESSION_LIMIT = 3
 const UNKNOWN_CREATED_AT = '1970-01-01T00:00:00.000Z'
@@ -84,12 +90,12 @@ export class FypRecommendationService {
 
     const eventService = new RecommendationEventService()
     const experimentService = new FypExperimentService()
-    const [profileResult, ownNeedsResult, ownOffersResult, needsResult, offersResult, history, experimentAssignment] = await Promise.all([
+    const [profileResult, ownNeedsResult, ownOffersResult, recentNeedsResult, recentOffersResult, history, experimentAssignment] = await Promise.all([
       supabase.from('profiles').select('id,boundaries,availability').eq('id', user.id).single(),
       supabase.from('needs').select('id,category,tags,location_mode,timing,boundaries,urgency,user_id,created_at').eq('user_id', user.id).eq('status', 'active').limit(25),
       supabase.from('offers').select('id,category,location_mode,timing,boundaries,capacity,current_capacity,rating,review_count,user_id,created_at').eq('user_id', user.id).eq('status', 'active').limit(25),
-      supabase.from('needs').select('id,title,description,category,tags,location_mode,timing,boundaries,urgency,user_id,user_name,created_at').eq('status', 'active').order('created_at', { ascending: false }).limit(CANDIDATE_WINDOW),
-      supabase.from('offers').select('id,title,description,category,location_mode,timing,boundaries,capacity,current_capacity,user_id,user_name,rating,review_count,created_at').eq('status', 'active').order('created_at', { ascending: false }).limit(CANDIDATE_WINDOW),
+      supabase.from('needs').select('id,title,description,category,tags,location_mode,timing,boundaries,urgency,user_id,user_name,created_at').eq('status', 'active').order('created_at', { ascending: false }).limit(FYP_RECENT_POOL_LIMIT),
+      supabase.from('offers').select('id,title,description,category,location_mode,timing,boundaries,capacity,current_capacity,user_id,user_name,rating,review_count,created_at').eq('status', 'active').order('created_at', { ascending: false }).limit(FYP_RECENT_POOL_LIMIT),
       eventService.historyFor(user.id, now),
       experimentService.assignmentForActor(user.id),
     ])
@@ -97,26 +103,39 @@ export class FypRecommendationService {
     if (profileResult.error || !profileResult.data) throw new Error('Your profile is unavailable for recommendation ranking.')
     if (ownNeedsResult.error) throw new Error(`Failed to load your Needs: ${ownNeedsResult.error.message}`)
     if (ownOffersResult.error) throw new Error(`Failed to load your Offers: ${ownOffersResult.error.message}`)
-    if (needsResult.error) throw new Error(`Failed to load candidate Needs: ${needsResult.error.message}`)
-    if (offersResult.error) throw new Error(`Failed to load candidate Offers: ${offersResult.error.message}`)
+    if (recentNeedsResult.error) throw new Error(`Failed to load recent candidate Needs: ${recentNeedsResult.error.message}`)
+    if (recentOffersResult.error) throw new Error(`Failed to load recent candidate Offers: ${recentOffersResult.error.message}`)
 
     const viewer: ViewerIntent = {
       profile: {
         userId: user.id,
         boundaries: (profileResult.data.boundaries ?? []) as Boundary[],
-        locationMode: 'either',
         availability: profileResult.data.availability ?? undefined,
       },
       needs: (ownNeedsResult.data ?? []).map((row) => this.toNeedIntent(row)),
       offers: (ownOffersResult.data ?? []).map((row) => this.toOfferIntent(row)),
     }
 
-    const needRows = new Map((needsResult.data ?? []).map((row) => [row.id, row as NeedRow]))
-    const offerRows = new Map((offersResult.data ?? []).map((row) => [row.id, row as OfferRow]))
-    const eligibleNeeds = (needsResult.data ?? []).filter((row) => this.isEligible('need', row.id, history))
-    const eligibleOffers = (offersResult.data ?? []).filter((row) => this.isEligible('offer', row.id, history))
-    const allRankedNeeds = rankNeedsForViewer(viewer, eligibleNeeds.map((row) => this.toNeedIntent(row as NeedRow)), now)
-    const allRankedOffers = rankOffersForViewer(viewer, eligibleOffers.map((row) => this.toOfferIntent(row as OfferRow)), now)
+    const [intentNeeds, intentOffers] = await Promise.all([
+      this.loadIntentNeeds(supabase, preferredNeedCategories(viewer)),
+      this.loadIntentOffers(supabase, preferredOfferCategories(viewer)),
+    ])
+
+    const candidateNeeds = mergeCandidatePools(
+      (recentNeedsResult.data ?? []).map((row) => row as NeedRow),
+      intentNeeds,
+    )
+    const candidateOffers = mergeCandidatePools(
+      (recentOffersResult.data ?? []).map((row) => row as OfferRow),
+      intentOffers,
+    )
+
+    const needRows = new Map(candidateNeeds.map((row) => [row.id, row]))
+    const offerRows = new Map(candidateOffers.map((row) => [row.id, row]))
+    const eligibleNeeds = candidateNeeds.filter((row) => this.isEligible('need', row.id, history))
+    const eligibleOffers = candidateOffers.filter((row) => this.isEligible('offer', row.id, history))
+    const allRankedNeeds = rankNeedsForViewer(viewer, eligibleNeeds.map((row) => this.toNeedIntent(row)), now)
+    const allRankedOffers = rankOffersForViewer(viewer, eligibleOffers.map((row) => this.toOfferIntent(row)), now)
     const sessionId = `${FYP_RANKING_VERSION}:${user.id}:${now.toISOString().slice(0, 10)}`
 
     const selectedNeeds = experimentAssignment.cohort === 'candidate'
@@ -169,6 +188,38 @@ export class FypRecommendationService {
       ownNeedIds: (ownNeedsResult.data ?? []).map((row) => row.id),
       ownOfferIds: (ownOffersResult.data ?? []).map((row) => row.id),
     }
+  }
+
+  private async loadIntentNeeds(
+    supabase: Awaited<ReturnType<typeof createClient>>,
+    categories: SurrogateCategory[],
+  ): Promise<NeedRow[]> {
+    if (!categories.length) return []
+    const { data, error } = await supabase
+      .from('needs')
+      .select('id,title,description,category,tags,location_mode,timing,boundaries,urgency,user_id,user_name,created_at')
+      .eq('status', 'active')
+      .in('category', categories)
+      .order('created_at', { ascending: false })
+      .limit(FYP_INTENT_POOL_LIMIT)
+    if (error) throw new Error(`Failed to load intent-aligned candidate Needs: ${error.message}`)
+    return (data ?? []).map((row) => row as NeedRow)
+  }
+
+  private async loadIntentOffers(
+    supabase: Awaited<ReturnType<typeof createClient>>,
+    categories: SurrogateCategory[],
+  ): Promise<OfferRow[]> {
+    if (!categories.length) return []
+    const { data, error } = await supabase
+      .from('offers')
+      .select('id,title,description,category,location_mode,timing,boundaries,capacity,current_capacity,user_id,user_name,rating,review_count,created_at')
+      .eq('status', 'active')
+      .in('category', categories)
+      .order('created_at', { ascending: false })
+      .limit(FYP_INTENT_POOL_LIMIT)
+    if (error) throw new Error(`Failed to load intent-aligned candidate Offers: ${error.message}`)
+    return (data ?? []).map((row) => row as OfferRow)
   }
 
   private asCandidateRanking<T extends { id: string }>(

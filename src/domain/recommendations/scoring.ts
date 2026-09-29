@@ -29,7 +29,7 @@ export type RecommendationMeta = {
 export type ViewerProfileIntent = {
   userId: string
   boundaries: Boundary[]
-  locationMode: LocationMode
+  locationMode?: LocationMode
   availability?: string
 }
 
@@ -92,7 +92,8 @@ const boundaryFit = (left: Boundary[], right: Boundary[]) => {
   return overlapRatio(left, right)
 }
 
-const locationFit = (left: LocationMode, right: LocationMode) => {
+const locationFit = (left?: LocationMode, right?: LocationMode) => {
+  if (!left || !right) return 0.5
   if (left === 'either' || right === 'either') return 1
   return left === right ? 1 : 0
 }
@@ -169,7 +170,7 @@ function scoreNeedForProfile(need: NeedIntent, profile: ViewerProfileIntent) {
     score: boundary * 0.5 + location * 0.3 + timing * 0.2,
     reasons: [
       ...(boundary >= 0.5 ? [reason('PROFILE_BOUNDARY_MATCH', 'Matches your profile boundaries', boundary * 0.5)] : []),
-      ...(location >= 1 ? [reason('LOCATION_MATCH', 'Location preference matches', location * 0.3)] : []),
+      ...(profile.locationMode && location >= 1 ? [reason('LOCATION_MATCH', 'Location preference matches', location * 0.3)] : []),
       ...(timing > 0.5 ? [reason('TIMING_MATCH', 'Availability appears aligned', timing * 0.2)] : []),
     ],
   }
@@ -184,7 +185,7 @@ function scoreOfferForProfile(offer: OfferIntent, profile: ViewerProfileIntent) 
     score: boundary * 0.5 + location * 0.3 + timing * 0.2,
     reasons: [
       ...(boundary >= 0.5 ? [reason('PROFILE_BOUNDARY_MATCH', 'Matches your profile boundaries', boundary * 0.5)] : []),
-      ...(location >= 1 ? [reason('LOCATION_MATCH', 'Location preference matches', location * 0.3)] : []),
+      ...(profile.locationMode && location >= 1 ? [reason('LOCATION_MATCH', 'Location preference matches', location * 0.3)] : []),
       ...(timing > 0.5 ? [reason('TIMING_MATCH', 'Availability appears aligned', timing * 0.2)] : []),
     ],
   }
