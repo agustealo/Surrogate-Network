@@ -15,6 +15,7 @@ import {
   buildShadowRanking,
   compareShadowRanking,
 } from '@/domain/recommendations/shadow'
+import { FypExperimentService } from '@/application/services/FypExperimentService'
 import {
   RecommendationEventService,
   recommendationSubjectKey,
@@ -82,13 +83,15 @@ export class FypRecommendationService {
     if (authError || !user) throw new Error('You must be signed in to discover recommendations.')
 
     const eventService = new RecommendationEventService()
-    const [profileResult, ownNeedsResult, ownOffersResult, needsResult, offersResult, history] = await Promise.all([
+    const experimentService = new FypExperimentService()
+    const [profileResult, ownNeedsResult, ownOffersResult, needsResult, offersResult, history, experimentAssignment] = await Promise.all([
       supabase.from('profiles').select('id,boundaries,availability').eq('id', user.id).single(),
       supabase.from('needs').select('id,category,tags,location_mode,timing,boundaries,urgency,user_id,created_at').eq('user_id', user.id).eq('status', 'active').limit(25),
       supabase.from('offers').select('id,category,location_mode,timing,boundaries,capacity,current_capacity,rating,review_count,user_id,created_at').eq('user_id', user.id).eq('status', 'active').limit(25),
       supabase.from('needs').select('id,title,description,category,tags,location_mode,timing,boundaries,urgency,user_id,user_name,created_at').eq('status', 'active').order('created_at', { ascending: false }).limit(CANDIDATE_WINDOW),
       supabase.from('offers').select('id,title,description,category,location_mode,timing,boundaries,capacity,current_capacity,user_id,user_name,rating,review_count,created_at').eq('status', 'active').order('created_at', { ascending: false }).limit(CANDIDATE_WINDOW),
       eventService.historyFor(user.id, now),
+      experimentService.assignmentForActor(user.id),
     ])
 
     if (profileResult.error || !profileResult.data) throw new Error('Your profile is unavailable for recommendation ranking.')
@@ -114,9 +117,27 @@ export class FypRecommendationService {
     const eligibleOffers = (offersResult.data ?? []).filter((row) => this.isEligible('offer', row.id, history))
     const allRankedNeeds = rankNeedsForViewer(viewer, eligibleNeeds.map((row) => this.toNeedIntent(row as NeedRow)), now)
     const allRankedOffers = rankOffersForViewer(viewer, eligibleOffers.map((row) => this.toOfferIntent(row as OfferRow)), now)
-    const rankedNeeds = allRankedNeeds.slice(0, FEED_LIMIT)
-    const rankedOffers = allRankedOffers.slice(0, FEED_LIMIT)
     const sessionId = `${FYP_RANKING_VERSION}:${user.id}:${now.toISOString().slice(0, 10)}`
+
+    const selectedNeeds = experimentAssignment.cohort === 'candidate'
+      ? this.asCandidateRanking(buildShadowRanking({
+          actorId: user.id,
+          sessionId: `${sessionId}:${FYP_SHADOW_RANKING_VERSION}`,
+          ranked: allRankedNeeds,
+          recentImpressionCountFor: (subjectId) => history.recentImpressionCounts.get(recommendationSubjectKey('need', subjectId)) ?? 0,
+        }))
+      : allRankedNeeds
+    const selectedOffers = experimentAssignment.cohort === 'candidate'
+      ? this.asCandidateRanking(buildShadowRanking({
+          actorId: user.id,
+          sessionId: `${sessionId}:${FYP_SHADOW_RANKING_VERSION}`,
+          ranked: allRankedOffers,
+          recentImpressionCountFor: (subjectId) => history.recentImpressionCounts.get(recommendationSubjectKey('offer', subjectId)) ?? 0,
+        }))
+      : allRankedOffers
+
+    const rankedNeeds = selectedNeeds.slice(0, FEED_LIMIT)
+    const rankedOffers = selectedOffers.slice(0, FEED_LIMIT)
 
     await this.recordShadowRanking({
       actorId: user.id,
@@ -148,6 +169,19 @@ export class FypRecommendationService {
       ownNeedIds: (ownNeedsResult.data ?? []).map((row) => row.id),
       ownOfferIds: (ownOffersResult.data ?? []).map((row) => row.id),
     }
+  }
+
+  private asCandidateRanking<T extends { id: string }>(
+    shadow: ReturnType<typeof buildShadowRanking<T>>,
+  ): RecommendationCandidate<T>[] {
+    return shadow.map((candidate) => ({
+      item: candidate.item,
+      recommendation: {
+        ...candidate.recommendation,
+        score: candidate.shadowScore,
+        rankingVersion: FYP_SHADOW_RANKING_VERSION,
+      },
+    }))
   }
 
   private async recordShadowRanking(input: {

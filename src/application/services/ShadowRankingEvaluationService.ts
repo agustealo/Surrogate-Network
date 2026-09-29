@@ -24,6 +24,7 @@ const outcomeActions = [
 type OutcomeName = ShadowOutcomeSignal['outcome']
 
 type AuditRow = {
+  actor_id: string
   action: string
   target_type: string | null
   target_id: string | null
@@ -32,6 +33,7 @@ type AuditRow = {
 }
 
 type ParsedShadow = {
+  actorId: string
   subjectType: RecommendationSubjectType
   subjectId: string
   timestampMs: number
@@ -71,8 +73,8 @@ function outcomeName(action: string): OutcomeName {
   return null
 }
 
-function subjectKey(subjectType: RecommendationSubjectType, subjectId: string): string {
-  return `${subjectType}:${subjectId}`
+function subjectKey(actorId: string, subjectType: RecommendationSubjectType, subjectId: string): string {
+  return `${actorId}:${subjectType}:${subjectId}`
 }
 
 function attributablePair(
@@ -104,7 +106,7 @@ export class ShadowRankingEvaluationService {
     const supabase = await createClient()
     const { data, error } = await supabase
       .from('audit_events')
-      .select('action,target_type,target_id,timestamp,after')
+      .select('actor_id,action,target_type,target_id,timestamp,after')
       .eq('actor_id', actorId)
       .in('action', [FYP_EVENT_ACTIONS.shadowImpression, ...outcomeActions])
       .gte('timestamp', windowStart.toISOString())
@@ -112,7 +114,22 @@ export class ShadowRankingEvaluationService {
       .order('timestamp', { ascending: true })
 
     if (error) throw new Error(`Failed to evaluate shadow ranking: ${error.message}`)
+    return this.buildReport(data as AuditRow[] ?? [], windowStart, now)
+  }
 
+  async evaluateGlobal(options?: { now?: Date; lookbackMs?: number }): Promise<ShadowRankingEvaluationReport> {
+    const now = options?.now ?? new Date()
+    const windowStart = new Date(now.getTime() - (options?.lookbackMs ?? DEFAULT_LOOKBACK_MS))
+    const supabase = await createClient()
+    const { data, error } = await supabase
+      .from('audit_events')
+      .select('actor_id,action,target_type,target_id,timestamp,after')
+      .in('action', [FYP_EVENT_ACTIONS.shadowImpression, ...outcomeActions])
+      .gte('timestamp', windowStart.toISOString())
+      .lte('timestamp', now.toISOString())
+      .order('timestamp', { ascending: true })
+
+    if (error) throw new Error(`Failed to evaluate global shadow ranking: ${error.message}`)
     return this.buildReport(data as AuditRow[] ?? [], windowStart, now)
   }
 
@@ -122,7 +139,7 @@ export class ShadowRankingEvaluationService {
     let dataIntegrityViolationCount = 0
 
     for (const row of rows) {
-      if ((row.target_type !== 'need' && row.target_type !== 'offer') || !row.target_id || !row.timestamp) {
+      if (!row.actor_id || (row.target_type !== 'need' && row.target_type !== 'offer') || !row.target_id || !row.timestamp) {
         dataIntegrityViolationCount += 1
         continue
       }
@@ -131,7 +148,7 @@ export class ShadowRankingEvaluationService {
         dataIntegrityViolationCount += 1
         continue
       }
-      const key = subjectKey(row.target_type, row.target_id)
+      const key = subjectKey(row.actor_id, row.target_type, row.target_id)
 
       if (row.action === FYP_EVENT_ACTIONS.shadowImpression) {
         const after = asRecord(row.after)
@@ -151,6 +168,7 @@ export class ShadowRankingEvaluationService {
           continue
         }
         const observation: ParsedShadow = {
+          actorId: row.actor_id,
           subjectType: row.target_type,
           subjectId: row.target_id,
           timestampMs,
@@ -177,8 +195,9 @@ export class ShadowRankingEvaluationService {
     const signals: ShadowOutcomeSignal[] = []
     for (const observations of shadowsBySubject.values()) {
       const ordered = [...observations].sort((left, right) => left.timestampMs - right.timestampMs)
+      const first = ordered[0]
       const subjectOutcomes = [
-        ...(outcomesBySubject.get(subjectKey(ordered[0].subjectType, ordered[0].subjectId)) ?? []),
+        ...(outcomesBySubject.get(subjectKey(first.actorId, first.subjectType, first.subjectId)) ?? []),
       ].sort((left, right) => left.timestampMs - right.timestampMs)
       const attributed = attributablePair(ordered, subjectOutcomes)
       const chosen = attributed?.observation ?? ordered[ordered.length - 1]

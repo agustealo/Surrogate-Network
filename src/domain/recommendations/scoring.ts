@@ -23,7 +23,7 @@ export type RecommendationMeta = {
   score: number
   confidence: number
   reasons: RecommendationReason[]
-  rankingVersion: typeof FYP_RANKING_VERSION
+  rankingVersion: string
 }
 
 export type ViewerProfileIntent = {
