@@ -40,6 +40,11 @@ type ParsedShadow = {
   rankDelta: number
 }
 
+type ParsedOutcome = {
+  timestampMs: number
+  outcome: Exclude<OutcomeName, null>
+}
+
 export type ShadowRankingEvaluationReport = {
   rankingVersion: typeof FYP_SHADOW_RANKING_VERSION
   windowStart: string
@@ -70,6 +75,25 @@ function subjectKey(subjectType: RecommendationSubjectType, subjectId: string): 
   return `${subjectType}:${subjectId}`
 }
 
+function attributablePair(
+  observations: ParsedShadow[],
+  outcomes: ParsedOutcome[],
+): { observation: ParsedShadow; outcome: ParsedOutcome } | null {
+  for (const outcome of outcomes) {
+    const eligible = observations.filter((observation) => (
+      observation.timestampMs <= outcome.timestampMs
+      && outcome.timestampMs - observation.timestampMs <= OUTCOME_WINDOW_MS
+    ))
+    if (eligible.length) {
+      return {
+        observation: eligible[eligible.length - 1],
+        outcome,
+      }
+    }
+  }
+  return null
+}
+
 export class ShadowRankingEvaluationService {
   async evaluateForActor(
     actorId: string,
@@ -94,7 +118,7 @@ export class ShadowRankingEvaluationService {
 
   buildReport(rows: AuditRow[], windowStart: Date, windowEnd: Date): ShadowRankingEvaluationReport {
     const shadowsBySubject = new Map<string, ParsedShadow[]>()
-    const outcomesBySubject = new Map<string, Array<{ timestampMs: number; outcome: Exclude<OutcomeName, null> }>>()
+    const outcomesBySubject = new Map<string, ParsedOutcome[]>()
     let dataIntegrityViolationCount = 0
 
     for (const row of rows) {
@@ -150,21 +174,11 @@ export class ShadowRankingEvaluationService {
     const signals: ShadowOutcomeSignal[] = []
     for (const observations of shadowsBySubject.values()) {
       const ordered = [...observations].sort((left, right) => left.timestampMs - right.timestampMs)
-      const subjectOutcomes = outcomesBySubject.get(subjectKey(ordered[0].subjectType, ordered[0].subjectId)) ?? []
-      const firstOutcome = subjectOutcomes[0]
-      let chosen = ordered[ordered.length - 1]
-      let outcome: OutcomeName = null
-
-      if (firstOutcome) {
-        const eligible = ordered.filter((observation) => (
-          observation.timestampMs <= firstOutcome.timestampMs
-          && firstOutcome.timestampMs - observation.timestampMs <= OUTCOME_WINDOW_MS
-        ))
-        if (eligible.length) {
-          chosen = eligible[eligible.length - 1]
-          outcome = firstOutcome.outcome
-        }
-      }
+      const subjectOutcomes = [
+        ...(outcomesBySubject.get(subjectKey(ordered[0].subjectType, ordered[0].subjectId)) ?? []),
+      ].sort((left, right) => left.timestampMs - right.timestampMs)
+      const attributed = attributablePair(ordered, subjectOutcomes)
+      const chosen = attributed?.observation ?? ordered[ordered.length - 1]
 
       signals.push({
         subjectType: chosen.subjectType,
@@ -172,7 +186,7 @@ export class ShadowRankingEvaluationService {
         baselinePosition: chosen.baselinePosition,
         shadowPosition: chosen.shadowPosition,
         rankDelta: chosen.rankDelta,
-        outcome,
+        outcome: attributed?.outcome.outcome ?? null,
       })
     }
 
