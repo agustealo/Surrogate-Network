@@ -29,12 +29,22 @@ export type ShadowGraduationDecision = {
   }
 }
 
+export type LimitedExperimentAllocation = {
+  authorized: boolean
+  requestedTrafficPercent: number
+  authorizedTrafficPercent: number
+  maximumTrafficPercent: number
+  reasons: string[]
+}
+
 export const FYP_SHADOW_GRADUATION_THRESHOLDS = {
   minimumEvaluatedCount: 500,
   minimumOutcomeCount: 50,
   maximumHarmfulDemotionRate: 0.35,
   minimumNetOutcomeRankGain: 1,
 } as const
+
+export const FYP_INITIAL_EXPERIMENT_MAX_TRAFFIC_PERCENT = 5 as const
 
 const round4 = (value: number) => Math.round(value * 10_000) / 10_000
 
@@ -91,5 +101,29 @@ export function decideShadowGraduation(
     eligibleForLimitedExperiment: reasons.length === 0,
     reasons,
     thresholds,
+  }
+}
+
+export function authorizeLimitedExperimentAllocation(
+  graduation: ShadowGraduationDecision,
+  requestedTrafficPercent: number,
+): LimitedExperimentAllocation {
+  const reasons = [...graduation.reasons]
+  if (!Number.isFinite(requestedTrafficPercent) || requestedTrafficPercent <= 0) {
+    reasons.push('invalid_requested_traffic_percent')
+  } else if (requestedTrafficPercent > FYP_INITIAL_EXPERIMENT_MAX_TRAFFIC_PERCENT) {
+    reasons.push(`requested_traffic_exceeds_initial_cap:${requestedTrafficPercent}/${FYP_INITIAL_EXPERIMENT_MAX_TRAFFIC_PERCENT}`)
+  }
+  if (!graduation.eligibleForLimitedExperiment && graduation.reasons.length === 0) {
+    reasons.push('shadow_graduation_not_authorized')
+  }
+
+  const authorized = graduation.eligibleForLimitedExperiment && reasons.length === 0
+  return {
+    authorized,
+    requestedTrafficPercent,
+    authorizedTrafficPercent: authorized ? requestedTrafficPercent : 0,
+    maximumTrafficPercent: FYP_INITIAL_EXPERIMENT_MAX_TRAFFIC_PERCENT,
+    reasons,
   }
 }
