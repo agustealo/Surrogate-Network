@@ -41,6 +41,7 @@ export type FypExperimentGuardrailDecision = {
 }
 
 export const FYP_EXPERIMENT_GUARDRAILS = {
+  minimumControlExposures: 100,
   minimumCandidateExposures: 100,
   maximumOutcomeRateRegression: 0.05,
   maximumSafetyIncidentRate: 0.01,
@@ -96,8 +97,13 @@ export function evaluateFypExperimentGuardrails(
   const candidateSafetyIncidentRate = rate(input.candidateSafetyIncidentCount, input.candidateExposureCount)
   const reasons: string[] = []
 
+  if (input.controlExposureCount < FYP_EXPERIMENT_GUARDRAILS.minimumControlExposures) {
+    reasons.push(`insufficient_control_exposures:${input.controlExposureCount}/${FYP_EXPERIMENT_GUARDRAILS.minimumControlExposures}`)
+  }
   if (input.candidateExposureCount < FYP_EXPERIMENT_GUARDRAILS.minimumCandidateExposures) {
     reasons.push(`insufficient_candidate_exposures:${input.candidateExposureCount}/${FYP_EXPERIMENT_GUARDRAILS.minimumCandidateExposures}`)
+  }
+  if (reasons.length) {
     return {
       action: 'insufficient_evidence',
       controlOutcomeRate,
