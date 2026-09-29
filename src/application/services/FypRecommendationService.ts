@@ -168,11 +168,11 @@ export class FypRecommendationService {
     const allRankedNeeds = rankNeedsForViewer(viewer, eligibleNeeds.map((row) => this.toNeedIntent(row)), now)
     const allRankedOffers = rankOffersForViewer(viewer, eligibleOffers.map((row) => this.toOfferIntent(row)), now)
 
-    const provisionalSessionId = crypto.randomUUID()
+    const sessionId = crypto.randomUUID()
     const selectedNeeds = experimentAssignment.cohort === 'candidate'
       ? this.asCandidateRanking(buildShadowRanking({
           actorId: user.id,
-          sessionId: `${provisionalSessionId}:${FYP_SHADOW_RANKING_VERSION}`,
+          sessionId: `${sessionId}:${FYP_SHADOW_RANKING_VERSION}`,
           ranked: allRankedNeeds,
           recentImpressionCountFor: (subjectId) => history.recentImpressionCounts.get(recommendationSubjectKey('need', subjectId)) ?? 0,
         }))
@@ -180,7 +180,7 @@ export class FypRecommendationService {
     const selectedOffers = experimentAssignment.cohort === 'candidate'
       ? this.asCandidateRanking(buildShadowRanking({
           actorId: user.id,
-          sessionId: `${provisionalSessionId}:${FYP_SHADOW_RANKING_VERSION}`,
+          sessionId: `${sessionId}:${FYP_SHADOW_RANKING_VERSION}`,
           ranked: allRankedOffers,
           recentImpressionCountFor: (subjectId) => history.recentImpressionCounts.get(recommendationSubjectKey('offer', subjectId)) ?? 0,
         }))
@@ -188,6 +188,7 @@ export class FypRecommendationService {
 
     const snapshot = await snapshotService.create({
       actorId: user.id,
+      sessionId,
       rankingVersion: expectedRankingVersion,
       now,
       needs: this.snapshotItems(selectedNeeds),
@@ -196,7 +197,7 @@ export class FypRecommendationService {
 
     await this.recordShadowRanking({
       actorId: user.id,
-      sessionId: snapshot.sessionId,
+      sessionId,
       baselineNeeds: allRankedNeeds,
       baselineOffers: allRankedOffers,
       history,
