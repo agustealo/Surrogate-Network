@@ -40,6 +40,13 @@ export type RecommendationHistory = {
   recentImpressionCounts: Map<string, number>
 }
 
+export type FypSafetyExposure = {
+  subjectType: RecommendationSubjectType
+  subjectId: string
+  experimentVersion: typeof FYP_LIMITED_EXPERIMENT_VERSION
+  experimentCohort: 'control' | 'candidate'
+}
+
 const keyFor = (subjectType: RecommendationSubjectType, subjectId: string) => `${subjectType}:${subjectId}`
 const EXPERIMENT_OUTCOME_WINDOW_MS = 30 * 86_400_000
 const EMPTY_UUID = '00000000-0000-0000-0000-000000000000'
@@ -215,12 +222,10 @@ export class RecommendationEventService {
     return { notInterested, saved, recentImpressionCounts }
   }
 
-  async recordSafetyIncidentForExposedMember(input: {
+  async resolveSafetyExposureForMember(input: {
     actorId: string
     targetUserId: string
-    incidentType: 'block' | 'report'
-    severity?: 'low' | 'medium' | 'high'
-  }): Promise<void> {
+  }): Promise<FypSafetyExposure | null> {
     const supabase = await createClient()
     const windowStart = new Date(Date.now() - EXPERIMENT_OUTCOME_WINDOW_MS).toISOString()
     const { data: exposures, error: exposureError } = await supabase
@@ -232,7 +237,7 @@ export class RecommendationEventService {
       .order('timestamp', { ascending: false })
 
     if (exposureError) throw new Error(`Failed to read FYP safety attribution history: ${exposureError.message}`)
-    if (!exposures?.length) return
+    if (!exposures?.length) return null
 
     const needIds = exposures
       .filter((row) => row.target_type === 'need' && row.target_id)
@@ -258,7 +263,7 @@ export class RecommendationEventService {
       && row.target_id
       && ownerBySubject.get(keyFor(row.target_type, row.target_id)) === input.targetUserId
     ))
-    if (!exposure || (exposure.target_type !== 'need' && exposure.target_type !== 'offer') || !exposure.target_id) return
+    if (!exposure || (exposure.target_type !== 'need' && exposure.target_type !== 'offer') || !exposure.target_id) return null
 
     const after = asRecord(exposure.after)
     const metadata = asRecord(after?.metadata as Json | undefined)
@@ -267,16 +272,33 @@ export class RecommendationEventService {
     if (
       experimentVersion !== FYP_LIMITED_EXPERIMENT_VERSION
       || (experimentCohort !== 'control' && experimentCohort !== 'candidate')
-    ) return
+    ) return null
 
+    return {
+      subjectType: exposure.target_type,
+      subjectId: exposure.target_id,
+      experimentVersion,
+      experimentCohort,
+    }
+  }
+
+  async recordSafetyIncidentFromExposure(input: {
+    actorId: string
+    targetUserId: string
+    incidentType: 'block' | 'report'
+    severity?: 'low' | 'medium' | 'high'
+    exposure: FypSafetyExposure | null
+  }): Promise<void> {
+    if (!input.exposure) return
+    const supabase = await createClient()
     const reason = `${input.incidentType}:${input.targetUserId}`
     const { data: existing, error: existingError } = await supabase
       .from('audit_events')
       .select('id')
       .eq('actor_id', input.actorId)
       .eq('action', FYP_EVENT_ACTIONS.safetyIncident)
-      .eq('target_type', exposure.target_type)
-      .eq('target_id', exposure.target_id)
+      .eq('target_type', input.exposure.subjectType)
+      .eq('target_id', input.exposure.subjectId)
       .eq('reason', reason)
       .limit(1)
 
@@ -286,12 +308,12 @@ export class RecommendationEventService {
     await this.recordWithClient(supabase, {
       actorId: input.actorId,
       action: FYP_EVENT_ACTIONS.safetyIncident,
-      subjectType: exposure.target_type,
-      subjectId: exposure.target_id,
+      subjectType: input.exposure.subjectType,
+      subjectId: input.exposure.subjectId,
       sessionId: reason,
       metadata: {
-        experimentVersion,
-        experimentCohort,
+        experimentVersion: input.exposure.experimentVersion,
+        experimentCohort: input.exposure.experimentCohort,
         incidentType: input.incidentType,
         incidentSeverity: input.severity ?? null,
         exposedMemberId: input.targetUserId,
@@ -301,6 +323,16 @@ export class RecommendationEventService {
 
     const { FypExperimentGuardrailService } = await import('@/application/services/FypExperimentGuardrailService')
     await new FypExperimentGuardrailService().evaluateAndRollback()
+  }
+
+  async recordSafetyIncidentForExposedMember(input: {
+    actorId: string
+    targetUserId: string
+    incidentType: 'block' | 'report'
+    severity?: 'low' | 'medium' | 'high'
+  }): Promise<void> {
+    const exposure = await this.resolveSafetyExposureForMember(input)
+    await this.recordSafetyIncidentFromExposure({ ...input, exposure })
   }
 
   async recordRelationshipOutcome(input: {
