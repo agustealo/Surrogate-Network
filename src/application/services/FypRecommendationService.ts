@@ -46,55 +46,28 @@ type OfferRow = {
   created_at: string
 }
 
-export type FypNeed = NeedRow & {
-  recommendation: RecommendationCandidate<NeedIntent>['recommendation']
-}
-
-export type FypOffer = OfferRow & {
-  recommendation: RecommendationCandidate<OfferIntent>['recommendation']
-}
+export type FypNeed = NeedRow & { recommendation: RecommendationCandidate<NeedIntent>['recommendation'] }
+export type FypOffer = OfferRow & { recommendation: RecommendationCandidate<OfferIntent>['recommendation'] }
 
 export type FypFeed = {
   needs: FypNeed[]
   offers: FypOffer[]
+  ownNeedIds: string[]
+  ownOfferIds: string[]
 }
 
 export class FypRecommendationService {
   async getFeed(): Promise<FypFeed> {
     const supabase = await createClient()
-    const {
-      data: { user },
-      error: authError,
-    } = await supabase.auth.getUser()
-
+    const { data: { user }, error: authError } = await supabase.auth.getUser()
     if (authError || !user) throw new Error('You must be signed in to discover recommendations.')
 
     const [profileResult, ownNeedsResult, ownOffersResult, needsResult, offersResult] = await Promise.all([
       supabase.from('profiles').select('id,boundaries,availability').eq('id', user.id).single(),
-      supabase
-        .from('needs')
-        .select('id,category,tags,location_mode,timing,boundaries,urgency,user_id,created_at')
-        .eq('user_id', user.id)
-        .eq('status', 'active')
-        .limit(25),
-      supabase
-        .from('offers')
-        .select('id,category,location_mode,timing,boundaries,capacity,current_capacity,rating,review_count,user_id,created_at')
-        .eq('user_id', user.id)
-        .eq('status', 'active')
-        .limit(25),
-      supabase
-        .from('needs')
-        .select('id,title,description,category,tags,location_mode,timing,boundaries,urgency,user_id,user_name,created_at')
-        .eq('status', 'active')
-        .order('created_at', { ascending: false })
-        .limit(CANDIDATE_WINDOW),
-      supabase
-        .from('offers')
-        .select('id,title,description,category,location_mode,timing,boundaries,capacity,current_capacity,user_id,user_name,rating,review_count,created_at')
-        .eq('status', 'active')
-        .order('created_at', { ascending: false })
-        .limit(CANDIDATE_WINDOW),
+      supabase.from('needs').select('id,category,tags,location_mode,timing,boundaries,urgency,user_id,created_at').eq('user_id', user.id).eq('status', 'active').limit(25),
+      supabase.from('offers').select('id,category,location_mode,timing,boundaries,capacity,current_capacity,rating,review_count,user_id,created_at').eq('user_id', user.id).eq('status', 'active').limit(25),
+      supabase.from('needs').select('id,title,description,category,tags,location_mode,timing,boundaries,urgency,user_id,user_name,created_at').eq('status', 'active').order('created_at', { ascending: false }).limit(CANDIDATE_WINDOW),
+      supabase.from('offers').select('id,title,description,category,location_mode,timing,boundaries,capacity,current_capacity,user_id,user_name,rating,review_count,created_at').eq('status', 'active').order('created_at', { ascending: false }).limit(CANDIDATE_WINDOW),
     ])
 
     if (profileResult.error || !profileResult.data) throw new Error('Your profile is unavailable for recommendation ranking.')
@@ -114,13 +87,10 @@ export class FypRecommendationService {
       offers: (ownOffersResult.data ?? []).map((row) => this.toOfferIntent(row)),
     }
 
-    const rankedNeeds = rankNeedsForViewer(viewer, (needsResult.data ?? []).map((row) => this.toNeedIntent(row as NeedRow)))
-      .slice(0, FEED_LIMIT)
-    const rankedOffers = rankOffersForViewer(viewer, (offersResult.data ?? []).map((row) => this.toOfferIntent(row as OfferRow)))
-      .slice(0, FEED_LIMIT)
-
     const needRows = new Map((needsResult.data ?? []).map((row) => [row.id, row as NeedRow]))
     const offerRows = new Map((offersResult.data ?? []).map((row) => [row.id, row as OfferRow]))
+    const rankedNeeds = rankNeedsForViewer(viewer, (needsResult.data ?? []).map((row) => this.toNeedIntent(row as NeedRow))).slice(0, FEED_LIMIT)
+    const rankedOffers = rankOffersForViewer(viewer, (offersResult.data ?? []).map((row) => this.toOfferIntent(row as OfferRow))).slice(0, FEED_LIMIT)
 
     return {
       needs: rankedNeeds.flatMap(({ item, recommendation }) => {
@@ -131,6 +101,8 @@ export class FypRecommendationService {
         const row = offerRows.get(item.id)
         return row ? [{ ...row, recommendation }] : []
       }),
+      ownNeedIds: (ownNeedsResult.data ?? []).map((row) => row.id),
+      ownOfferIds: (ownOffersResult.data ?? []).map((row) => row.id),
     }
   }
 
