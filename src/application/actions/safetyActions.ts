@@ -3,6 +3,7 @@
 import { revalidatePath } from 'next/cache'
 import { z } from 'zod'
 import { actionFailure, requireActiveMember, type ActionResult } from '@/application/actions/memberContext'
+import { RecommendationEventService } from '@/application/services/RecommendationEventService'
 import { createClient } from '@/infrastructure/supabase/server'
 
 const reportSchema = z.object({
@@ -11,6 +12,25 @@ const reportSchema = z.object({
   severity: z.enum(['low', 'medium', 'high']),
   description: z.string().trim().min(10, 'Please provide enough detail for moderation.').max(4000),
 })
+
+async function recordFypSafetySignal(input: {
+  actorId: string
+  targetUserId: string
+  incidentType: 'block' | 'report'
+  severity?: 'low' | 'medium' | 'high'
+}): Promise<void> {
+  try {
+    await new RecommendationEventService().recordSafetyIncidentForExposedMember(input)
+  } catch (error) {
+    console.error(JSON.stringify({
+      level: 'error',
+      event: 'fyp_safety_attribution_failed',
+      timestamp: new Date().toISOString(),
+      incidentType: input.incidentType,
+      errorName: error instanceof Error ? error.name : 'NonErrorThrown',
+    }))
+  }
+}
 
 export async function blockMemberAction(targetUserId: string): Promise<ActionResult> {
   try {
@@ -24,6 +44,12 @@ export async function blockMemberAction(targetUserId: string): Promise<ActionRes
       { onConflict: 'blocker_user_id,blocked_user_id', ignoreDuplicates: true },
     )
     if (error) throw new Error(`Unable to block this member: ${error.message}`)
+
+    await recordFypSafetySignal({
+      actorId: actor.id,
+      targetUserId: targetId,
+      incidentType: 'block',
+    })
 
     revalidatePath('/discover')
     revalidatePath('/proposals')
@@ -78,6 +104,14 @@ export async function reportMemberAction(input: unknown): Promise<ActionResult<{
       .single()
 
     if (error || !data) throw new Error(error?.message ?? 'Unable to submit this report.')
+
+    await recordFypSafetySignal({
+      actorId: actor.id,
+      targetUserId: values.reportedUserId,
+      incidentType: 'report',
+      severity: values.severity,
+    })
+
     revalidatePath(`/profile/${values.reportedUserId}`)
     return { ok: true, data: { id: data.id } }
   } catch (error) {
