@@ -25,6 +25,7 @@ describe('Route registry integration', () => {
     expect(routes.admin).toEqual({
       dashboard: '/admin',
       reports: '/admin/reports',
+      fyp: '/admin/fyp',
     })
   })
 
