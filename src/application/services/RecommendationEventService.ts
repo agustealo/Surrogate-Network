@@ -6,6 +6,7 @@ import { createClient } from '@/infrastructure/supabase/server'
 export const FYP_EVENT_ACTIONS = {
   impression: 'fyp.impression',
   shadowImpression: 'fyp.shadow_impression',
+  experimentImpression: 'fyp.experiment_impression',
   open: 'fyp.open',
   save: 'fyp.save',
   unsave: 'fyp.unsave',
@@ -38,6 +39,13 @@ export type RecommendationHistory = {
 }
 
 const keyFor = (subjectType: RecommendationSubjectType, subjectId: string) => `${subjectType}:${subjectId}`
+const EXPERIMENT_OUTCOME_WINDOW_MS = 30 * 86_400_000
+
+function asRecord(value: Json | null | undefined): Record<string, unknown> | null {
+  return value !== null && typeof value === 'object' && !Array.isArray(value)
+    ? value as Record<string, unknown>
+    : null
+}
 
 export class RecommendationEventService {
   async record(input: RecommendationEventInput): Promise<void> {
@@ -97,10 +105,28 @@ export class RecommendationEventService {
     await this.recordImpressionBatch(actorId, sessionId, FYP_EVENT_ACTIONS.shadowImpression, items)
   }
 
+  async recordExperimentImpressions(
+    actorId: string,
+    sessionId: string,
+    items: Array<{
+      subjectType: RecommendationSubjectType
+      subjectId: string
+      rankingVersion: string
+      rankPosition: number
+      score: number
+      metadata?: Record<string, Json | undefined>
+    }>,
+  ): Promise<void> {
+    await this.recordImpressionBatch(actorId, sessionId, FYP_EVENT_ACTIONS.experimentImpression, items)
+  }
+
   private async recordImpressionBatch(
     actorId: string,
     sessionId: string,
-    action: typeof FYP_EVENT_ACTIONS.impression | typeof FYP_EVENT_ACTIONS.shadowImpression,
+    action:
+      | typeof FYP_EVENT_ACTIONS.impression
+      | typeof FYP_EVENT_ACTIONS.shadowImpression
+      | typeof FYP_EVENT_ACTIONS.experimentImpression,
     items: Array<{
       subjectType: RecommendationSubjectType
       subjectId: string
@@ -209,12 +235,38 @@ export class RecommendationEventService {
     const subjectType: RecommendationSubjectType = need.user_id === input.actorId ? 'offer' : 'need'
     const subjectId = subjectType === 'offer' ? offer.id : need.id
     const action = FYP_EVENT_ACTIONS[input.action]
+    const experimentWindowStart = new Date(Date.now() - EXPERIMENT_OUTCOME_WINDOW_MS).toISOString()
+    const { data: experimentRows } = await supabase
+      .from('audit_events')
+      .select('after')
+      .eq('actor_id', input.actorId)
+      .eq('action', FYP_EVENT_ACTIONS.experimentImpression)
+      .eq('target_type', subjectType)
+      .eq('target_id', subjectId)
+      .gte('timestamp', experimentWindowStart)
+      .order('timestamp', { ascending: false })
+      .limit(1)
+
+    const experimentAfter = asRecord(experimentRows?.[0]?.after)
+    const experimentMetadata = asRecord(experimentAfter?.metadata as Json | undefined)
+    const experimentVersion = experimentMetadata?.experimentVersion
+    const experimentCohort = experimentMetadata?.experimentCohort
+    const hasExperimentProvenance = typeof experimentVersion === 'string'
+      && (experimentCohort === 'control' || experimentCohort === 'candidate')
+
     await this.recordWithClient(supabase, {
       actorId: input.actorId,
       action,
       subjectType,
       subjectId,
-      metadata: input.metadata,
+      metadata: {
+        ...(input.metadata ?? {}),
+        ...(hasExperimentProvenance ? {
+          experimentVersion,
+          experimentCohort,
+          excludedFromShadowEvaluation: true,
+        } : {}),
+      },
     })
   }
 }
