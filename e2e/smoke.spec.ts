@@ -266,7 +266,9 @@ test.describe('Consumer trial smoke @smoke', () => {
 
       await requester.goto('/home')
       await expect(requester.getByRole('heading', { name: 'Your network' })).toBeVisible()
-      await expect(requester.getByText('Active Surrogacies')).toBeVisible()
+      const activeConnectionsCard = requester.getByText('Active Connections', { exact: true }).locator('..').locator('..')
+      await expect(activeConnectionsCard.getByText('1', { exact: true })).toBeVisible()
+      await expect(activeConnectionsCard.getByRole('link', { name: 'View' })).toHaveAttribute('href', '/surrogacies')
       await requester.evaluate(() => window.scrollTo(0, 0))
       await captureVisualEvidence(requester, '07-member-dashboard.png')
 
