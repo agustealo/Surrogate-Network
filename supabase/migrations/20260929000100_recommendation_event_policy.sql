@@ -22,7 +22,10 @@ WITH CHECK (
   AND target_id IS NOT NULL
 );
 
-CREATE OR REPLACE FUNCTION public.fyp_counterpart_subject(
+CREATE SCHEMA IF NOT EXISTS private;
+REVOKE ALL ON SCHEMA private FROM PUBLIC, anon, authenticated;
+
+CREATE OR REPLACE FUNCTION private.fyp_counterpart_subject(
   p_actor_id uuid,
   p_need_id uuid,
   p_offer_id uuid
@@ -42,10 +45,7 @@ AS $$
   LIMIT 1;
 $$;
 
-REVOKE EXECUTE ON FUNCTION public.fyp_counterpart_subject(uuid, uuid, uuid) FROM PUBLIC, anon, authenticated;
-GRANT EXECUTE ON FUNCTION public.fyp_counterpart_subject(uuid, uuid, uuid) TO service_role, postgres;
-
-CREATE OR REPLACE FUNCTION public.record_fyp_proposal_event()
+CREATE OR REPLACE FUNCTION private.record_fyp_proposal_event()
 RETURNS trigger
 LANGUAGE plpgsql
 SECURITY DEFINER
@@ -69,7 +69,7 @@ BEGIN
 
   SELECT subject_type, subject_id
   INTO v_subject_type, v_subject_id
-  FROM public.fyp_counterpart_subject(v_actor_id, NEW.need_id, NEW.offer_id);
+  FROM private.fyp_counterpart_subject(v_actor_id, NEW.need_id, NEW.offer_id);
 
   IF v_subject_id IS NOT NULL THEN
     INSERT INTO public.audit_events(action, actor_id, target_type, target_id, after)
@@ -89,9 +89,9 @@ $$;
 DROP TRIGGER IF EXISTS proposals_fyp_attribution ON public.proposals;
 CREATE TRIGGER proposals_fyp_attribution
 AFTER INSERT OR UPDATE OF status ON public.proposals
-FOR EACH ROW EXECUTE FUNCTION public.record_fyp_proposal_event();
+FOR EACH ROW EXECUTE FUNCTION private.record_fyp_proposal_event();
 
-CREATE OR REPLACE FUNCTION public.record_fyp_exchange_event()
+CREATE OR REPLACE FUNCTION private.record_fyp_exchange_event()
 RETURNS trigger
 LANGUAGE plpgsql
 SECURITY DEFINER
@@ -114,7 +114,7 @@ BEGIN
 
   SELECT subject_type, subject_id
   INTO v_subject_type, v_subject_id
-  FROM public.fyp_counterpart_subject(v_actor_id, v_need_id, v_offer_id);
+  FROM private.fyp_counterpart_subject(v_actor_id, v_need_id, v_offer_id);
 
   IF v_subject_id IS NOT NULL THEN
     INSERT INTO public.audit_events(action, actor_id, target_type, target_id, after)
@@ -134,9 +134,9 @@ $$;
 DROP TRIGGER IF EXISTS exchanges_fyp_attribution ON public.exchanges;
 CREATE TRIGGER exchanges_fyp_attribution
 AFTER INSERT ON public.exchanges
-FOR EACH ROW EXECUTE FUNCTION public.record_fyp_exchange_event();
+FOR EACH ROW EXECUTE FUNCTION private.record_fyp_exchange_event();
 
-CREATE OR REPLACE FUNCTION public.record_fyp_feedback_event()
+CREATE OR REPLACE FUNCTION private.record_fyp_feedback_event()
 RETURNS trigger
 LANGUAGE plpgsql
 SECURITY DEFINER
@@ -154,7 +154,7 @@ BEGIN
 
   SELECT subject_type, subject_id
   INTO v_subject_type, v_subject_id
-  FROM public.fyp_counterpart_subject(NEW.from_user_id, v_need_id, v_offer_id);
+  FROM private.fyp_counterpart_subject(NEW.from_user_id, v_need_id, v_offer_id);
 
   IF v_subject_id IS NOT NULL THEN
     INSERT INTO public.audit_events(action, actor_id, target_type, target_id, after)
@@ -179,6 +179,6 @@ $$;
 DROP TRIGGER IF EXISTS feedback_fyp_attribution ON public.feedback;
 CREATE TRIGGER feedback_fyp_attribution
 AFTER INSERT ON public.feedback
-FOR EACH ROW EXECUTE FUNCTION public.record_fyp_feedback_event();
+FOR EACH ROW EXECUTE FUNCTION private.record_fyp_feedback_event();
 
 COMMIT;
