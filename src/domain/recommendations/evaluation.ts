@@ -50,6 +50,19 @@ export type FypPromotionDecision = {
 
 const divide = (numerator: number, denominator: number) => denominator > 0 ? numerator / denominator : 0
 const round = (value: number) => Math.round(value * 10_000) / 10_000
+const subjectKey = (event: FypEvaluationEvent) => `${event.actorId}:${event.subjectType}:${event.subjectId}`
+
+export function attributeRankingVersions(events: FypEvaluationEvent[]): FypEvaluationEvent[] {
+  const latestVersionBySubject = new Map<string, string>()
+  return [...events]
+    .sort((left, right) => new Date(left.occurredAt).getTime() - new Date(right.occurredAt).getTime())
+    .map((event) => {
+      const key = subjectKey(event)
+      if (event.rankingVersion) latestVersionBySubject.set(key, event.rankingVersion)
+      const rankingVersion = event.rankingVersion ?? latestVersionBySubject.get(key) ?? null
+      return { ...event, rankingVersion }
+    })
+}
 
 export function evaluateFypEvents(events: FypEvaluationEvent[]): FypEvaluationMetrics {
   const count = (action: string) => events.filter((event) => event.action === action).length
@@ -64,7 +77,7 @@ export function evaluateFypEvents(events: FypEvaluationEvent[]): FypEvaluationMe
 
   const exposureCounts = new Map<string, number>()
   for (const event of impressions) {
-    const key = `${event.actorId}:${event.subjectType}:${event.subjectId}`
+    const key = subjectKey(event)
     exposureCounts.set(key, (exposureCounts.get(key) ?? 0) + 1)
   }
   const repeatedImpressions = [...exposureCounts.values()].reduce((sum, value) => sum + Math.max(0, value - 1), 0)
@@ -98,8 +111,8 @@ export function evaluateFypEvents(events: FypEvaluationEvent[]): FypEvaluationMe
 
 export function evaluateByRankingVersion(events: FypEvaluationEvent[]): FypCandidateEvaluation[] {
   const byVersion = new Map<string, FypEvaluationEvent[]>()
-  for (const event of events) {
-    const version = event.rankingVersion ?? 'UNKNOWN'
+  for (const event of attributeRankingVersions(events)) {
+    const version = event.rankingVersion ?? 'UNATTRIBUTED'
     const bucket = byVersion.get(version) ?? []
     bucket.push(event)
     byVersion.set(version, bucket)
