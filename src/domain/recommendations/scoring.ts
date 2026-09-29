@@ -23,7 +23,7 @@ export type RecommendationMeta = {
   score: number
   confidence: number
   reasons: RecommendationReason[]
-  rankingVersion: typeof FYP_RANKING_VERSION
+  rankingVersion: string
 }
 
 export type ViewerProfileIntent = {
@@ -118,181 +118,118 @@ const freshness = (createdAt: string, now: Date) => {
 const offerTrust = (rating?: number, reviewCount?: number) => {
   if (typeof rating !== 'number' || !Number.isFinite(rating) || !reviewCount) return 0.5
   const boundedRating = Math.max(1, Math.min(5, rating)) / 5
-  const evidenceConfidence = Math.min(1, Math.log10(reviewCount + 1) / 2)
-  return 0.5 + (boundedRating - 0.5) * evidenceConfidence
+  const confidence = Math.min(1, reviewCount / 20)
+  return 0.5 + (boundedRating - 0.5) * confidence
 }
 
-const urgencyQuality = (urgency?: NeedIntent['urgency']) => {
-  if (urgency === 'high') return 1
-  if (urgency === 'medium') return 0.75
-  if (urgency === 'low') return 0.55
-  return 0.5
-}
-
-const capacityQuality = (capacity?: number, currentCapacity?: number) => {
-  if (!capacity || capacity <= 0) return 0.5
-  const remaining = Math.max(0, capacity - (currentCapacity ?? 0))
-  return clamp01(remaining / capacity)
-}
-
-const confidenceFromSignals = (signalCount: number) => clamp01(0.45 + Math.min(signalCount, 5) * 0.1)
-
-const reason = (code: RecommendationReason['code'], label: string, contribution: number): RecommendationReason => ({
-  code,
-  label,
-  contribution: Math.round(contribution * 100) / 100,
+const buildRecommendation = (input: {
+  weightedScore: number
+  confidence: number
+  reasons: RecommendationReason[]
+}): RecommendationMeta => ({
+  score: Math.max(0, Math.min(100, Math.round(input.weightedScore))),
+  confidence: Math.max(0, Math.min(1, Math.round(input.confidence * 100) / 100)),
+  reasons: input.reasons
+    .filter((reason) => reason.contribution > 0)
+    .sort((a, b) => b.contribution - a.contribution)
+    .slice(0, 4),
+  rankingVersion: FYP_RANKING_VERSION,
 })
 
-function scoreNeedAgainstOffer(need: NeedIntent, offer: OfferIntent) {
-  const boundary = boundaryFit(need.boundaries, offer.boundaries)
-  const location = locationFit(need.locationMode, offer.locationMode)
-  const category = need.category === offer.category ? 1 : 0.35
-  const timing = timingFit(need.timing, offer.timing)
-
-  return {
-    score: boundary * 0.4 + location * 0.25 + category * 0.2 + timing * 0.15,
-    reasons: [
-      ...(boundary >= 0.5 ? [reason('BOUNDARY_MATCH', 'Compatible boundaries', boundary * 0.4)] : []),
-      ...(location >= 1 ? [reason('LOCATION_MATCH', 'Location preference matches', location * 0.25)] : []),
-      ...(category >= 1 ? [reason('CATEGORY_MATCH', 'Matches your active listing category', category * 0.2)] : []),
-      ...(timing > 0.5 ? [reason('TIMING_MATCH', 'Availability appears aligned', timing * 0.15)] : []),
-    ],
-  }
-}
-
-function scoreNeedForProfile(need: NeedIntent, profile: ViewerProfileIntent) {
-  const boundary = boundaryFit(need.boundaries, profile.boundaries)
-  const location = locationFit(need.locationMode, profile.locationMode)
-  const timing = timingFit(need.timing, profile.availability)
-
-  return {
-    score: boundary * 0.5 + location * 0.3 + timing * 0.2,
-    reasons: [
-      ...(boundary >= 0.5 ? [reason('PROFILE_BOUNDARY_MATCH', 'Matches your profile boundaries', boundary * 0.5)] : []),
-      ...(location >= 1 ? [reason('LOCATION_MATCH', 'Location preference matches', location * 0.3)] : []),
-      ...(timing > 0.5 ? [reason('TIMING_MATCH', 'Availability appears aligned', timing * 0.2)] : []),
-    ],
-  }
-}
-
-function scoreOfferForProfile(offer: OfferIntent, profile: ViewerProfileIntent) {
-  const boundary = boundaryFit(offer.boundaries, profile.boundaries)
-  const location = locationFit(offer.locationMode, profile.locationMode)
-  const timing = timingFit(offer.timing, profile.availability)
-
-  return {
-    score: boundary * 0.5 + location * 0.3 + timing * 0.2,
-    reasons: [
-      ...(boundary >= 0.5 ? [reason('PROFILE_BOUNDARY_MATCH', 'Matches your profile boundaries', boundary * 0.5)] : []),
-      ...(location >= 1 ? [reason('LOCATION_MATCH', 'Location preference matches', location * 0.3)] : []),
-      ...(timing > 0.5 ? [reason('TIMING_MATCH', 'Availability appears aligned', timing * 0.2)] : []),
-    ],
-  }
-}
-
-function bestCompatibility<T>(items: T[], scorer: (item: T) => { score: number; reasons: RecommendationReason[] }, fallback: { score: number; reasons: RecommendationReason[] }) {
-  return items.reduce((best, item) => {
-    const current = scorer(item)
-    return current.score >= best.score ? current : best
-  }, fallback)
-}
-
-export function rankNeedsForViewer<T extends NeedIntent>(viewer: ViewerIntent, candidates: T[], now = new Date()): RecommendationCandidate<T>[] {
-  const ranked = candidates
-    .filter((candidate) => candidate.userId !== viewer.profile.userId)
-    .map((candidate) => {
-      const profileFallback = scoreNeedForProfile(candidate, viewer.profile)
-      const compatibility = viewer.offers.length
-        ? bestCompatibility(viewer.offers, (offer) => scoreNeedAgainstOffer(candidate, offer), profileFallback)
-        : profileFallback
-      const fresh = freshness(candidate.createdAt, now)
-      const quality = urgencyQuality(candidate.urgency)
-      const score = compatibility.score * 0.7 + fresh * 0.2 + quality * 0.1
-      const reasons = [
-        ...compatibility.reasons,
-        ...(fresh >= 0.85 ? [reason('FRESH_LISTING', 'Recently posted', fresh * 0.2)] : []),
-        ...(candidate.urgency === 'high' ? [reason('URGENT_NEED', 'High-priority request', quality * 0.1)] : []),
-      ]
-        .sort((a, b) => b.contribution - a.contribution)
-        .slice(0, 3)
-
-      return {
-        item: candidate,
-        recommendation: {
-          score: roundScore(score),
-          confidence: roundScore(confidenceFromSignals(reasons.length)),
-          reasons,
-          rankingVersion: FYP_RANKING_VERSION,
-        },
-      }
+function bestNeedForOffer(offer: OfferIntent, needs: NeedIntent[], profile: ViewerProfileIntent, now: Date): RecommendationMeta {
+  if (!needs.length) {
+    const boundary = boundaryFit(profile.boundaries, offer.boundaries)
+    const location = locationFit(profile.locationMode, offer.locationMode)
+    return buildRecommendation({
+      weightedScore: 100 * (0.45 * boundary + 0.3 * location + 0.25 * freshness(offer.createdAt, now)),
+      confidence: 0.45,
+      reasons: [
+        { code: 'PROFILE_BOUNDARY_MATCH', label: 'Fits your boundaries', contribution: 45 * boundary },
+        { code: 'LOCATION_MATCH', label: 'Fits your location preference', contribution: 30 * location },
+        { code: 'FRESH_LISTING', label: 'Recently listed', contribution: 25 * freshness(offer.createdAt, now) },
+      ],
     })
-    .sort((left, right) => right.recommendation.score - left.recommendation.score || new Date(right.item.createdAt).getTime() - new Date(left.item.createdAt).getTime())
-
-  return diversify(ranked)
-}
-
-export function rankOffersForViewer<T extends OfferIntent>(viewer: ViewerIntent, candidates: T[], now = new Date()): RecommendationCandidate<T>[] {
-  const ranked = candidates
-    .filter((candidate) => candidate.userId !== viewer.profile.userId)
-    .map((candidate) => {
-      const profileFallback = scoreOfferForProfile(candidate, viewer.profile)
-      const compatibility = viewer.needs.length
-        ? bestCompatibility(viewer.needs, (need) => scoreNeedAgainstOffer(need, candidate), profileFallback)
-        : profileFallback
-      const fresh = freshness(candidate.createdAt, now)
-      const trust = offerTrust(candidate.rating, candidate.reviewCount)
-      const capacity = capacityQuality(candidate.capacity, candidate.currentCapacity)
-      const score = compatibility.score * 0.65 + fresh * 0.15 + trust * 0.15 + capacity * 0.05
-      const reasons = [
-        ...compatibility.reasons,
-        ...(fresh >= 0.85 ? [reason('FRESH_LISTING', 'Recently posted', fresh * 0.15)] : []),
-        ...(trust > 0.55 ? [reason('TRUST_SIGNAL', 'Supported by completed-review history', trust * 0.15)] : []),
-        ...(capacity > 0.5 ? [reason('AVAILABLE_CAPACITY', 'Has available capacity', capacity * 0.05)] : []),
-      ]
-        .sort((a, b) => b.contribution - a.contribution)
-        .slice(0, 3)
-
-      return {
-        item: candidate,
-        recommendation: {
-          score: roundScore(score),
-          confidence: roundScore(confidenceFromSignals(reasons.length)),
-          reasons,
-          rankingVersion: FYP_RANKING_VERSION,
-        },
-      }
-    })
-    .sort((left, right) => right.recommendation.score - left.recommendation.score || new Date(right.item.createdAt).getTime() - new Date(left.item.createdAt).getTime())
-
-  return diversify(ranked)
-}
-
-function diversify<T extends { userId: string; category: SurrogateCategory }>(ranked: RecommendationCandidate<T>[]) {
-  const remaining = [...ranked]
-  const output: RecommendationCandidate<T>[] = []
-  const ownerCounts = new Map<string, number>()
-  const categoryCounts = new Map<SurrogateCategory, number>()
-
-  while (remaining.length) {
-    let bestIndex = 0
-    let bestAdjustedScore = Number.NEGATIVE_INFINITY
-
-    for (let index = 0; index < remaining.length; index += 1) {
-      const candidate = remaining[index]
-      const ownerPenalty = (ownerCounts.get(candidate.item.userId) ?? 0) * 8
-      const categoryPenalty = (categoryCounts.get(candidate.item.category) ?? 0) * 2
-      const adjustedScore = candidate.recommendation.score - ownerPenalty - categoryPenalty
-      if (adjustedScore > bestAdjustedScore) {
-        bestAdjustedScore = adjustedScore
-        bestIndex = index
-      }
-    }
-
-    const [selected] = remaining.splice(bestIndex, 1)
-    output.push(selected)
-    ownerCounts.set(selected.item.userId, (ownerCounts.get(selected.item.userId) ?? 0) + 1)
-    categoryCounts.set(selected.item.category, (categoryCounts.get(selected.item.category) ?? 0) + 1)
   }
 
-  return output
+  return needs
+    .map((need) => {
+      const boundary = boundaryFit(need.boundaries, offer.boundaries)
+      const location = locationFit(need.locationMode, offer.locationMode)
+      const category = need.category === offer.category ? 1 : 0.25
+      const timing = timingFit(need.timing, offer.timing)
+      const fresh = freshness(offer.createdAt, now)
+      const trust = offerTrust(offer.rating, offer.reviewCount)
+      const capacity = typeof offer.capacity === 'number' && typeof offer.currentCapacity === 'number'
+        ? Math.max(0, offer.capacity - offer.currentCapacity) > 0 ? 1 : 0
+        : 0.5
+      return buildRecommendation({
+        weightedScore: 100 * (0.3 * boundary + 0.2 * location + 0.18 * category + 0.12 * timing + 0.08 * fresh + 0.07 * trust + 0.05 * capacity),
+        confidence: 0.8,
+        reasons: [
+          { code: 'BOUNDARY_MATCH', label: 'Boundary fit', contribution: 30 * boundary },
+          { code: 'LOCATION_MATCH', label: 'Location fit', contribution: 20 * location },
+          { code: 'CATEGORY_MATCH', label: 'Matches your Need category', contribution: 18 * category },
+          { code: 'TIMING_MATCH', label: 'Timing fit', contribution: 12 * timing },
+          { code: 'FRESH_LISTING', label: 'Recently listed', contribution: 8 * fresh },
+          { code: 'TRUST_SIGNAL', label: 'Established trust signals', contribution: 7 * trust },
+          { code: 'AVAILABLE_CAPACITY', label: 'Capacity available', contribution: 5 * capacity },
+        ],
+      })
+    })
+    .sort((a, b) => b.score - a.score)[0]
+}
+
+function bestOfferForNeed(need: NeedIntent, offers: OfferIntent[], profile: ViewerProfileIntent, now: Date): RecommendationMeta {
+  if (!offers.length) {
+    const boundary = boundaryFit(profile.boundaries, need.boundaries)
+    const location = locationFit(profile.locationMode, need.locationMode)
+    const urgency = need.urgency === 'high' ? 1 : need.urgency === 'medium' ? 0.6 : 0.2
+    return buildRecommendation({
+      weightedScore: 100 * (0.45 * boundary + 0.3 * location + 0.15 * freshness(need.createdAt, now) + 0.1 * urgency),
+      confidence: 0.45,
+      reasons: [
+        { code: 'PROFILE_BOUNDARY_MATCH', label: 'Fits your boundaries', contribution: 45 * boundary },
+        { code: 'LOCATION_MATCH', label: 'Fits your location preference', contribution: 30 * location },
+        { code: 'FRESH_LISTING', label: 'Recently listed', contribution: 15 * freshness(need.createdAt, now) },
+        { code: 'URGENT_NEED', label: 'Time-sensitive Need', contribution: 10 * urgency },
+      ],
+    })
+  }
+
+  return offers
+    .map((offer) => {
+      const boundary = boundaryFit(need.boundaries, offer.boundaries)
+      const location = locationFit(need.locationMode, offer.locationMode)
+      const category = need.category === offer.category ? 1 : 0.25
+      const timing = timingFit(need.timing, offer.timing)
+      const fresh = freshness(need.createdAt, now)
+      const urgency = need.urgency === 'high' ? 1 : need.urgency === 'medium' ? 0.6 : 0.2
+      return buildRecommendation({
+        weightedScore: 100 * (0.32 * boundary + 0.22 * location + 0.2 * category + 0.12 * timing + 0.08 * fresh + 0.06 * urgency),
+        confidence: 0.8,
+        reasons: [
+          { code: 'BOUNDARY_MATCH', label: 'Boundary fit', contribution: 32 * boundary },
+          { code: 'LOCATION_MATCH', label: 'Location fit', contribution: 22 * location },
+          { code: 'CATEGORY_MATCH', label: 'Matches your Offer category', contribution: 20 * category },
+          { code: 'TIMING_MATCH', label: 'Timing fit', contribution: 12 * timing },
+          { code: 'FRESH_LISTING', label: 'Recently listed', contribution: 8 * fresh },
+          { code: 'URGENT_NEED', label: 'Time-sensitive Need', contribution: 6 * urgency },
+        ],
+      })
+    })
+    .sort((a, b) => b.score - a.score)[0]
+}
+
+export function rankOffersForViewer(viewer: ViewerIntent, offers: OfferIntent[], now = new Date()): RecommendationCandidate<OfferIntent>[] {
+  return offers
+    .filter((offer) => offer.userId !== viewer.profile.userId)
+    .map((offer) => ({ item: offer, recommendation: bestNeedForOffer(offer, viewer.needs, viewer.profile, now) }))
+    .sort((a, b) => b.recommendation.score - a.recommendation.score || a.item.id.localeCompare(b.item.id))
+}
+
+export function rankNeedsForViewer(viewer: ViewerIntent, needs: NeedIntent[], now = new Date()): RecommendationCandidate<NeedIntent>[] {
+  return needs
+    .filter((need) => need.userId !== viewer.profile.userId)
+    .map((need) => ({ item: need, recommendation: bestOfferForNeed(need, viewer.offers, viewer.profile, now) }))
+    .sort((a, b) => b.recommendation.score - a.recommendation.score || a.item.id.localeCompare(b.item.id))
 }
