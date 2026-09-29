@@ -4,6 +4,11 @@ import { FypRecommendationService } from '@/application/services/FypRecommendati
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card'
+import {
+  RecommendationControls,
+  RecommendationImpressionTracker,
+  type RecommendationImpressionItem,
+} from '@/components/recommendations/RecommendationControls'
 import { routes } from '@/lib/routes'
 
 function RecommendationSignals({ score, reasons }: { score: number; reasons: { code: string; label: string }[] }) {
@@ -26,9 +31,27 @@ function RecommendationSignals({ score, reasons }: { score: number; reasons: { c
 
 export default async function DiscoverPage() {
   const feed = await new FypRecommendationService().getFeed()
+  const impressionItems: RecommendationImpressionItem[] = [
+    ...feed.needs.map((need, rankPosition) => ({
+      subjectType: 'need' as const,
+      subjectId: need.id,
+      rankingVersion: need.recommendation.rankingVersion,
+      rankPosition,
+      score: need.recommendation.score,
+    })),
+    ...feed.offers.map((offer, rankPosition) => ({
+      subjectType: 'offer' as const,
+      subjectId: offer.id,
+      rankingVersion: offer.recommendation.rankingVersion,
+      rankPosition,
+      score: offer.recommendation.score,
+    })),
+  ]
 
   return (
     <div className="container mx-auto max-w-7xl space-y-8 px-4 py-8">
+      <RecommendationImpressionTracker sessionId={feed.sessionId} items={impressionItems} />
+
       <div className="flex flex-wrap items-end justify-between gap-4">
         <div>
           <h1 className="text-3xl font-bold">Discover</h1>
@@ -53,7 +76,7 @@ export default async function DiscoverPage() {
       <section className="space-y-4">
         <h2 className="flex items-center gap-2 text-xl font-semibold"><Heart className="h-5 w-5" />Recommended Needs</h2>
         <div className="grid gap-4 md:grid-cols-2">
-          {feed.needs.map((need) => (
+          {feed.needs.map((need, rankPosition) => (
             <Card key={need.id}>
               <CardHeader>
                 <Badge className="w-fit" variant="outline">{need.category}</Badge>
@@ -64,7 +87,18 @@ export default async function DiscoverPage() {
                 <p className="line-clamp-4">{need.description}</p>
                 <RecommendationSignals score={need.recommendation.score} reasons={need.recommendation.reasons} />
               </CardContent>
-              <CardFooter><Button asChild variant="outline"><Link href={routes.memberDynamic.need(need.id)}>View Need</Link></Button></CardFooter>
+              <CardFooter>
+                <RecommendationControls
+                  subjectType="need"
+                  subjectId={need.id}
+                  href={routes.memberDynamic.need(need.id)}
+                  saved={need.saved}
+                  sessionId={feed.sessionId}
+                  rankingVersion={need.recommendation.rankingVersion}
+                  rankPosition={rankPosition}
+                  score={need.recommendation.score}
+                />
+              </CardFooter>
             </Card>
           ))}
         </div>
@@ -74,7 +108,7 @@ export default async function DiscoverPage() {
       <section className="space-y-4">
         <h2 className="flex items-center gap-2 text-xl font-semibold"><Handshake className="h-5 w-5" />Recommended Offers</h2>
         <div className="grid gap-4 md:grid-cols-2">
-          {feed.offers.map((offer) => (
+          {feed.offers.map((offer, rankPosition) => (
             <Card key={offer.id}>
               <CardHeader>
                 <Badge className="w-fit" variant="outline">{offer.category}</Badge>
@@ -86,7 +120,18 @@ export default async function DiscoverPage() {
                 {typeof offer.rating === 'number' && <p className="mt-3 text-sm text-muted-foreground">{offer.rating.toFixed(1)} rating · {offer.review_count ?? 0} reviews</p>}
                 <RecommendationSignals score={offer.recommendation.score} reasons={offer.recommendation.reasons} />
               </CardContent>
-              <CardFooter><Button asChild variant="outline"><Link href={routes.memberDynamic.offer(offer.id)}>View Offer</Link></Button></CardFooter>
+              <CardFooter>
+                <RecommendationControls
+                  subjectType="offer"
+                  subjectId={offer.id}
+                  href={routes.memberDynamic.offer(offer.id)}
+                  saved={offer.saved}
+                  sessionId={feed.sessionId}
+                  rankingVersion={offer.recommendation.rankingVersion}
+                  rankPosition={rankPosition}
+                  score={offer.recommendation.score}
+                />
+              </CardFooter>
             </Card>
           ))}
         </div>
