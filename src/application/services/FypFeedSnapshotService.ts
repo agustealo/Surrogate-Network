@@ -154,13 +154,13 @@ export class FypFeedSnapshotService {
 
   async create(input: {
     actorId: string
+    sessionId: string
     rankingVersion: string
     now: Date
     needs: FypFeedSnapshotItem[]
     offers: FypFeedSnapshotItem[]
   }): Promise<FypFeedSessionSnapshot> {
     const supabase = await createClient()
-    const sessionId = crypto.randomUUID()
     const generatedAt = input.now.toISOString()
     const expiresAt = new Date(input.now.getTime() + FYP_FEED_SESSION_TTL_MS).toISOString()
 
@@ -179,7 +179,7 @@ export class FypFeedSnapshotService {
       action: FYP_FEED_SNAPSHOT_ACTION,
       target_type: 'fyp_feed_lane',
       target_id: lane,
-      reason: sessionId,
+      reason: input.sessionId,
       after: {
         rankingVersion: input.rankingVersion,
         generatedAt,
@@ -192,7 +192,7 @@ export class FypFeedSnapshotService {
     if (error) throw new Error(`Failed to persist FYP feed snapshot: ${error.message}`)
 
     return {
-      sessionId,
+      sessionId: input.sessionId,
       rankingVersion: input.rankingVersion,
       generatedAt,
       expiresAt,
