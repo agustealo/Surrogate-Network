@@ -2,7 +2,7 @@ import 'server-only'
 
 import type { RecommendationMeta } from '@/domain/recommendations/scoring'
 import type { Json } from '@/infrastructure/supabase/database.types'
-import { createClient } from '@/infrastructure/supabase/server'
+import { createClient, createServiceClient } from '@/infrastructure/supabase/server'
 
 export const FYP_FEED_SNAPSHOT_ACTION = 'fyp.feed_snapshot' as const
 export const FYP_FEED_SESSION_TTL_MS = 4 * 60 * 60 * 1000
@@ -160,7 +160,7 @@ export class FypFeedSnapshotService {
     needs: FypFeedSnapshotItem[]
     offers: FypFeedSnapshotItem[]
   }): Promise<FypFeedSessionSnapshot> {
-    const supabase = await createClient()
+    const systemClient = createServiceClient()
     const generatedAt = input.now.toISOString()
     const expiresAt = new Date(input.now.getTime() + FYP_FEED_SESSION_TTL_MS).toISOString()
 
@@ -188,7 +188,7 @@ export class FypFeedSnapshotService {
       } as Json,
     }))
 
-    const { error } = await supabase.from('audit_events').insert(rows)
+    const { error } = await systemClient.from('audit_events').insert(rows)
     if (error) throw new Error(`Failed to persist FYP feed snapshot: ${error.message}`)
 
     return {
