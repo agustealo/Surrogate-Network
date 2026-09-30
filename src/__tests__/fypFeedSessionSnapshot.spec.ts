@@ -18,6 +18,16 @@ describe('FYP feed-session snapshot wiring', () => {
     expect(snapshot).toContain('items: serialize')
   })
 
+  it('keeps member reads under RLS while routing snapshot writes through trusted server authority', () => {
+    const snapshot = source('src/application/services/FypFeedSnapshotService.ts')
+
+    expect(snapshot).toContain("import { createClient, createServiceClient } from '@/infrastructure/supabase/server'")
+    expect(snapshot).toContain('const supabase = await createClient()')
+    expect(snapshot).toContain('const systemClient = createServiceClient()')
+    expect(snapshot).toContain("systemClient.from('audit_events').insert(rows)")
+    expect(snapshot).not.toContain("supabase.from('audit_events').insert(rows)")
+  })
+
   it('reuses only a non-expired snapshot for the currently authorized ranking version', () => {
     const snapshot = source('src/application/services/FypFeedSnapshotService.ts')
     const service = source('src/application/services/FypRecommendationService.ts')
