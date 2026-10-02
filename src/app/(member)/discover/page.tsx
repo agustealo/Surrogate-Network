@@ -32,18 +32,18 @@ function RecommendationSignals({ score, reasons }: { score: number; reasons: { c
 export default async function DiscoverPage() {
   const feed = await new FypRecommendationService().getFeed()
   const impressionItems: RecommendationImpressionItem[] = [
-    ...feed.needs.map((need, rankPosition) => ({
+    ...feed.needs.map((need) => ({
       subjectType: 'need' as const,
       subjectId: need.id,
       rankingVersion: need.recommendation.rankingVersion,
-      rankPosition,
+      rankPosition: need.rankPosition,
       score: need.recommendation.score,
     })),
-    ...feed.offers.map((offer, rankPosition) => ({
+    ...feed.offers.map((offer) => ({
       subjectType: 'offer' as const,
       subjectId: offer.id,
       rankingVersion: offer.recommendation.rankingVersion,
-      rankPosition,
+      rankPosition: offer.rankPosition,
       score: offer.recommendation.score,
     })),
   ]
@@ -76,7 +76,7 @@ export default async function DiscoverPage() {
       <section className="space-y-4">
         <h2 className="flex items-center gap-2 text-xl font-semibold"><Heart className="h-5 w-5" />Recommended Needs</h2>
         <div className="grid gap-4 md:grid-cols-2">
-          {feed.needs.map((need, rankPosition) => (
+          {feed.needs.map((need) => (
             <Card key={need.id}>
               <CardHeader>
                 <Badge className="w-fit" variant="outline">{need.category}</Badge>
@@ -95,7 +95,7 @@ export default async function DiscoverPage() {
                   saved={need.saved}
                   sessionId={feed.sessionId}
                   rankingVersion={need.recommendation.rankingVersion}
-                  rankPosition={rankPosition}
+                  rankPosition={need.rankPosition}
                   score={need.recommendation.score}
                 />
               </CardFooter>
@@ -108,7 +108,7 @@ export default async function DiscoverPage() {
       <section className="space-y-4">
         <h2 className="flex items-center gap-2 text-xl font-semibold"><Handshake className="h-5 w-5" />Recommended Offers</h2>
         <div className="grid gap-4 md:grid-cols-2">
-          {feed.offers.map((offer, rankPosition) => (
+          {feed.offers.map((offer) => (
             <Card key={offer.id}>
               <CardHeader>
                 <Badge className="w-fit" variant="outline">{offer.category}</Badge>
@@ -128,7 +128,7 @@ export default async function DiscoverPage() {
                   saved={offer.saved}
                   sessionId={feed.sessionId}
                   rankingVersion={offer.recommendation.rankingVersion}
-                  rankPosition={rankPosition}
+                  rankPosition={offer.rankPosition}
                   score={offer.recommendation.score}
                 />
               </CardFooter>
