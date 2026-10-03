@@ -24,6 +24,7 @@ export const routes = {
   member: {
     home: '/home',
     discover: '/discover',
+    recommendationPreferences: '/discover/preferences',
     needs: '/needs',
     needsCreate: '/needs/create',
     offers: '/offers',
