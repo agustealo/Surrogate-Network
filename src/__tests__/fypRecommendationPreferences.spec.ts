@@ -31,13 +31,14 @@ describe('FYP recommendation preference management', () => {
     const routes = source('src/lib/routes.ts')
     const discover = source('src/app/(member)/discover/page.tsx')
     const page = source('src/app/(member)/discover/preferences/page.tsx')
+    const controls = source('src/components/recommendations/RecommendationPreferenceItemControls.tsx')
 
     expect(routes).toContain("recommendationPreferences: '/discover/preferences'")
     expect(discover).toContain('routes.member.recommendationPreferences')
     expect(discover).toContain('Saved & hidden')
     expect(page).toContain('Recommendation preferences')
-    expect(page).toContain('Remove saved')
-    expect(page).toContain('Show again')
+    expect(controls).toContain('Remove saved')
+    expect(controls).toContain('Show again')
   })
 
   it('allows stale preference state to be cleared even when the listing is unavailable', () => {
