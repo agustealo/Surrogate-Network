@@ -81,7 +81,8 @@ export default async function DiscoverPage({
           <h1 className="text-3xl font-bold">Discover</h1>
           <p className="text-muted-foreground">For You recommendations ranked from your explicit profile and marketplace intent.</p>
         </div>
-        <div className="flex gap-2">
+        <div className="flex flex-wrap gap-2">
+          <Button asChild variant="outline"><Link href={routes.member.recommendationPreferences}>Saved & hidden</Link></Button>
           <Button asChild variant="outline"><Link href="/needs/create">Create Need</Link></Button>
           <Button asChild><Link href="/offers/create">Create Offer</Link></Button>
         </div>
