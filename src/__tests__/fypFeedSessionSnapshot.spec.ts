@@ -67,8 +67,9 @@ describe('FYP feed-session snapshot wiring', () => {
     const service = source('src/application/services/FypRecommendationService.ts')
     const page = source('src/app/(member)/discover/page.tsx')
 
-    expect(service).toContain('needOffset = this.normalizeOffset')
-    expect(service).toContain('offerOffset = this.normalizeOffset')
+    expect(service).toContain('const cursorMatchesSession = input.cursor.sessionId === input.snapshot.sessionId')
+    expect(service).toContain('? this.normalizeOffset(input.cursor.needOffset')
+    expect(service).toContain('? this.normalizeOffset(input.cursor.offerOffset')
     expect(service).toContain('let needIndex = needOffset')
     expect(service).toContain('let offerIndex = offerOffset')
     expect(service).toContain('rankPosition: item.position')
@@ -78,6 +79,19 @@ describe('FYP feed-session snapshot wiring', () => {
     expect(page).toContain('offerOffset: cursorValue(params.offerOffset)')
     expect(page).toContain('More Needs')
     expect(page).toContain('More Offers')
+  })
+
+  it('rejects stale offsets from a different or expired snapshot session', () => {
+    const service = source('src/application/services/FypRecommendationService.ts')
+    const page = source('src/app/(member)/discover/page.tsx')
+
+    expect(service).toContain('cursorMatchesSession = input.cursor.sessionId === input.snapshot.sessionId')
+    expect(service).toContain('cursorMatchesSession\n      ? this.normalizeOffset(input.cursor.needOffset')
+    expect(service).toContain('cursorMatchesSession\n      ? this.normalizeOffset(input.cursor.offerOffset')
+    expect(page).toContain("new URLSearchParams({ sessionId })")
+    expect(page).toContain('sessionId: requestedSessionId')
+    expect(page).toContain('discoverHref(feed.sessionId, feed.nextNeedOffset, feed.offerOffset)')
+    expect(page).toContain('discoverHref(feed.sessionId, feed.needOffset, feed.nextOfferOffset)')
   })
 
   it('does not let repeat-exposure suppression mutate an already generated session', () => {

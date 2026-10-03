@@ -38,6 +38,7 @@ import type { Boundary, SurrogateCategory } from '@/domain/types'
 const FEED_LIMIT = 24
 
 export type FypFeedCursor = {
+  sessionId?: string
   needOffset?: number
   offerOffset?: number
 }
@@ -232,8 +233,13 @@ export class FypRecommendationService {
     ownOfferIds: string[]
     cursor: FypFeedCursor
   }): Promise<FypFeed> {
-    const needOffset = this.normalizeOffset(input.cursor.needOffset, input.snapshot.needs.length)
-    const offerOffset = this.normalizeOffset(input.cursor.offerOffset, input.snapshot.offers.length)
+    const cursorMatchesSession = input.cursor.sessionId === input.snapshot.sessionId
+    const needOffset = cursorMatchesSession
+      ? this.normalizeOffset(input.cursor.needOffset, input.snapshot.needs.length)
+      : 0
+    const offerOffset = cursorMatchesSession
+      ? this.normalizeOffset(input.cursor.offerOffset, input.snapshot.offers.length)
+      : 0
     const needIds = input.snapshot.needs.slice(needOffset).map((item) => item.subjectId)
     const offerIds = input.snapshot.offers.slice(offerOffset).map((item) => item.subjectId)
     const [{ data: needs, error: needsError }, { data: offers, error: offersError }] = await Promise.all([

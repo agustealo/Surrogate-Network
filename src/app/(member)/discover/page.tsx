@@ -35,8 +35,8 @@ function cursorValue(value: string | string[] | undefined): number {
   return Number.isInteger(parsed) && parsed >= 0 ? parsed : 0
 }
 
-function discoverHref(needOffset: number, offerOffset: number) {
-  const params = new URLSearchParams()
+function discoverHref(sessionId: string, needOffset: number, offerOffset: number) {
+  const params = new URLSearchParams({ sessionId })
   if (needOffset > 0) params.set('needOffset', String(needOffset))
   if (offerOffset > 0) params.set('offerOffset', String(offerOffset))
   const query = params.toString()
@@ -46,10 +46,12 @@ function discoverHref(needOffset: number, offerOffset: number) {
 export default async function DiscoverPage({
   searchParams,
 }: {
-  searchParams: Promise<{ needOffset?: string | string[]; offerOffset?: string | string[] }>
+  searchParams: Promise<{ sessionId?: string | string[]; needOffset?: string | string[]; offerOffset?: string | string[] }>
 }) {
   const params = await searchParams
+  const requestedSessionId = Array.isArray(params.sessionId) ? params.sessionId[0] : params.sessionId
   const feed = await new FypRecommendationService().getFeed(new Date(), {
+    sessionId: requestedSessionId,
     needOffset: cursorValue(params.needOffset),
     offerOffset: cursorValue(params.offerOffset),
   })
@@ -126,8 +128,8 @@ export default async function DiscoverPage({
         </div>
         {!feed.needs.length && <p className="text-muted-foreground">No eligible active Needs are currently available on this page.</p>}
         <div className="flex items-center justify-between gap-3">
-          <div>{feed.needOffset > 0 && <Button asChild variant="outline"><Link href={discoverHref(0, feed.offerOffset)}>First Needs</Link></Button>}</div>
-          {feed.nextNeedOffset !== null && <Button asChild variant="outline"><Link href={discoverHref(feed.nextNeedOffset, feed.offerOffset)}>More Needs</Link></Button>}
+          <div>{feed.needOffset > 0 && <Button asChild variant="outline"><Link href={discoverHref(feed.sessionId, 0, feed.offerOffset)}>First Needs</Link></Button>}</div>
+          {feed.nextNeedOffset !== null && <Button asChild variant="outline"><Link href={discoverHref(feed.sessionId, feed.nextNeedOffset, feed.offerOffset)}>More Needs</Link></Button>}
         </div>
       </section>
 
@@ -163,8 +165,8 @@ export default async function DiscoverPage({
         </div>
         {!feed.offers.length && <p className="text-muted-foreground">No eligible active Offers are currently available on this page.</p>}
         <div className="flex items-center justify-between gap-3">
-          <div>{feed.offerOffset > 0 && <Button asChild variant="outline"><Link href={discoverHref(feed.needOffset, 0)}>First Offers</Link></Button>}</div>
-          {feed.nextOfferOffset !== null && <Button asChild variant="outline"><Link href={discoverHref(feed.needOffset, feed.nextOfferOffset)}>More Offers</Link></Button>}
+          <div>{feed.offerOffset > 0 && <Button asChild variant="outline"><Link href={discoverHref(feed.sessionId, feed.needOffset, 0)}>First Offers</Link></Button>}</div>
+          {feed.nextOfferOffset !== null && <Button asChild variant="outline"><Link href={discoverHref(feed.sessionId, feed.needOffset, feed.nextOfferOffset)}>More Offers</Link></Button>}
         </div>
       </section>
     </div>
