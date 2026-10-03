@@ -80,6 +80,19 @@ describe('FYP feed-session snapshot wiring', () => {
     expect(page).toContain('More Offers')
   })
 
+  it('rejects stale offsets from a different or expired snapshot session', () => {
+    const service = source('src/application/services/FypRecommendationService.ts')
+    const page = source('src/app/(member)/discover/page.tsx')
+
+    expect(service).toContain('cursorMatchesSession = input.cursor.sessionId === input.snapshot.sessionId')
+    expect(service).toContain('cursorMatchesSession\n      ? this.normalizeOffset(input.cursor.needOffset')
+    expect(service).toContain('cursorMatchesSession\n      ? this.normalizeOffset(input.cursor.offerOffset')
+    expect(page).toContain("new URLSearchParams({ sessionId })")
+    expect(page).toContain('sessionId: requestedSessionId')
+    expect(page).toContain('discoverHref(feed.sessionId, feed.nextNeedOffset, feed.offerOffset)')
+    expect(page).toContain('discoverHref(feed.sessionId, feed.needOffset, feed.nextOfferOffset)')
+  })
+
   it('does not let repeat-exposure suppression mutate an already generated session', () => {
     const service = source('src/application/services/FypRecommendationService.ts')
     const snapshotEligibility = service.slice(service.indexOf('private isSnapshotEligible('), service.indexOf('private toNeedIntent('))
