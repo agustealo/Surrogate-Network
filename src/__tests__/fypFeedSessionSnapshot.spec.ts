@@ -63,6 +63,23 @@ describe('FYP feed-session snapshot wiring', () => {
     expect(page).toContain('rankPosition={offer.rankPosition}')
   })
 
+  it('continues through frozen snapshot indices without re-ranking or renumbering attribution', () => {
+    const service = source('src/application/services/FypRecommendationService.ts')
+    const page = source('src/app/(member)/discover/page.tsx')
+
+    expect(service).toContain('needOffset = this.normalizeOffset')
+    expect(service).toContain('offerOffset = this.normalizeOffset')
+    expect(service).toContain('let needIndex = needOffset')
+    expect(service).toContain('let offerIndex = offerOffset')
+    expect(service).toContain('rankPosition: item.position')
+    expect(service).toContain("nextEligibleOffset('need'")
+    expect(service).toContain("nextEligibleOffset('offer'")
+    expect(page).toContain('needOffset: cursorValue(params.needOffset)')
+    expect(page).toContain('offerOffset: cursorValue(params.offerOffset)')
+    expect(page).toContain('More Needs')
+    expect(page).toContain('More Offers')
+  })
+
   it('does not let repeat-exposure suppression mutate an already generated session', () => {
     const service = source('src/application/services/FypRecommendationService.ts')
     const snapshotEligibility = service.slice(service.indexOf('private isSnapshotEligible('), service.indexOf('private toNeedIntent('))

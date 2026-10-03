@@ -29,8 +29,30 @@ function RecommendationSignals({ score, reasons }: { score: number; reasons: { c
   )
 }
 
-export default async function DiscoverPage() {
-  const feed = await new FypRecommendationService().getFeed()
+function cursorValue(value: string | string[] | undefined): number {
+  const raw = Array.isArray(value) ? value[0] : value
+  const parsed = Number(raw)
+  return Number.isInteger(parsed) && parsed >= 0 ? parsed : 0
+}
+
+function discoverHref(needOffset: number, offerOffset: number) {
+  const params = new URLSearchParams()
+  if (needOffset > 0) params.set('needOffset', String(needOffset))
+  if (offerOffset > 0) params.set('offerOffset', String(offerOffset))
+  const query = params.toString()
+  return query ? `/discover?${query}` : '/discover'
+}
+
+export default async function DiscoverPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ needOffset?: string | string[]; offerOffset?: string | string[] }>
+}) {
+  const params = await searchParams
+  const feed = await new FypRecommendationService().getFeed(new Date(), {
+    needOffset: cursorValue(params.needOffset),
+    offerOffset: cursorValue(params.offerOffset),
+  })
   const impressionItems: RecommendationImpressionItem[] = [
     ...feed.needs.map((need) => ({
       subjectType: 'need' as const,
@@ -102,7 +124,11 @@ export default async function DiscoverPage() {
             </Card>
           ))}
         </div>
-        {!feed.needs.length && <p className="text-muted-foreground">No eligible active Needs are currently available.</p>}
+        {!feed.needs.length && <p className="text-muted-foreground">No eligible active Needs are currently available on this page.</p>}
+        <div className="flex items-center justify-between gap-3">
+          <div>{feed.needOffset > 0 && <Button asChild variant="outline"><Link href={discoverHref(0, feed.offerOffset)}>First Needs</Link></Button>}</div>
+          {feed.nextNeedOffset !== null && <Button asChild variant="outline"><Link href={discoverHref(feed.nextNeedOffset, feed.offerOffset)}>More Needs</Link></Button>}
+        </div>
       </section>
 
       <section className="space-y-4">
@@ -135,7 +161,11 @@ export default async function DiscoverPage() {
             </Card>
           ))}
         </div>
-        {!feed.offers.length && <p className="text-muted-foreground">No eligible active Offers are currently available.</p>}
+        {!feed.offers.length && <p className="text-muted-foreground">No eligible active Offers are currently available on this page.</p>}
+        <div className="flex items-center justify-between gap-3">
+          <div>{feed.offerOffset > 0 && <Button asChild variant="outline"><Link href={discoverHref(feed.needOffset, 0)}>First Offers</Link></Button>}</div>
+          {feed.nextOfferOffset !== null && <Button asChild variant="outline"><Link href={discoverHref(feed.needOffset, feed.nextOfferOffset)}>More Offers</Link></Button>}
+        </div>
       </section>
     </div>
   )

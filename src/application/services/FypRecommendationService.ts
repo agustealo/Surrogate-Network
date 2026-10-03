@@ -36,6 +36,11 @@ import {
 import type { Boundary, SurrogateCategory } from '@/domain/types'
 
 const FEED_LIMIT = 24
+
+export type FypFeedCursor = {
+  needOffset?: number
+  offerOffset?: number
+}
 const REPEAT_IMPRESSION_LIMIT = 3
 const UNKNOWN_CREATED_AT = '1970-01-01T00:00:00.000Z'
 const EMPTY_UUID = '00000000-0000-0000-0000-000000000000'
@@ -91,10 +96,14 @@ export type FypFeed = {
   offers: FypOffer[]
   ownNeedIds: string[]
   ownOfferIds: string[]
+  needOffset: number
+  offerOffset: number
+  nextNeedOffset: number | null
+  nextOfferOffset: number | null
 }
 
 export class FypRecommendationService {
-  async getFeed(now = new Date()): Promise<FypFeed> {
+  async getFeed(now = new Date(), cursor: FypFeedCursor = {}): Promise<FypFeed> {
     const supabase = await createClient()
     const { data: { user }, error: authError } = await supabase.auth.getUser()
     if (authError || !user) throw new Error('You must be signed in to discover recommendations.')
@@ -130,6 +139,7 @@ export class FypRecommendationService {
         history,
         ownNeedIds: (ownNeedsResult.data ?? []).map((row) => row.id),
         ownOfferIds: (ownOffersResult.data ?? []).map((row) => row.id),
+        cursor,
       })
     }
 
@@ -210,6 +220,7 @@ export class FypRecommendationService {
       history,
       ownNeedIds: (ownNeedsResult.data ?? []).map((row) => row.id),
       ownOfferIds: (ownOffersResult.data ?? []).map((row) => row.id),
+      cursor,
     })
   }
 
@@ -219,9 +230,12 @@ export class FypRecommendationService {
     history: Awaited<ReturnType<RecommendationEventService['historyFor']>>
     ownNeedIds: string[]
     ownOfferIds: string[]
+    cursor: FypFeedCursor
   }): Promise<FypFeed> {
-    const needIds = input.snapshot.needs.map((item) => item.subjectId)
-    const offerIds = input.snapshot.offers.map((item) => item.subjectId)
+    const needOffset = this.normalizeOffset(input.cursor.needOffset, input.snapshot.needs.length)
+    const offerOffset = this.normalizeOffset(input.cursor.offerOffset, input.snapshot.offers.length)
+    const needIds = input.snapshot.needs.slice(needOffset).map((item) => item.subjectId)
+    const offerIds = input.snapshot.offers.slice(offerOffset).map((item) => item.subjectId)
     const [{ data: needs, error: needsError }, { data: offers, error: offersError }] = await Promise.all([
       input.supabase
         .from('needs')
@@ -242,8 +256,10 @@ export class FypRecommendationService {
     const needsOut: FypNeed[] = []
     const offersOut: FypOffer[] = []
 
-    for (const item of input.snapshot.needs) {
-      if (needsOut.length >= FEED_LIMIT) break
+    let needIndex = needOffset
+    while (needIndex < input.snapshot.needs.length && needsOut.length < FEED_LIMIT) {
+      const item = input.snapshot.needs[needIndex]
+      needIndex += 1
       const row = needRows.get(item.subjectId)
       if (!row || !this.isSnapshotEligible('need', item.subjectId, input.history)) continue
       needsOut.push({
@@ -253,8 +269,11 @@ export class FypRecommendationService {
         saved: input.history.saved.has(recommendationSubjectKey('need', item.subjectId)),
       })
     }
-    for (const item of input.snapshot.offers) {
-      if (offersOut.length >= FEED_LIMIT) break
+
+    let offerIndex = offerOffset
+    while (offerIndex < input.snapshot.offers.length && offersOut.length < FEED_LIMIT) {
+      const item = input.snapshot.offers[offerIndex]
+      offerIndex += 1
       const row = offerRows.get(item.subjectId)
       if (!row || !this.isSnapshotEligible('offer', item.subjectId, input.history)) continue
       offersOut.push({
@@ -265,6 +284,9 @@ export class FypRecommendationService {
       })
     }
 
+    const nextNeedOffset = this.nextEligibleOffset('need', input.snapshot.needs, needIndex, needRows, input.history)
+    const nextOfferOffset = this.nextEligibleOffset('offer', input.snapshot.offers, offerIndex, offerRows, input.history)
+
     return {
       sessionId: input.snapshot.sessionId,
       generatedAt: input.snapshot.generatedAt,
@@ -273,7 +295,30 @@ export class FypRecommendationService {
       offers: offersOut,
       ownNeedIds: input.ownNeedIds,
       ownOfferIds: input.ownOfferIds,
+      needOffset,
+      offerOffset,
+      nextNeedOffset,
+      nextOfferOffset,
     }
+  }
+
+  private normalizeOffset(value: number | undefined, length: number): number {
+    if (!Number.isInteger(value) || value === undefined || value < 0) return 0
+    return Math.min(value, length)
+  }
+
+  private nextEligibleOffset<T extends { id: string }>(
+    subjectType: 'need' | 'offer',
+    items: FypFeedSnapshotItem[],
+    startIndex: number,
+    rows: Map<string, T>,
+    history: Awaited<ReturnType<RecommendationEventService['historyFor']>>,
+  ): number | null {
+    for (let index = startIndex; index < items.length; index += 1) {
+      const item = items[index]
+      if (rows.has(item.subjectId) && this.isSnapshotEligible(subjectType, item.subjectId, history)) return index
+    }
+    return null
   }
 
   private snapshotItems<T extends NeedIntent | OfferIntent>(
