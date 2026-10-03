@@ -67,8 +67,9 @@ describe('FYP feed-session snapshot wiring', () => {
     const service = source('src/application/services/FypRecommendationService.ts')
     const page = source('src/app/(member)/discover/page.tsx')
 
-    expect(service).toContain('needOffset = this.normalizeOffset')
-    expect(service).toContain('offerOffset = this.normalizeOffset')
+    expect(service).toContain('const cursorMatchesSession = input.cursor.sessionId === input.snapshot.sessionId')
+    expect(service).toContain('? this.normalizeOffset(input.cursor.needOffset')
+    expect(service).toContain('? this.normalizeOffset(input.cursor.offerOffset')
     expect(service).toContain('let needIndex = needOffset')
     expect(service).toContain('let offerIndex = offerOffset')
     expect(service).toContain('rankPosition: item.position')
