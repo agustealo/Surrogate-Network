@@ -24,7 +24,7 @@ const impressionSchema = z.object({
 const preferenceSchema = z.object({
   subjectType,
   subjectId: z.string().uuid(),
-  preference: z.enum(['save', 'unsave', 'not_interested']),
+  preference: z.enum(['save', 'unsave', 'not_interested', 'restore_interest']),
 })
 
 const openSchema = z.object({
@@ -66,7 +66,9 @@ export async function setRecommendationPreferenceAction(input: unknown): Promise
       ? FYP_EVENT_ACTIONS.save
       : values.preference === 'unsave'
         ? FYP_EVENT_ACTIONS.unsave
-        : FYP_EVENT_ACTIONS.notInterested
+        : values.preference === 'not_interested'
+          ? FYP_EVENT_ACTIONS.notInterested
+          : FYP_EVENT_ACTIONS.restoreInterest
 
     await new RecommendationEventService().record({
       actorId: actor.id,
@@ -75,6 +77,7 @@ export async function setRecommendationPreferenceAction(input: unknown): Promise
       subjectId: values.subjectId,
     })
     revalidatePath('/discover')
+    revalidatePath('/discover/preferences')
     return { ok: true, data: undefined }
   } catch (error) {
     return actionFailure(error)
