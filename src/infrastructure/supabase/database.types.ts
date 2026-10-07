@@ -136,48 +136,6 @@ export type Database = {
           },
         ]
       }
-      recommendation_preferences: {
-        Row: {
-          actor_id: string
-          preference: string
-          source_event_id: string
-          source_timestamp: string
-          target_id: string
-          target_type: string
-        }
-        Insert: {
-          actor_id: string
-          preference: string
-          source_event_id: string
-          source_timestamp: string
-          target_id: string
-          target_type: string
-        }
-        Update: {
-          actor_id?: string
-          preference?: string
-          source_event_id?: string
-          source_timestamp?: string
-          target_id?: string
-          target_type?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "recommendation_preferences_actor_id_fkey"
-            columns: ["actor_id"]
-            isOneToOne: false
-            referencedRelation: "profiles"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "recommendation_preferences_actor_id_fkey"
-            columns: ["actor_id"]
-            isOneToOne: false
-            referencedRelation: "public_profiles"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
       blocks: {
         Row: {
           blocked_user_id: string
@@ -849,6 +807,48 @@ export type Database = {
           {
             foreignKeyName: "proposals_receiving_user_id_fkey"
             columns: ["receiving_user_id"]
+            isOneToOne: false
+            referencedRelation: "public_profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      recommendation_preferences: {
+        Row: {
+          actor_id: string
+          preference: string
+          source_event_id: string
+          source_timestamp: string
+          target_id: string
+          target_type: string
+        }
+        Insert: {
+          actor_id: string
+          preference: string
+          source_event_id: string
+          source_timestamp: string
+          target_id: string
+          target_type: string
+        }
+        Update: {
+          actor_id?: string
+          preference?: string
+          source_event_id?: string
+          source_timestamp?: string
+          target_id?: string
+          target_type?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "recommendation_preferences_actor_id_fkey"
+            columns: ["actor_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "recommendation_preferences_actor_id_fkey"
+            columns: ["actor_id"]
             isOneToOne: false
             referencedRelation: "public_profiles"
             referencedColumns: ["id"]
