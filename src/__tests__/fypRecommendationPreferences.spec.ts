@@ -10,11 +10,16 @@ describe('FYP recommendation preference management', () => {
     const events = source('src/application/services/RecommendationEventService.ts')
 
     expect(events).toContain("restoreInterest: 'fyp.restore_interest'")
-    expect(events).toContain(".in('action', [")
-    expect(events).toContain('FYP_EVENT_ACTIONS.restoreInterest')
-    expect(events).not.toContain('const historyStart = new Date(now.getTime() - 90')
-    expect(events).toContain("const recentStart = new Date(now.getTime() - 7 * 86_400_000)")
-    expect(events).toContain("if (event.action === FYP_EVENT_ACTIONS.restoreInterest) notInterested.delete(key)")
+    const historyStart = events.indexOf('async historyFor(')
+    const historyEnd = events.indexOf('async resolveSafetyExposureForMember', historyStart)
+    const history = events.slice(historyStart, historyEnd)
+
+    expect(history).toContain(".from('recommendation_preferences')")
+    expect(history).toContain("preference.preference === 'saved'")
+    expect(history).toContain("preference.preference === 'hidden'")
+    expect(history).not.toContain('const historyStart = new Date(now.getTime() - 90')
+    expect(history).toContain("const recentStart = new Date(now.getTime() - 7 * 86_400_000)")
+    expect(history).toContain(".eq('action', FYP_EVENT_ACTIONS.impression)")
   })
 
   it('permits only an active member to restore their own recommendation interest', () => {
