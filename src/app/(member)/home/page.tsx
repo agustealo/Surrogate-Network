@@ -53,7 +53,7 @@ export default async function MemberHomePage() {
             <CardContent className="space-y-3"><p className="text-sm text-muted-foreground">Find Needs and Offers that interest you.</p><Button asChild variant="outline"><Link href={routes.member.discover}>Explore Discover</Link></Button></CardContent>
           </Card>
         </div>
-        <Button asChild variant="link" className="px-0"><Link href={"/profile/create"}>See the getting-started guide</Link></Button>
+        <Button asChild variant="link" className="px-0"><Link href={routes.member.profileCreate}>See the getting-started guide</Link></Button>
       </section>
     )}
     {hasActivity && (
