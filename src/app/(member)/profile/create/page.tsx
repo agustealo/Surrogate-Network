@@ -24,7 +24,7 @@ export default async function CreateProfilePage() {
   const hasListing = (needsResult.count ?? 0) + (offersResult.count ?? 0) > 0
 
   return (
-    <main className="container mx-auto max-w-5xl space-y-8 px-4 py-8">
+    <div className="container mx-auto max-w-5xl space-y-8 px-4 py-8">
       <header className="space-y-3">
         <p className="text-sm font-medium text-primary">Getting started</p>
         <h1 className="text-3xl font-bold">Welcome{profileResult.data?.name ? `, ${profileResult.data.name}` : ''}</h1>
@@ -89,6 +89,6 @@ export default async function CreateProfilePage() {
         A connection only begins after a proposal is accepted. You decide which Needs or Offers to publish.
       </p>
       <Button asChild variant="ghost"><Link href={routes.member.home}>Skip for now</Link></Button>
-    </main>
+    </div>
   )
 }
