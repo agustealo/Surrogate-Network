@@ -131,6 +131,7 @@ function NavSection({ section, items, pathname, defaultOpen }: {
             <Link
               key={item.id}
               href={item.href}
+              aria-current={isRouteActive(pathname, item.href) ? "page" : undefined}
               className={cn(
                 "flex items-center gap-3 px-3 py-2 text-sm font-medium rounded-md transition-colors",
                 isRouteActive(pathname, item.href)
