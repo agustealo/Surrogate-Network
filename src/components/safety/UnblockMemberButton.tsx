@@ -16,7 +16,14 @@ export function UnblockMemberButton({ userId, name }: { userId: string; name: st
   async function unblock() {
     setBusy(true)
     setError(null)
-    const result = await unblockMemberAction(userId)
+    let result: Awaited<ReturnType<typeof unblockMemberAction>>
+    try {
+      result = await unblockMemberAction(userId)
+    } catch {
+      setBusy(false)
+      setError('We could not unblock this member. Please try again.')
+      return
+    }
     setBusy(false)
     if (!result.ok) {
       setError(result.error)
