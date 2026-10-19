@@ -22,7 +22,8 @@ jobs:
           node-version: '22'
           cache: npm
       - name: Regenerate vulnerable dependency resolutions using npm registry
-        run: npm audit fix --package-lock-only
+        run: |
+          npm audit fix --package-lock-only || echo 'Some advisories cannot be auto-fixed; production audit remains mandatory.'
       - name: Verify locked dependencies install and pass production audit
         run: |
           npm ci
