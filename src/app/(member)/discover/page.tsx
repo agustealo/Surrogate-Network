@@ -127,7 +127,16 @@ export default async function DiscoverPage({
             </Card>
           ))}
         </div>
-        {!feed.needs.length && <p className="text-muted-foreground">No matching Needs on this page. Try another page or check back for new requests.</p>}
+        {!feed.needs.length && (
+          <div className="space-y-3 rounded-lg border border-dashed p-5" role="status">
+            <p className="font-medium">No matching Needs here yet</p>
+            <p className="text-sm text-muted-foreground">You can explore Offers, share what you're looking for, or revisit your saved and hidden recommendations.</p>
+            <div className="flex flex-wrap gap-2">
+              <Button asChild size="sm"><Link href={routes.member.needsCreate}>Share a Need</Link></Button>
+              <Button asChild size="sm" variant="outline"><Link href={routes.member.recommendationPreferences}>Saved & hidden</Link></Button>
+            </div>
+          </div>
+        )}
         <div className="flex items-center justify-between gap-3">
           <div>{feed.needOffset > 0 && <Button asChild variant="outline"><Link href={discoverHref(feed.sessionId, 0, feed.offerOffset)}>First Needs</Link></Button>}</div>
           {feed.nextNeedOffset !== null && <Button asChild variant="outline"><Link href={discoverHref(feed.sessionId, feed.nextNeedOffset, feed.offerOffset)}>More Needs</Link></Button>}
@@ -164,7 +173,16 @@ export default async function DiscoverPage({
             </Card>
           ))}
         </div>
-        {!feed.offers.length && <p className="text-muted-foreground">No matching Offers on this page. Try another page or check back for new offers.</p>}
+        {!feed.offers.length && (
+          <div className="space-y-3 rounded-lg border border-dashed p-5" role="status">
+            <p className="font-medium">No matching Offers here yet</p>
+            <p className="text-sm text-muted-foreground">New offers may appear later. You can share what you need or review recommendations you've saved.</p>
+            <div className="flex flex-wrap gap-2">
+              <Button asChild size="sm"><Link href={routes.member.needsCreate}>Share a Need</Link></Button>
+              <Button asChild size="sm" variant="outline"><Link href={routes.member.recommendationPreferences}>Saved & hidden</Link></Button>
+            </div>
+          </div>
+        )}
         <div className="flex items-center justify-between gap-3">
           <div>{feed.offerOffset > 0 && <Button asChild variant="outline"><Link href={discoverHref(feed.sessionId, feed.needOffset, 0)}>First Offers</Link></Button>}</div>
           {feed.nextOfferOffset !== null && <Button asChild variant="outline"><Link href={discoverHref(feed.sessionId, feed.needOffset, feed.nextOfferOffset)}>More Offers</Link></Button>}
