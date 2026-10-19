@@ -344,6 +344,17 @@ test.describe('Consumer trial smoke @smoke', () => {
       await expect(provider.getByText(`${needTitle} ↔ ${offerTitle}`, { exact: true })).toBeVisible()
 
       await provider.goto('/settings')
+      await expect(provider.getByRole('heading', { name: 'Settings', exact: true })).toBeVisible()
+      await expect(provider.getByRole('link', { name: 'Manage saved & hidden recommendations' })).toHaveAttribute('href', '/discover/preferences')
+      await expect(provider.getByRole('link', { name: 'Manage blocked members' })).toHaveAttribute('href', '/settings/blocked')
+      await provider.getByRole('link', { name: 'Manage blocked members' }).click()
+      await expect(provider.getByRole('heading', { name: 'Blocked members' })).toBeVisible()
+      await provider.getByRole('link', { name: 'Back to Settings' }).click()
+      await expect(provider.getByRole('heading', { name: 'Settings', exact: true })).toBeVisible()
+      await provider.getByRole('button', { name: 'Deactivate Consumer Trial Account' }).click()
+      await expect(provider.getByRole('button', { name: 'Confirm Deactivation' })).toBeVisible()
+      await provider.getByRole('button', { name: 'Cancel' }).click()
+      await expect(provider.getByRole('button', { name: 'Confirm Deactivation' })).toHaveCount(0)
       await expect(provider.getByRole('link', { name: 'Download my data' })).toBeVisible()
       await expect(provider.getByRole('button', { name: 'Delete account' })).toBeVisible()
       await provider.getByRole('link', { name: 'Download my data' }).evaluate((element) => {
