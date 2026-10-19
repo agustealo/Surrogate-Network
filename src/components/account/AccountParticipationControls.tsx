@@ -18,7 +18,14 @@ export function AccountParticipationControls({ mode }: { mode: 'deactivate' | 'r
     setBusy(true)
     setError(null)
     const active = mode === 'reactivate'
-    const result = await setTrialParticipationAction(active)
+    let result: Awaited<ReturnType<typeof setTrialParticipationAction>>
+    try {
+      result = await setTrialParticipationAction(active)
+    } catch {
+      setError('We could not update your participation. Please try again.')
+      setBusy(false)
+      return
+    }
     setBusy(false)
 
     if (!result.ok) {
