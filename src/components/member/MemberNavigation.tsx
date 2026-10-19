@@ -108,11 +108,11 @@ function NavSection({ section, items, pathname, defaultOpen }: {
 }) {
   const [isOpen, setIsOpen] = useState(defaultOpen);
 
+  const isActiveSection = items.some((item) => isRouteActive(pathname, item.href));
+
   useEffect(() => {
-    if (items.some((item) => isRouteActive(pathname, item.href))) {
-      setIsOpen(true);
-    }
-  }, [items, pathname]);
+    if (isActiveSection) setIsOpen(true);
+  }, [isActiveSection, pathname]);
 
   return (
     <Collapsible open={isOpen} onOpenChange={setIsOpen}>
