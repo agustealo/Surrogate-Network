@@ -18,10 +18,17 @@ export function AccountDeletionControls() {
   async function removeAccount() {
     setBusy(true)
     setError(null)
-    const result = await deleteAccountAction({
-      currentPassword: password,
-      confirmation,
-    })
+    let result: Awaited<ReturnType<typeof deleteAccountAction>>
+    try {
+      result = await deleteAccountAction({
+        currentPassword: password,
+        confirmation,
+      })
+    } catch {
+      setBusy(false)
+      setError('We could not complete your request. Please try again.')
+      return
+    }
 
     if (!result.ok) {
       setBusy(false)

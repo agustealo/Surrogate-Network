@@ -33,6 +33,7 @@ export const routes = {
     surrogacies: '/surrogacies',
     rewards: '/rewards',
     profile: '/profile',
+    profileCreate: '/profile/create',
     settings: '/settings',
     blockedMembers: '/settings/blocked',
     accountExport: '/account/export',

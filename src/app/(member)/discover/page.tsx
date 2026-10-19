@@ -16,7 +16,7 @@ function RecommendationSignals({ score, reasons }: { score: number; reasons: { c
     <div className="mt-4 space-y-2">
       <div className="flex items-center gap-2 text-sm font-medium">
         <Sparkles className="h-4 w-4" aria-hidden="true" />
-        <span>{score}% fit for you</span>
+        <span>Match score: {score}/100</span>
       </div>
       {reasons.length > 0 && (
         <div className="flex flex-wrap gap-2" aria-label="Why this recommendation">
@@ -79,7 +79,7 @@ export default async function DiscoverPage({
       <div className="flex flex-wrap items-end justify-between gap-4">
         <div>
           <h1 className="text-3xl font-bold">Discover</h1>
-          <p className="text-muted-foreground">For You recommendations ranked from your explicit profile and marketplace intent.</p>
+          <p className="text-muted-foreground">Find people whose Needs and Offers may fit what you are looking for.</p>
         </div>
         <div className="flex flex-wrap gap-2">
           <Button asChild variant="outline"><Link href={routes.member.recommendationPreferences}>Saved & hidden</Link></Button>
@@ -102,7 +102,7 @@ export default async function DiscoverPage({
         <h2 className="flex items-center gap-2 text-xl font-semibold"><Heart className="h-5 w-5" />Recommended Needs</h2>
         <div className="grid gap-4 md:grid-cols-2">
           {feed.needs.map((need) => (
-            <Card key={need.id}>
+            <Card key={need.id} data-recommendation-key={`need:${need.id}`}>
               <CardHeader>
                 <Badge className="w-fit" variant="outline">{need.category}</Badge>
                 <CardTitle>{need.title}</CardTitle>
@@ -127,7 +127,16 @@ export default async function DiscoverPage({
             </Card>
           ))}
         </div>
-        {!feed.needs.length && <p className="text-muted-foreground">No eligible active Needs are currently available on this page.</p>}
+        {!feed.needs.length && (
+          <div className="space-y-3 rounded-lg border border-dashed p-5" role="status">
+            <p className="font-medium">No matching Needs here yet</p>
+            <p className="text-sm text-muted-foreground">You can explore Offers, share what you're looking for, or revisit your saved and hidden recommendations.</p>
+            <div className="flex flex-wrap gap-2">
+              <Button asChild size="sm"><Link href={routes.member.needsCreate}>Share a Need</Link></Button>
+              <Button asChild size="sm" variant="outline"><Link href={routes.member.recommendationPreferences}>Saved & hidden</Link></Button>
+            </div>
+          </div>
+        )}
         <div className="flex items-center justify-between gap-3">
           <div>{feed.needOffset > 0 && <Button asChild variant="outline"><Link href={discoverHref(feed.sessionId, 0, feed.offerOffset)}>First Needs</Link></Button>}</div>
           {feed.nextNeedOffset !== null && <Button asChild variant="outline"><Link href={discoverHref(feed.sessionId, feed.nextNeedOffset, feed.offerOffset)}>More Needs</Link></Button>}
@@ -138,7 +147,7 @@ export default async function DiscoverPage({
         <h2 className="flex items-center gap-2 text-xl font-semibold"><Handshake className="h-5 w-5" />Recommended Offers</h2>
         <div className="grid gap-4 md:grid-cols-2">
           {feed.offers.map((offer) => (
-            <Card key={offer.id}>
+            <Card key={offer.id} data-recommendation-key={`offer:${offer.id}`}>
               <CardHeader>
                 <Badge className="w-fit" variant="outline">{offer.category}</Badge>
                 <CardTitle>{offer.title}</CardTitle>
@@ -164,7 +173,16 @@ export default async function DiscoverPage({
             </Card>
           ))}
         </div>
-        {!feed.offers.length && <p className="text-muted-foreground">No eligible active Offers are currently available on this page.</p>}
+        {!feed.offers.length && (
+          <div className="space-y-3 rounded-lg border border-dashed p-5" role="status">
+            <p className="font-medium">No matching Offers here yet</p>
+            <p className="text-sm text-muted-foreground">New offers may appear later. You can share what you need or review recommendations you've saved.</p>
+            <div className="flex flex-wrap gap-2">
+              <Button asChild size="sm"><Link href={routes.member.needsCreate}>Share a Need</Link></Button>
+              <Button asChild size="sm" variant="outline"><Link href={routes.member.recommendationPreferences}>Saved & hidden</Link></Button>
+            </div>
+          </div>
+        )}
         <div className="flex items-center justify-between gap-3">
           <div>{feed.offerOffset > 0 && <Button asChild variant="outline"><Link href={discoverHref(feed.sessionId, feed.needOffset, 0)}>First Offers</Link></Button>}</div>
           {feed.nextOfferOffset !== null && <Button asChild variant="outline"><Link href={discoverHref(feed.sessionId, feed.needOffset, feed.nextOfferOffset)}>More Offers</Link></Button>}

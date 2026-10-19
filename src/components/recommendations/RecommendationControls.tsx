@@ -28,7 +28,49 @@ export function RecommendationImpressionTracker({
   items: RecommendationImpressionItem[]
 }) {
   useEffect(() => {
-    void recordRecommendationImpressionsAction({ sessionId, items })
+    const byKey = new Map(items.map((item) => [`${item.subjectType}:${item.subjectId}`, item]))
+    const seen = new Set<string>()
+    const pending = new Map<string, RecommendationImpressionItem>()
+    let flushTimer: ReturnType<typeof setTimeout> | undefined
+
+    function flush() {
+      flushTimer = undefined
+      if (!pending.size) return
+      const batch = [...pending.values()]
+      pending.clear()
+      // Server-side session deduplication remains authoritative.
+      void recordRecommendationImpressionsAction({ sessionId, items: batch })
+    }
+
+    if (typeof IntersectionObserver === 'undefined') {
+      // Do not fabricate impressions in browsers without visibility observation.
+      return
+    }
+
+    const observer = new IntersectionObserver((entries) => {
+      if (document.visibilityState === 'hidden') return
+      for (const entry of entries) {
+        if (!entry.isIntersecting || entry.intersectionRatio < 0.5) continue
+        const key = (entry.target as HTMLElement).dataset.recommendationKey
+        if (!key || seen.has(key)) continue
+        const item = byKey.get(key)
+        if (!item) continue
+        seen.add(key)
+        pending.set(key, item)
+        observer.unobserve(entry.target)
+      }
+      if (pending.size && !flushTimer) flushTimer = setTimeout(flush, 150)
+    }, { threshold: 0.5 })
+
+    for (const element of document.querySelectorAll<HTMLElement>('[data-recommendation-key]')) {
+      if (byKey.has(element.dataset.recommendationKey ?? '')) observer.observe(element)
+    }
+
+    return () => {
+      observer.disconnect()
+      if (flushTimer) clearTimeout(flushTimer)
+      flush()
+    }
   }, [sessionId, items])
 
   return null

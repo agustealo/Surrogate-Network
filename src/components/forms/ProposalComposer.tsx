@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useId, useState } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { Loader2 } from 'lucide-react'
@@ -22,6 +22,7 @@ type ProposalComposerProps =
   | { needId?: never; offerId: string; options: PairOption[] }
 
 export function ProposalComposer(props: ProposalComposerProps) {
+  const formId = useId()
   const router = useRouter()
   const { toast } = useToast()
   const [selectedId, setSelectedId] = useState('')
@@ -44,7 +45,9 @@ export function ProposalComposer(props: ProposalComposerProps) {
 
     setIsSubmitting(true)
     setError(null)
-    const result = await createProposalAction({
+    let result: Awaited<ReturnType<typeof createProposalAction>>
+    try {
+      result = await createProposalAction({
       needId: 'needId' in props ? props.needId : selectedId,
       offerId: 'offerId' in props ? props.offerId : selectedId,
       message: message || undefined,
@@ -52,7 +55,12 @@ export function ProposalComposer(props: ProposalComposerProps) {
       duration: duration || undefined,
       frequency: frequency || undefined,
       locationMethod: locationMethod || undefined,
-    })
+      })
+    } catch {
+      setError('Your proposal could not be sent. Please try again.')
+      setIsSubmitting(false)
+      return
+    }
     setIsSubmitting(false)
 
     if (!result.ok) {
@@ -78,23 +86,38 @@ export function ProposalComposer(props: ProposalComposerProps) {
     <Card>
       <CardHeader>
         <CardTitle>Make a proposal</CardTitle>
-        <CardDescription>Pair this listing with {pairingLabel}. The other member must accept before a Surrogacy exists.</CardDescription>
+        <CardDescription>Pair this listing with {pairingLabel}. The other member must accept before you become connected.</CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
         <div className="space-y-2">
-          <label className="text-sm font-medium">Pair with {pairingLabel}</label>
+          <label htmlFor={`${formId}-pair`} className="text-sm font-medium">Pair with {pairingLabel}</label>
           <Select value={selectedId} onValueChange={setSelectedId}>
-            <SelectTrigger><SelectValue placeholder={`Select ${pairingLabel}`} /></SelectTrigger>
+            <SelectTrigger id={`${formId}-pair`} aria-invalid={Boolean(error && !selectedId)}><SelectValue placeholder={`Select ${pairingLabel}`} /></SelectTrigger>
             <SelectContent>{props.options.map((option) => <SelectItem key={option.id} value={option.id}>{option.title}</SelectItem>)}</SelectContent>
           </Select>
         </div>
         <div className="grid gap-4 md:grid-cols-2">
-          <Input value={proposedDate} onChange={(event) => setProposedDate(event.target.value)} placeholder="Proposed date / window" maxLength={100} />
-          <Input value={duration} onChange={(event) => setDuration(event.target.value)} placeholder="Duration" maxLength={100} />
-          <Input value={frequency} onChange={(event) => setFrequency(event.target.value)} placeholder="Frequency" maxLength={100} />
-          <Input value={locationMethod} onChange={(event) => setLocationMethod(event.target.value)} placeholder="Location / method" maxLength={200} />
+          <div className="space-y-2">
+            <label htmlFor={`${formId}-date`} className="text-sm font-medium">Proposed date or window (optional)</label>
+            <Input id={`${formId}-date`} value={proposedDate} onChange={(event) => setProposedDate(event.target.value)} placeholder="For example, next weekend" maxLength={100} />
+          </div>
+          <div className="space-y-2">
+            <label htmlFor={`${formId}-duration`} className="text-sm font-medium">Duration (optional)</label>
+            <Input id={`${formId}-duration`} value={duration} onChange={(event) => setDuration(event.target.value)} placeholder="For example, one hour" maxLength={100} />
+          </div>
+          <div className="space-y-2">
+            <label htmlFor={`${formId}-frequency`} className="text-sm font-medium">Frequency (optional)</label>
+            <Input id={`${formId}-frequency`} value={frequency} onChange={(event) => setFrequency(event.target.value)} placeholder="For example, once a week" maxLength={100} />
+          </div>
+          <div className="space-y-2">
+            <label htmlFor={`${formId}-location`} className="text-sm font-medium">Location or meeting method (optional)</label>
+            <Input id={`${formId}-location`} value={locationMethod} onChange={(event) => setLocationMethod(event.target.value)} placeholder="For example, online" maxLength={200} />
+          </div>
         </div>
-        <Textarea value={message} onChange={(event) => setMessage(event.target.value)} placeholder="Add context for the other member" maxLength={2000} />
+        <div className="space-y-2">
+          <label htmlFor={`${formId}-message`} className="text-sm font-medium">Message (optional)</label>
+          <Textarea id={`${formId}-message`} value={message} onChange={(event) => setMessage(event.target.value)} placeholder="Share details that will help the other member decide" maxLength={2000} />
+        </div>
         {error && <p role="alert" className="text-sm text-destructive">{error}</p>}
         <Button onClick={submit} disabled={isSubmitting}>
           {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}

@@ -14,7 +14,7 @@ import {
   CollapsibleContent,
   CollapsibleTrigger,
 } from "@/components/ui/collapsible";
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import {
   memberNavigation,
   filterNavigationItems,
@@ -26,15 +26,6 @@ import type { NavigationItem } from '@/navigation';
 export function MemberNavigation() {
   const pathname = usePathname();
   const router = useRouter();
-  const [myActivityOpen] = useState(() => {
-    return filterNavigationItems(memberNavigation, 'member', 'desktop')
-      .some(item => isRouteActive(pathname, item.href));
-  });
-  const [accountOpen] = useState(() => {
-    return filterNavigationItems(memberNavigation, 'member', 'desktop')
-      .some(item => isRouteActive(pathname, item.href));
-  });
-
   const desktopItems = filterNavigationItems(memberNavigation, 'member', 'desktop');
   const grouped = groupNavigationBySection(desktopItems);
 
@@ -58,13 +49,14 @@ export function MemberNavigation() {
           <span className="font-bold text-foreground">{BRAND_NAME}</span>
         </Link>
       </div>
-      <nav className="flex-1 px-3 space-y-1">
+      <nav aria-label="Member primary navigation" className="flex-1 px-3 space-y-1">
         {desktopItems.filter(item => !item.section).map((item) => {
           const Icon = item.icon;
           return (
             <Link
               key={item.id}
               href={item.href}
+              aria-current={isRouteActive(pathname, item.href) ? "page" : undefined}
               className={cn(
                 "flex items-center gap-3 px-3 py-2 text-sm font-medium rounded-md transition-colors",
                 isRouteActive(pathname, item.href)
@@ -84,7 +76,7 @@ export function MemberNavigation() {
             section={section}
             items={items}
             pathname={pathname}
-            defaultOpen={section === 'My Activity' ? myActivityOpen : section === 'Account' ? accountOpen : false}
+            defaultOpen={items.some((item) => isRouteActive(pathname, item.href))}
           />
         ))}
       </nav>
@@ -116,6 +108,12 @@ function NavSection({ section, items, pathname, defaultOpen }: {
 }) {
   const [isOpen, setIsOpen] = useState(defaultOpen);
 
+  const isActiveSection = items.some((item) => isRouteActive(pathname, item.href));
+
+  useEffect(() => {
+    if (isActiveSection) setIsOpen(true);
+  }, [isActiveSection, pathname]);
+
   return (
     <Collapsible open={isOpen} onOpenChange={setIsOpen}>
       <CollapsibleTrigger className="flex items-center justify-between w-full px-3 py-2 text-sm font-semibold text-foreground hover:bg-muted rounded-md">
@@ -133,6 +131,7 @@ function NavSection({ section, items, pathname, defaultOpen }: {
             <Link
               key={item.id}
               href={item.href}
+              aria-current={isRouteActive(pathname, item.href) ? "page" : undefined}
               className={cn(
                 "flex items-center gap-3 px-3 py-2 text-sm font-medium rounded-md transition-colors",
                 isRouteActive(pathname, item.href)
