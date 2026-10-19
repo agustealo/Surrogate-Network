@@ -182,18 +182,11 @@ export class RecommendationEventService {
   async historyFor(actorId: string, now = new Date()): Promise<RecommendationHistory> {
     const supabase = await createClient()
     const recentStart = new Date(now.getTime() - 7 * 86_400_000).toISOString()
-    const [{ data: preferenceEvents, error: preferenceError }, { data: impressionEvents, error: impressionError }] = await Promise.all([
+    const [{ data: preferences, error: preferenceError }, { data: impressionEvents, error: impressionError }] = await Promise.all([
       supabase
-        .from('audit_events')
-        .select('action,target_type,target_id,timestamp')
-        .eq('actor_id', actorId)
-        .in('action', [
-          FYP_EVENT_ACTIONS.save,
-          FYP_EVENT_ACTIONS.unsave,
-          FYP_EVENT_ACTIONS.notInterested,
-          FYP_EVENT_ACTIONS.restoreInterest,
-        ])
-        .order('timestamp', { ascending: true }),
+        .from('recommendation_preferences')
+        .select('target_type,target_id,preference')
+        .eq('actor_id', actorId),
       supabase
         .from('audit_events')
         .select('target_type,target_id,timestamp')
@@ -202,26 +195,18 @@ export class RecommendationEventService {
         .gte('timestamp', recentStart),
     ])
 
-    if (preferenceError) throw new Error(`Failed to read recommendation preferences: ${preferenceError.message}`)
+    if (preferenceError) throw new Error(`Failed to read recommendation preference projection: ${preferenceError.message}`)
     if (impressionError) throw new Error(`Failed to read recent recommendation impressions: ${impressionError.message}`)
 
     const notInterested = new Set<string>()
     const saved = new Set<string>()
     const recentImpressionCounts = new Map<string, number>()
 
-    for (const event of preferenceEvents ?? []) {
-      if ((event.target_type !== 'need' && event.target_type !== 'offer') || !event.target_id) continue
-      const key = keyFor(event.target_type, event.target_id)
-      if (event.action === FYP_EVENT_ACTIONS.save) {
-        saved.add(key)
-        notInterested.delete(key)
-      }
-      if (event.action === FYP_EVENT_ACTIONS.unsave) saved.delete(key)
-      if (event.action === FYP_EVENT_ACTIONS.notInterested) {
-        notInterested.add(key)
-        saved.delete(key)
-      }
-      if (event.action === FYP_EVENT_ACTIONS.restoreInterest) notInterested.delete(key)
+    for (const preference of preferences ?? []) {
+      if ((preference.target_type !== 'need' && preference.target_type !== 'offer') || !preference.target_id) continue
+      const key = keyFor(preference.target_type, preference.target_id)
+      if (preference.preference === 'saved') saved.add(key)
+      if (preference.preference === 'hidden') notInterested.add(key)
     }
 
     for (const event of impressionEvents ?? []) {
