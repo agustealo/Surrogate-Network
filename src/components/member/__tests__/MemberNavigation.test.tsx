@@ -1,4 +1,4 @@
-import { act, fireEvent, render, screen } from '@testing-library/react'
+import { act, fireEvent, render, screen, within } from '@testing-library/react'
 import { MemberNavigation } from '@/components/member/MemberNavigation'
 
 let pathname = '/home'
@@ -20,7 +20,7 @@ describe('MemberNavigation', () => {
     pathname = '/settings'
     act(() => view.rerender(<MemberNavigation />))
 
-    expect(screen.getByRole('navigation', { name: 'Member primary navigation' }).getByRole('link', { name: 'Settings' })).toHaveAttribute('aria-current', 'page')
+    expect(within(screen.getByRole('navigation', { name: 'Member primary navigation' })).getByRole('link', { name: 'Settings' })).toHaveAttribute('aria-current', 'page')
     expect(screen.getByRole('button', { name: 'Account' })).toHaveAttribute('aria-expanded', 'true')
   })
 
