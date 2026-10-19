@@ -20,7 +20,7 @@ describe('MemberNavigation', () => {
     pathname = '/settings'
     act(() => view.rerender(<MemberNavigation />))
 
-    expect(screen.getByRole('link', { name: 'Settings' }).closest('[aria-current="page"]')).not.toBeNull()
+    expect(screen.getByRole('navigation', { name: 'Member primary navigation' }).getByRole('link', { name: 'Settings' })).toHaveAttribute('aria-current', 'page')
     expect(screen.getByRole('button', { name: 'Account' })).toHaveAttribute('aria-expanded', 'true')
   })
 
