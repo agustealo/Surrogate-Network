@@ -257,6 +257,31 @@ test.describe('Consumer trial smoke @smoke', () => {
       await provider.evaluate(() => window.scrollTo(0, 0))
       await captureVisualEvidence(provider, '08-discovery-marketplace.png')
 
+      // Persisted recommendation preferences must survive navigation and affect the real feed.
+      const recommendedNeedId = new URL(needUrl).pathname.split('/').pop()
+      const needRecommendation = () => provider.locator(`[data-recommendation-key="need:${recommendedNeedId}"]`)
+      await needRecommendation().getByRole('button', { name: 'Save', exact: true }).click()
+      await expect(needRecommendation().getByRole('button', { name: 'Saved', exact: true })).toBeVisible()
+
+      await provider.goto('/discover/preferences')
+      await expect(provider.getByRole('heading', { name: 'Recommendation preferences' })).toBeVisible()
+      const savedSection = provider.getByRole('region', { name: 'Saved' })
+      await expect(savedSection.getByText(needTitle, { exact: true })).toBeVisible()
+      await savedSection.getByRole('button', { name: 'Remove saved' }).click()
+      await expect(savedSection.getByText(needTitle, { exact: true })).toHaveCount(0)
+
+      await provider.goto('/discover')
+      await needRecommendation().getByRole('button', { name: 'Not interested' }).click()
+      await expect(needRecommendation()).toHaveCount(0)
+      await provider.goto('/discover/preferences')
+      const hiddenSection = provider.getByRole('region', { name: 'Hidden' })
+      await expect(hiddenSection.getByText(needTitle, { exact: true })).toBeVisible()
+      await hiddenSection.getByRole('button', { name: 'Show again' }).click()
+      await expect(hiddenSection.getByText(needTitle, { exact: true })).toHaveCount(0)
+
+      await provider.goto('/discover')
+      await expect(needRecommendation()).toBeVisible()
+
       await provider.goto(needUrl)
       const composer = provider.getByText('Make a proposal', { exact: true }).locator('..').locator('..')
       await composer.getByRole('combobox').click()
