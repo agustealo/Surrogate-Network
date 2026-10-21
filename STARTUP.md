@@ -97,6 +97,24 @@ The CI pipeline starts fresh local Supabase runtimes for SECURITY, BUILD, E2E TR
 
 ## Common failures
 
+### pnpm build-script errors or mixed package-manager installs
+
+This repository uses **npm** as its sole package manager. The authoritative dependency lock is `package-lock.json`, and CI installs with `npm ci`. Do not run `pnpm install` or commit a `pnpm-lock.yaml` or `pnpm-workspace.yaml` to work around build-script approval errors.
+
+If startup logs show `ERR_PNPM_IGNORED_BUILDS`, `Moving ... installed by a different package manager`, or partial downloads from a pnpm-driven install, restore the repository-owned installation:
+
+```bash
+node --version  # Requires 22+
+rm -rf node_modules
+npm ci
+npm run local:up
+npm run dev
+```
+
+This does not suppress pnpm security checks globally; it avoids invoking a package manager that the repository does not use. Leave `package-lock.json` unchanged unless intentionally updating dependencies. The development server listens at `http://localhost:9002`.
+
+`npm start` launches the production server, not a development installation. Use `npm run build` first and then `npm start` only when the local Supabase runtime and environment are configured.
+
 ### Local configuration is missing
 
 Run:
