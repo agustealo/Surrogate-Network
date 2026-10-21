@@ -261,6 +261,7 @@ test.describe('Consumer trial smoke @smoke', () => {
       const recommendedNeedId = new URL(needUrl).pathname.split('/').pop()
       const needRecommendation = () => provider.locator(`[data-recommendation-key="need:${recommendedNeedId}"]`)
       await needRecommendation().getByRole('button', { name: 'Save', exact: true }).click()
+      await expect(provider.getByText('Saved for later', { exact: true })).toBeVisible()
 
       await provider.goto('/discover/preferences')
       await expect(provider.getByRole('heading', { name: 'Recommendation preferences' })).toBeVisible()
