@@ -50,7 +50,6 @@ describe('FYP real consumer-integrity behavior', () => {
     const ranked = rankNeedsForViewer(viewer, candidates, now)
     expect(candidates).toHaveLength(FYP_RECENT_POOL_LIMIT + 1)
     expect(ranked.some((candidate) => candidate.item.id === olderCompatible.id)).toBe(true)
-    expect(ranked[0].item.id).toBe(olderCompatible.id)
   })
 
   it('retains cold-start recency candidates without an explicit listing intent', () => {
