@@ -260,8 +260,11 @@ test.describe('Consumer trial smoke @smoke', () => {
       // Persisted recommendation preferences must survive navigation and affect the real feed.
       const recommendedNeedId = new URL(needUrl).pathname.split('/').pop()
       const needRecommendation = () => provider.locator(`[data-recommendation-key="need:${recommendedNeedId}"]`)
-      await needRecommendation().getByRole('button', { name: 'Save', exact: true }).click()
-      await expect(provider.getByText('Saved for later', { exact: true })).toBeVisible()
+      const saveControl = needRecommendation().getByRole('button', { name: 'Save', exact: true })
+      await saveControl.click()
+      // The preference projection is the durable source of truth, not a transient toast.
+      // Wait for the client mutation to settle before navigating away.
+      await expect(needRecommendation().getByRole('button', { name: 'Saved', exact: true })).toHaveAttribute('aria-pressed', 'true', { timeout: 15_000 })
 
       await provider.goto('/discover/preferences')
       await expect(provider.getByRole('heading', { name: 'Recommendation preferences' })).toBeVisible()
