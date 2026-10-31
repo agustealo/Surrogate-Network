@@ -1,6 +1,7 @@
 "use client";
 
 import { zodResolver } from "@hookform/resolvers/zod";
+import { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
 import * as z from "zod";
 import { useRouter } from "next/navigation";
@@ -22,6 +23,11 @@ type LoginFormValues = z.infer<typeof loginFormSchema>;
 export function LoginForm() {
   const router = useRouter();
   const { toast } = useToast();
+  const [hydrated, setHydrated] = useState(false);
+
+  useEffect(() => {
+    setHydrated(true);
+  }, []);
   const form = useForm<LoginFormValues>({
     resolver: zodResolver(loginFormSchema),
     defaultValues: { email: "", password: "" },
@@ -61,7 +67,7 @@ export function LoginForm() {
           </FormItem>
         )} />
         {form.formState.errors.root?.message && <p role="alert" className="text-sm text-destructive">{form.formState.errors.root.message}</p>}
-        <Button type="submit" className="w-full" size="lg" disabled={form.formState.isSubmitting}>
+        <Button type="submit" className="w-full" size="lg" disabled={!hydrated || form.formState.isSubmitting}>
           {form.formState.isSubmitting ? "Signing in..." : "Sign in"}
           {!form.formState.isSubmitting && <LogIn className="ml-2 h-5 w-5" />}
         </Button>
