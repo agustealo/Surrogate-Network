@@ -21,7 +21,7 @@ function configuredSupabaseSources(supabaseUrl: string | undefined) {
   }
 }
 
-export function buildContentSecurityPolicy(supabaseUrl?: string) {
+export function buildContentSecurityPolicy(supabaseUrl?: string, nodeEnv = process.env.NODE_ENV) {
   const { httpOrigin, websocketOrigin } = configuredSupabaseSources(supabaseUrl)
   const connectionSources = ["'self'"]
   const assetSources = ["'self'", 'data:', 'blob:']
@@ -37,13 +37,16 @@ export function buildContentSecurityPolicy(supabaseUrl?: string) {
     connectionSources.push(websocketOrigin)
   }
 
+  const scriptSources = ["'self'", "'unsafe-inline'"]
+  if (nodeEnv === 'development') scriptSources.push("'unsafe-eval'")
+
   return [
     "default-src 'self'",
     "base-uri 'self'",
     "object-src 'none'",
     "frame-ancestors 'none'",
     "form-action 'self'",
-    "script-src 'self' 'unsafe-inline'",
+    `script-src ${scriptSources.join(' ')}`,
     "style-src 'self' 'unsafe-inline'",
     "font-src 'self' data:",
     `img-src ${assetSources.join(' ')}`,
@@ -60,7 +63,7 @@ export function buildSecurityHeaders(options?: {
 }): SecurityHeader[] {
   const nodeEnv = options?.nodeEnv ?? process.env.NODE_ENV
   const headers: SecurityHeader[] = [
-    { key: 'Content-Security-Policy', value: buildContentSecurityPolicy(options?.supabaseUrl) },
+    { key: 'Content-Security-Policy', value: buildContentSecurityPolicy(options?.supabaseUrl, nodeEnv) },
     { key: 'X-Content-Type-Options', value: 'nosniff' },
     { key: 'X-Frame-Options', value: 'DENY' },
     { key: 'Referrer-Policy', value: 'strict-origin-when-cross-origin' },
