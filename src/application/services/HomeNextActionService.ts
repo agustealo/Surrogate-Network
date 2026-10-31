@@ -12,7 +12,7 @@ export type HomeAction = {
 
 export type HomeProposal = {
   id: string
-  status: string
+  status: string | null
   proposing_user_id: string
   receiving_user_id: string
   countered_by_user_id: string | null
@@ -21,21 +21,21 @@ export type HomeProposal = {
 
 export type HomeConnection = {
   id: string
-  status: string
+  status: string | null
   started_at: string | null
 }
 
 export type HomeMoment = {
   id: string
   surrogacy_id: string
-  status: string
+  status: string | null
   scheduled_time: string
 }
 
 export type HomeExchange = {
   id: string
   surrogacy_id: string
-  status: string
+  status: string | null
   completed_at: string | null
 }
 
