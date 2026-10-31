@@ -18,6 +18,21 @@ describe('production security headers', () => {
     expect(policy).not.toContain('https://*.supabase.co')
   })
 
+  it('allows React development diagnostics without weakening production CSP', () => {
+    const development = buildSecurityHeaders({
+      nodeEnv: 'development',
+      supabaseUrl: 'http://127.0.0.1:54321',
+    }).find((header) => header.key === 'Content-Security-Policy')?.value
+    const production = buildSecurityHeaders({
+      nodeEnv: 'production',
+      supabaseUrl: 'https://project-ref.supabase.co',
+    }).find((header) => header.key === 'Content-Security-Policy')?.value
+
+    expect(development).toContain("script-src 'self' 'unsafe-inline' 'unsafe-eval'")
+    expect(production).toContain("script-src 'self' 'unsafe-inline'")
+    expect(production).not.toContain("'unsafe-eval'")
+  })
+
   it('adds HSTS only to production responses', () => {
     const production = buildSecurityHeaders({
       nodeEnv: 'production',
