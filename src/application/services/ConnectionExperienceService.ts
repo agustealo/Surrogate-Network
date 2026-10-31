@@ -23,7 +23,7 @@ export function connectionStatusLabel(status: string | null): string {
     completed: 'Completed Connection',
     ended: 'Ended Connection',
   }
-  return labels[status] ?? 'Connection status unavailable'
+  return status ? labels[status] ?? 'Connection status unavailable' : 'Connection status unavailable'
 }
 
 export function getConnectionNextStep(input: {
