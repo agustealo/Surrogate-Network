@@ -206,6 +206,7 @@ describe('FYP_BASELINE_V1', () => {
       locationMode: 'remote' as const,
       tags: [] as string[],
       boundaries: ['platonic'] as ViewerIntent['profile']['boundaries'],
+      timing: 'weekday evenings',
       createdAt: '2026-09-29T11:00:00.000Z',
     }
     const result = rankNeedsForViewer(
