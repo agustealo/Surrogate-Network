@@ -1,13 +1,13 @@
 import type { Json } from '@/infrastructure/supabase/database.types'
 
 export type ConnectionMomentSummary = {
-  status: string
+  status: string | null
   scheduled_time: string
 }
 
 export type ConnectionExchangeSummary = {
   id: string
-  status: string
+  status: string | null
 }
 
 export type ConnectionNextStep = {
@@ -16,7 +16,7 @@ export type ConnectionNextStep = {
   kind: 'feedback' | 'moment' | 'schedule' | 'inactive'
 }
 
-export function connectionStatusLabel(status: string): string {
+export function connectionStatusLabel(status: string | null): string {
   const labels: Record<string, string> = {
     active: 'Active Connection',
     paused: 'Paused Connection',
@@ -27,7 +27,7 @@ export function connectionStatusLabel(status: string): string {
 }
 
 export function getConnectionNextStep(input: {
-  status: string
+  status: string | null
   moments: ConnectionMomentSummary[]
   exchanges: ConnectionExchangeSummary[]
   reviewedExchangeIds: ReadonlySet<string>
