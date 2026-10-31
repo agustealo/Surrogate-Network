@@ -8,6 +8,7 @@ import { MomentActions } from '@/components/connections/MomentActions'
 import { MomentScheduler } from '@/components/connections/MomentScheduler'
 import { createClient } from '@/infrastructure/supabase/server'
 import { routes } from '@/lib/routes'
+import { connectionStatusLabel, displayConnectionAgreement, getConnectionNextStep } from '@/application/services/ConnectionExperienceService'
 
 type SurrogacyDetailPageProps = {
   params: Promise<{ id: string }>
@@ -59,24 +60,52 @@ export default async function SurrogacyDetailPage({ params }: SurrogacyDetailPag
   const otherUserId = relationship.partner_ids.find((partnerId) => partnerId !== user.id)
   if (!otherUserId) throw new Error('Relationship participant data is incomplete.')
   const otherName = need.user_id === otherUserId ? need.user_name : offer.user_name
+  const agreement = displayConnectionAgreement(relationship.agreement)
+  const nextStep = getConnectionNextStep({
+    status: relationship.status,
+    moments: momentsResult.data ?? [],
+    exchanges: exchangesResult.data ?? [],
+    reviewedExchangeIds,
+  })
 
   return (
     <div className="container mx-auto max-w-5xl space-y-6 px-4 py-8">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <Button asChild variant="outline"><Link href="/surrogacies">Back to Connections</Link></Button>
-        <Badge>{relationship.status}</Badge>
+        <Badge>{connectionStatusLabel(relationship.status)}</Badge>
       </div>
 
       <Card>
-        <CardHeader><CardTitle className="text-3xl">{need.title} ↔ {offer.title}</CardTitle><CardDescription>Connected with {otherName} since {formatDate(relationship.started_at)}.</CardDescription></CardHeader>
+        <CardHeader><CardTitle className="text-3xl">{need.title} ↔ {offer.title}</CardTitle><CardDescription>Connected with {otherName} since {formatDate(relationship.started_at)}. This relationship originated from an accepted Proposal.</CardDescription></CardHeader>
         <CardContent className="flex flex-wrap gap-2"><Button asChild size="sm" variant="outline"><Link href={`/needs/${need.id}`}>View Need</Link></Button><Button asChild size="sm" variant="outline"><Link href={`/offers/${offer.id}`}>View Offer</Link></Button></CardContent>
       </Card>
+
+      <section aria-labelledby="connection-next-step" className="space-y-3">
+        <h2 id="connection-next-step" className="text-xl font-semibold">What happens next?</h2>
+        <Card><CardHeader><CardTitle className="text-lg">{nextStep.heading}</CardTitle><CardDescription>{nextStep.description}</CardDescription></CardHeader></Card>
+      </section>
+
+      <section aria-labelledby="connection-agreement" className="space-y-3">
+        <h2 id="connection-agreement" className="text-xl font-semibold">Shared expectations</h2>
+        <Card><CardContent className="space-y-4 pt-6">
+          {agreement ? (
+            <dl className="space-y-3 text-sm">
+              {agreement.boundaries.length > 0 && <div><dt className="font-semibold">Recorded boundaries</dt><dd className="text-muted-foreground">{agreement.boundaries.join(', ')}</dd></div>}
+              {agreement.expectations.length > 0 && <div><dt className="font-semibold">Recorded expectations</dt><dd><ul className="list-disc space-y-1 pl-5">{agreement.expectations.map((item, index) => <li key={index}>{item}</li>)}</ul></dd></div>}
+              {agreement.communicationMethod && <div><dt className="font-semibold">Recorded communication method</dt><dd className="text-muted-foreground">{agreement.communicationMethod}</dd></div>}
+            </dl>
+          ) : (
+            <p className="text-sm text-muted-foreground">No structured agreement details are recorded for display. Review the original Need and Offer for their stated terms. Do not assume an unrecorded expectation was agreed.</p>
+          )}
+          <p className="text-xs text-muted-foreground">This section displays recorded information only. It does not create or modify consent, guarantees, or relationship terms.</p>
+        </CardContent></Card>
+      </section>
 
       {relationship.status === 'active' && <MomentScheduler surrogacyId={relationship.id} />}
 
       <section className="space-y-4">
-        <div><h2 className="text-2xl font-semibold">Moments & Exchanges</h2><p className="text-muted-foreground">The operational history of this relationship.</p></div>
-        {!(momentsResult.data ?? []).length && <p className="rounded-md border p-4 text-muted-foreground">No Moments scheduled yet.</p>}
+        <div><h2 className="text-2xl font-semibold">Moments & Exchanges</h2><p className="text-muted-foreground">Scheduled experiences and the outcomes recorded together.</p></div>
+        {!(momentsResult.data ?? []).length && <p className="rounded-md border p-4 text-muted-foreground">No Moments have been recorded for this Connection.</p>}
         {(momentsResult.data ?? []).map((moment) => {
           const exchange = exchangeByMoment.get(moment.id)
           const canReview = exchange && (exchange.status === 'completed' || exchange.status === 'partial') && !reviewedExchangeIds.has(exchange.id)
