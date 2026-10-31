@@ -23,7 +23,7 @@ const offerFormSchema = z.object({
   locationMode: z.enum(['remote', 'local', 'either']),
   timing: z.string().trim().max(500),
   boundaries: z.array(z.enum(boundaryValues)).min(1, 'Select at least one boundary.'),
-  capacity: z.coerce.number().int().min(1).max(50).optional().or(z.literal('')),
+  capacity: z.union([z.number().int().min(1).max(50), z.literal('')]).optional(),
 })
 
 type OfferFormValues = z.infer<typeof offerFormSchema>
@@ -90,7 +90,7 @@ export function OfferForm({ onSuccess, onCancel }: OfferFormProps) {
                 <FormItem><FormLabel>Location</FormLabel><Select value={field.value} onValueChange={field.onChange}><FormControl><SelectTrigger><SelectValue /></SelectTrigger></FormControl><SelectContent><SelectItem value="remote">Remote</SelectItem><SelectItem value="local">Local</SelectItem><SelectItem value="either">Either</SelectItem></SelectContent></Select><FormMessage /></FormItem>
               )} />
               <FormField control={form.control} name="capacity" render={({ field }) => (
-                <FormItem><FormLabel>Capacity</FormLabel><FormControl><Input type="number" min={1} max={50} placeholder="Optional" {...field} /></FormControl><FormMessage /></FormItem>
+                <FormItem><FormLabel>Capacity</FormLabel><FormControl><Input type="number" min={1} max={50} placeholder="Optional" {...field} onChange={(event) => field.onChange(event.target.value === '' ? '' : Number(event.target.value))} /></FormControl><FormMessage /></FormItem>
               )} />
             </div>
             <FormField control={form.control} name="timing" render={({ field }) => (
