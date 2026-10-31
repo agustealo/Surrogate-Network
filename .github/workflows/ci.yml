@@ -29,7 +29,6 @@ jobs:
         run: |
           npm install --package-lock-only --ignore-scripts --save-exact next@16.4.3 zod@4.6.7
           npm install --package-lock-only --ignore-scripts --save-dev --save-exact eslint-config-next@16.4.3
-          npm audit fix --package-lock-only --ignore-scripts
           npm audit --omit=dev --audit-level=high
           npm ci
       - name: Commit generated manifest and lockfile
