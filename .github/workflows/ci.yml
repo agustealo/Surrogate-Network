@@ -2,7 +2,7 @@ name: Surrogate Network CI
 
 on:
   push:
-    branches: [master, main, develop, test/fyp-persisted-preference-journey-20261021]
+    branches: [master, main, develop]
   pull_request:
     branches: [master, main]
 
@@ -10,39 +10,6 @@ env:
   NODE_VERSION: '22'
 
 jobs:
-  dependency-refresh:
-    name: TEMPORARY DEPENDENCY REFRESH
-    if: github.event_name == 'push' && github.ref == 'refs/heads/test/fyp-persisted-preference-journey-20261021'
-    runs-on: ubuntu-latest
-    permissions:
-      contents: write
-    steps:
-      - name: Checkout exact branch
-        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
-        with:
-          persist-credentials: true
-      - name: Setup Node.js
-        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7
-        with:
-          node-version: ${{ env.NODE_VERSION }}
-      - name: Regenerate production dependencies from npm registry
-        run: |
-          npm install --package-lock-only --ignore-scripts --save-exact next@16.4.3 zod@4.6.7
-          npm install --package-lock-only --ignore-scripts --save-dev --save-exact eslint-config-next@16.4.3
-          npm audit --omit=dev --audit-level=high
-          npm ci
-      - name: Commit generated manifest and lockfile
-        run: |
-          git config user.name 'github-actions[bot]'
-          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
-          git add package.json package-lock.json
-          if git diff --cached --quiet; then
-            echo 'No dependency changes'
-            exit 0
-          fi
-          git commit -m 'fix(deps): patch Next.js and Zod with npm-generated lockfile'
-          git push origin HEAD:test/fyp-persisted-preference-journey-20261021
-
   install:
     name: INSTALL
     runs-on: ubuntu-latest
