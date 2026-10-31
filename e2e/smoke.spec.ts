@@ -274,7 +274,7 @@ test.describe('Consumer trial smoke @smoke', () => {
       await expect(savedSection.getByText(needTitle, { exact: true })).toHaveCount(0)
 
       await provider.goto('/discover')
-      await needRecommendation().getByRole('button', { name: 'Not interested' }).click()
+      await needRecommendation().getByRole('button', { name: 'Hide from Discover' }).click()
       await expect(needRecommendation()).toHaveCount(0)
       await provider.goto('/discover/preferences')
       const hiddenSection = provider.getByRole('region', { name: 'Hidden' })
