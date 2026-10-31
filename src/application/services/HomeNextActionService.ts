@@ -72,7 +72,7 @@ export function selectHomeActions(input: {
 
   for (const exchange of exchanges) {
     if (!activeIds.has(exchange.surrogacy_id)) continue
-    if (!['completed', 'partial'].includes(exchange.status) || reviewedExchangeIds.has(exchange.id)) continue
+    if (!['completed', 'partial'].includes(exchange.status ?? '') || reviewedExchangeIds.has(exchange.id)) continue
     result.push({
       key: `feedback:${exchange.id}`,
       title: 'Share feedback on an exchange',
@@ -86,7 +86,7 @@ export function selectHomeActions(input: {
 
   const scheduledConnectionIds = new Set<string>()
   for (const moment of moments) {
-    if (!activeIds.has(moment.surrogacy_id) || !['scheduled', 'in_progress'].includes(moment.status)) continue
+    if (!activeIds.has(moment.surrogacy_id) || !['scheduled', 'in_progress'].includes(moment.status ?? '')) continue
     scheduledConnectionIds.add(moment.surrogacy_id)
     result.push({
       key: `moment:${moment.id}`,
