@@ -115,6 +115,31 @@ This does not suppress pnpm security checks globally; it avoids invoking a packa
 
 `npm start` launches the production server, not a development installation. Use `npm run build` first and then `npm start` only when the local Supabase runtime and environment are configured.
 
+### Recommendation preferences table missing from the schema cache
+
+If Discover reports `Could not find the table 'public.recommendation_preferences' in the schema cache`, first confirm that the app points at the intended local Supabase instance and that the migration `20261007000100_fyp_preference_projection.sql` has been applied. This is a **schema state** problem, not an empty-preferences state. Never suppress it by returning an empty recommendation history.
+
+```bash
+supabase status
+supabase migration list --local
+```
+
+The migration must appear in the local migration history. When using the local environment, apply outstanding repository migrations using the installed CLI's supported migration command (inspect `supabase migration --help` and `supabase db --help` for your version). If the table exists and has appropriate `GRANT SELECT` and RLS ownership policy but PostgREST still reports a stale schema, reload its schema cache:
+
+```sql
+NOTIFY pgrst, 'reload schema';
+```
+
+Execute that SQL against the **same database** that supplies `NEXT_PUBLIC_SUPABASE_URL`. A schema cache reload does not create a missing table. After confirming migration state, restart the dev server.
+
+For **disposable local test data only**, `npm run local:reset` rebuilds from all committed migrations and regenerates local runtime configuration. **This deletes local database records.** Never run it against valuable local data or production; back up any data you need first.
+
+The relevant migration includes the preference projection, owner-scoped RLS, and its audit-event trigger. Do not manually create a parallel table or bypass RLS.
+
+### React development CSP diagnostic
+
+The development-only CSP allows `unsafe-eval` for React/Turbopack diagnostic support. Production responses must not include that permission. If the warning remains after updating, restart `npm run dev` and inspect the actual response `Content-Security-Policy` header for the page. A reverse proxy or hosting layer may supply a second policy that is more restrictive.
+
 ### Local configuration is missing
 
 Run:
