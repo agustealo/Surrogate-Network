@@ -21,7 +21,7 @@ function configuredSupabaseSources(supabaseUrl: string | undefined) {
   }
 }
 
-export function buildContentSecurityPolicy(supabaseUrl?: string, nodeEnv = process.env.NODE_ENV) {
+export function buildContentSecurityPolicy(supabaseUrl?: string, nodeEnv: string | undefined = process.env.NODE_ENV) {
   const { httpOrigin, websocketOrigin } = configuredSupabaseSources(supabaseUrl)
   const connectionSources = ["'self'"]
   const assetSources = ["'self'", 'data:', 'blob:']
