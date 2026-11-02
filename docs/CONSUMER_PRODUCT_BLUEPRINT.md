@@ -1,10 +1,27 @@
 # Surrogate Network: Canonical Consumer Product Blueprint
 
-Status: proposed product/experience contract, not a claim of implemented functionality  
+Status: product/experience contract with implementation evidence ledger; human and hosted acceptance remain unverified  
 Date: 2026-10-31  
-Baseline: `master@b971531c5925422372444b3c8dbb62c5bfa3437f`  
+Original audit baseline: `master@b971531c5925422372444b3c8dbb62c5bfa3437f`  
+Implementation checkpoint: `master@5d593f1e3f561d5960005983e187453bfc0461a9` (12/12 post-merge checks passed)  
 Owners: product and engineering  
 Related authority: [Project Manifest](PROJECT_MANIFEST.md), [Consumer Acceptance Trial](CONSUMER_ACCEPTANCE_TRIAL.md), [Architecture](ARCHITECTURE.md), [issue #38](https://github.com/agustealo/Surrogate-Network/issues/38), [issue #11](https://github.com/agustealo/Surrogate-Network/issues/11).
+
+## Implemented CX-01 through CX-04: immutable evidence checkpoint
+
+The findings and proposed work below reflect the **original audit**, not the current shipped state. At the implementation checkpoint noted above:
+
+| Slice | Current repository-owned implementation | Evidence |
+| --- | --- | --- |
+| CX-01: First-use comprehension | The existing signup path leads to canonical onboarding with Need/Offer/Discover choices, the lifecycle explanation, and safety/block destinations. Human comprehension remains unmeasured. | [PR #49](https://github.com/agustealo/Surrogate-Network/pull/49) |
+| CX-02: Home next actions | The read-only Home projection prioritizes real proposal decisions, exchange feedback, upcoming Moments, and active Connections. No duplicate task-state store. | [PR #44](https://github.com/agustealo/Surrogate-Network/pull/44) |
+| CX-03: Connection experience | Contextual relationship status and next-step guidance extend the current Connection surface, preserving canonical lifecycle authority. | [PR #45](https://github.com/agustealo/Surrogate-Network/pull/45) |
+| CX-04: Recommendation truth | Discovery removes unsupported numerical compatibility claims and uses honest explanatory presentation. Reversible save/hide/restore is exercised against real persisted state. | [PR #46](https://github.com/agustealo/Surrogate-Network/pull/46), [PR #41](https://github.com/agustealo/Surrogate-Network/pull/41) |
+| Dependency integrity | Patched Next.js and Zod versions with a registry-generated consistent lockfile; production audit at high severity passes. | [PR #48](https://github.com/agustealo/Surrogate-Network/pull/48) |
+
+**Verification:** [Post-merge GitHub CI #41368737470](https://github.com/agustealo/Surrogate-Network/actions/runs/41368737470) passed INSTALL, DEPENDENCY AUDIT, TYPECHECK, LINT, UNIT, COMPONENT, NAVIGATION, SECURITY, BUILD, E2E TRIAL, A11Y, and QUALITY GATE on the checkpoint revision. This is **repository-level automated evidence only**, not consumer usability acceptance or production deployment certification.
+
+**Remaining independently owned gates:** [Issue #38](https://github.com/agustealo/Surrogate-Network/issues/38) requires real human observations, mobile/keyboard/screen-reader evaluations, and a recorded release decision. [Issue #11](https://github.com/agustealo/Surrogate-Network/issues/11) requires actual hosted SHA verification, production restore/SMTP evidence, operating ownership, and enforced branch protection. Do not call an unrestricted public launch ready on the basis of CI.
 
 ## 1. Product definition
 
@@ -41,7 +58,7 @@ No paid/token economy is part of this blueprint. Existing XP/rewards recognize g
 
 **Not shipped:** member messaging, generic notifications, media storage, autonomous compatibility prediction, token economy. Do not show placeholder routes or claim these functions exist. Future communication requires persisted conversation ownership, block/report enforcement, retention, deletion, access controls, and abuse-aware operations. Future prediction must not invent certainty.
 
-**Source findings on this baseline:**
+**Historical source findings on the original audit baseline (superseded by the implementation checkpoint above):**
 - `src/app/(member)/home/page.tsx` surfaces counts of Needs/Offers/Connections plus rank/XP and generic shortcuts. It does not render a prioritized, real-data pending-action or upcoming-Moment queue.
 - `src/app/(member)/discover/page.tsx` separates recommended Needs and Offers into card lists, shows a `score/100` and reason badges, and exposes recommendation controls. An exact-looking score needs validated meaning and truthful explanation; do not infer the score is a calibrated probability.
 - `src/app/(member)/surrogacies/[id]/page.tsx` renders relationship/Need/Offer details, Moment scheduling, Exchange history and Feedback. It does not currently present an explicit member-facing next-step timeline or acknowledgement of agreement boundaries.
@@ -123,4 +140,4 @@ If those questions cannot be answered, the feature is not ready for the primary 
 
 ## 11. Next slice
 
-Begin with CX-01 through CX-05. Inspect live routes and human experience before implementing CX-06 through CX-10. Prioritize Home next actions and Connection clarity only after validating the surrounding user journey and authorization. Keep the existing relationship state machine intact, and do not re-open completed FYP integrity work without a concrete regression.
+CX-01 through CX-04 have merged implementation and post-merge automated verification. The next active slice is **CX-05: human consumer acceptance** under issue #38, independently from the hosted/operational release controls in issue #11. Record observed human problems, correct demonstrated blockers, and retest at an exact revision before starting CX-06 through CX-10. Do not reopen completed FYP integrity work without a concrete regression.
