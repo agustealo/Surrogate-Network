@@ -11,20 +11,26 @@ import {
 } from '@/components/recommendations/RecommendationControls'
 import { routes } from '@/lib/routes'
 
-function RecommendationSignals({ score, reasons }: { score: number; reasons: { code: string; label: string }[] }) {
+function RecommendationSignals({ reasons }: { reasons: { code: string; label: string }[] }) {
   return (
-    <div className="mt-4 space-y-2">
+    <div className="mt-4 space-y-2" aria-label="Recommendation explanation">
       <div className="flex items-center gap-2 text-sm font-medium">
         <Sparkles className="h-4 w-4" aria-hidden="true" />
-        <span>Match score: {score}/100</span>
+        <span>Why you may be seeing this</span>
       </div>
-      {reasons.length > 0 && (
-        <div className="flex flex-wrap gap-2" aria-label="Why this recommendation">
+      {reasons.length > 0 ? (
+        <ul className="flex flex-wrap gap-2" aria-label="Ranking signals">
           {reasons.map((reason) => (
-            <Badge key={reason.code} variant="secondary">{reason.label}</Badge>
+            <li key={reason.code}><Badge variant="secondary">{reason.label}</Badge></li>
           ))}
-        </div>
+        </ul>
+      ) : (
+        <p className="text-sm text-muted-foreground">No specific matching signal is available for this recommendation.</p>
       )}
+      <p className="text-xs text-muted-foreground">
+        These are automated ranking signals, not verified compatibility, safety checks, or a promise of availability.
+        Review the listing and agree on boundaries before connecting.
+      </p>
     </div>
   )
 }
@@ -79,7 +85,7 @@ export default async function DiscoverPage({
       <div className="flex flex-wrap items-end justify-between gap-4">
         <div>
           <h1 className="text-3xl font-bold">Discover</h1>
-          <p className="text-muted-foreground">Find people whose Needs and Offers may fit what you are looking for.</p>
+          <p className="text-muted-foreground">Explore Needs and Offers ranked using available listing and profile signals. A recommendation is an invitation to look closer, not an agreement.</p>
         </div>
         <div className="flex flex-wrap gap-2">
           <Button asChild variant="outline"><Link href={routes.member.recommendationPreferences}>Saved & hidden</Link></Button>
@@ -110,7 +116,7 @@ export default async function DiscoverPage({
               </CardHeader>
               <CardContent>
                 <p className="line-clamp-4">{need.description}</p>
-                <RecommendationSignals score={need.recommendation.score} reasons={need.recommendation.reasons} />
+                <RecommendationSignals reasons={need.recommendation.reasons} />
               </CardContent>
               <CardFooter>
                 <RecommendationControls
@@ -156,7 +162,7 @@ export default async function DiscoverPage({
               <CardContent>
                 <p className="line-clamp-4">{offer.description}</p>
                 {typeof offer.rating === 'number' && <p className="mt-3 text-sm text-muted-foreground">{offer.rating.toFixed(1)} rating · {offer.review_count ?? 0} reviews</p>}
-                <RecommendationSignals score={offer.recommendation.score} reasons={offer.recommendation.reasons} />
+                <RecommendationSignals reasons={offer.recommendation.reasons} />
               </CardContent>
               <CardFooter>
                 <RecommendationControls

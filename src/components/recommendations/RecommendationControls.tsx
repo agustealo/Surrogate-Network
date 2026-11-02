@@ -105,6 +105,10 @@ export function RecommendationControls({
     setHydrated(true)
   }, [])
 
+  useEffect(() => {
+    setIsSaved(saved)
+  }, [saved])
+
   async function toggleSave() {
     if (!hydrated || busy) return
     setBusy('save')
@@ -141,6 +145,7 @@ export function RecommendationControls({
         toast({ title: 'Could not update recommendation', description: result.error, variant: 'destructive' })
         return
       }
+      toast({ title: 'Recommendation hidden', description: 'You can restore it from Saved & hidden.' })
       router.refresh()
     } catch {
       toast({ title: 'Could not update recommendation', description: 'Please try again.', variant: 'destructive' })
@@ -171,7 +176,7 @@ export function RecommendationControls({
       </Button>
       <Button type="button" variant="ghost" size="sm" onClick={hideRecommendation} disabled={!hydrated || busy !== null}>
         {busy === 'not_interested' ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <ThumbsDown className="mr-2 h-4 w-4" />}
-        Not interested
+        Hide from Discover
       </Button>
     </div>
   )

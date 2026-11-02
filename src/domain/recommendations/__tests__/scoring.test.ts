@@ -165,4 +165,57 @@ describe('FYP_BASELINE_V1', () => {
     expect(ranked[0].item.id).toBe('aligned')
     expect(ranked[0].recommendation.reasons.some((item) => item.code === 'PROFILE_BOUNDARY_MATCH')).toBe(true)
   })
+  it('never describes unspecified boundary preferences as compatible', () => {
+    const noBoundaries: ViewerIntent = {
+      profile: { userId: 'viewer', boundaries: [] },
+      needs: [],
+      offers: [],
+    }
+    const offer = {
+      id: 'unspecified-offer',
+      userId: 'member-a',
+      category: 'casual' as const,
+      locationMode: 'remote' as const,
+      boundaries: [] as ViewerIntent['profile']['boundaries'],
+      createdAt: '2026-09-29T11:00:00.000Z',
+    }
+
+    const withoutEvidence = rankOffersForViewer(noBoundaries, [offer], now)
+    expect(withoutEvidence[0].recommendation.reasons.some(
+      reason => reason.code === 'PROFILE_BOUNDARY_MATCH',
+    )).toBe(false)
+
+    const oneSided = rankOffersForViewer(
+      { ...noBoundaries, profile: { ...noBoundaries.profile, boundaries: ['platonic'] } },
+      [offer], now,
+    )
+    expect(oneSided[0].recommendation.reasons.some(
+      reason => reason.code === 'PROFILE_BOUNDARY_MATCH',
+    )).toBe(false)
+  })
+
+  it('requires both active listing sides to specify boundaries before claiming a match', () => {
+    const offer = {
+      ...viewer.offers[0],
+      boundaries: [] as ViewerIntent['profile']['boundaries'],
+    }
+    const candidate = {
+      id: 'need-with-boundaries',
+      userId: 'member-b',
+      category: 'personal' as const,
+      locationMode: 'remote' as const,
+      tags: [] as string[],
+      boundaries: ['platonic'] as ViewerIntent['profile']['boundaries'],
+      timing: 'weekday evenings',
+      createdAt: '2026-09-29T11:00:00.000Z',
+    }
+    const result = rankNeedsForViewer(
+      { ...viewer, offers: [offer] },
+      [candidate], now,
+    )
+    expect(result[0].recommendation.reasons.some(
+      reason => reason.code === 'BOUNDARY_MATCH',
+    )).toBe(false)
+  })
+
 })

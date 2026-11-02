@@ -153,7 +153,7 @@ function scoreNeedAgainstOffer(need: NeedIntent, offer: OfferIntent) {
   return {
     score: boundary * 0.4 + location * 0.25 + category * 0.2 + timing * 0.15,
     reasons: [
-      ...(boundary >= 0.5 ? [reason('BOUNDARY_MATCH', 'Compatible boundaries', boundary * 0.4)] : []),
+      ...(boundary >= 0.5 && need.boundaries.length > 0 && offer.boundaries.length > 0 ? [reason('BOUNDARY_MATCH', 'Compatible boundaries', boundary * 0.4)] : []),
       ...(location >= 1 ? [reason('LOCATION_MATCH', 'Location preference matches', location * 0.25)] : []),
       ...(category >= 1 ? [reason('CATEGORY_MATCH', 'Matches your active listing category', category * 0.2)] : []),
       ...(timing > 0.5 ? [reason('TIMING_MATCH', 'Availability appears aligned', timing * 0.15)] : []),
@@ -169,7 +169,7 @@ function scoreNeedForProfile(need: NeedIntent, profile: ViewerProfileIntent) {
   return {
     score: boundary * 0.5 + location * 0.3 + timing * 0.2,
     reasons: [
-      ...(boundary >= 0.5 ? [reason('PROFILE_BOUNDARY_MATCH', 'Matches your profile boundaries', boundary * 0.5)] : []),
+      ...(boundary >= 0.5 && need.boundaries.length > 0 && profile.boundaries.length > 0 ? [reason('PROFILE_BOUNDARY_MATCH', 'Matches your profile boundaries', boundary * 0.5)] : []),
       ...(profile.locationMode && location >= 1 ? [reason('LOCATION_MATCH', 'Location preference matches', location * 0.3)] : []),
       ...(timing > 0.5 ? [reason('TIMING_MATCH', 'Availability appears aligned', timing * 0.2)] : []),
     ],
@@ -184,7 +184,7 @@ function scoreOfferForProfile(offer: OfferIntent, profile: ViewerProfileIntent) 
   return {
     score: boundary * 0.5 + location * 0.3 + timing * 0.2,
     reasons: [
-      ...(boundary >= 0.5 ? [reason('PROFILE_BOUNDARY_MATCH', 'Matches your profile boundaries', boundary * 0.5)] : []),
+      ...(boundary >= 0.5 && offer.boundaries.length > 0 && profile.boundaries.length > 0 ? [reason('PROFILE_BOUNDARY_MATCH', 'Matches your profile boundaries', boundary * 0.5)] : []),
       ...(profile.locationMode && location >= 1 ? [reason('LOCATION_MATCH', 'Location preference matches', location * 0.3)] : []),
       ...(timing > 0.5 ? [reason('TIMING_MATCH', 'Availability appears aligned', timing * 0.2)] : []),
     ],
