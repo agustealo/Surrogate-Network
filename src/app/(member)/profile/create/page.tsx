@@ -1,6 +1,6 @@
 import Link from 'next/link'
 import { redirect } from 'next/navigation'
-import { Compass, Gift, HandHeart, UserRound } from 'lucide-react'
+import { Compass, Gift, HandHeart, ShieldCheck, UserRound } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { createClient } from '@/infrastructure/supabase/server'
@@ -82,6 +82,47 @@ export default async function CreateProfilePage() {
             </CardHeader>
             <CardContent><Button asChild variant="outline"><Link href={routes.member.profile}>View my profile</Link></Button></CardContent>
           </Card>
+        </div>
+      </section>
+
+      <section aria-labelledby="how-connection-works" className="space-y-4">
+        <div className="space-y-2">
+          <h2 id="how-connection-works" className="text-xl font-semibold">What happens after your first step?</h2>
+          <p className="text-sm text-muted-foreground">
+            You stay in control at each stage. Looking at a listing does not create a commitment.
+          </p>
+        </div>
+        <ol className="grid gap-3 md:grid-cols-2">
+          <li className="rounded-lg border p-4">
+            <p className="font-semibold">1. Share or discover</p>
+            <p className="mt-1 text-sm text-muted-foreground">Publish a Need or Offer, or browse what other members have shared.</p>
+          </li>
+          <li className="rounded-lg border p-4">
+            <p className="font-semibold">2. Review a proposal</p>
+            <p className="mt-1 text-sm text-muted-foreground">A proposal starts a conversation about terms. Review boundaries and expectations before accepting.</p>
+          </li>
+          <li className="rounded-lg border p-4">
+            <p className="font-semibold">3. Plan a Moment</p>
+            <p className="mt-1 text-sm text-muted-foreground">Once a proposal is accepted, the Connection can plan an actual shared Moment.</p>
+          </li>
+          <li className="rounded-lg border p-4">
+            <p className="font-semibold">4. Reflect on the exchange</p>
+            <p className="mt-1 text-sm text-muted-foreground">After an exchange, share feedback when that action is available.</p>
+          </li>
+        </ol>
+      </section>
+
+      <section aria-labelledby="safety-before-connecting" className="rounded-lg border p-5 space-y-3">
+        <h2 id="safety-before-connecting" className="flex items-center gap-2 text-lg font-semibold">
+          <ShieldCheck className="h-5 w-5" aria-hidden="true" />Your comfort and boundaries come first
+        </h2>
+        <p className="text-sm text-muted-foreground">
+          Recommendation rankings do not verify someone’s safety or compatibility. Review their listing,
+          decide what you’re comfortable sharing, and only accept a proposal when its terms work for you.
+        </p>
+        <div className="flex flex-wrap gap-3">
+          <Button asChild variant="outline" size="sm"><Link href={routes.public.safety}>Read safety guidance</Link></Button>
+          <Button asChild variant="outline" size="sm"><Link href={routes.member.blockedMembers}>Manage blocked members</Link></Button>
         </div>
       </section>
 
