@@ -223,6 +223,11 @@ test.describe('Consumer trial smoke @smoke', () => {
       await expect(requester.getByRole('link', { name: 'Share a Need' })).toHaveAttribute('href', '/needs/create')
       await expect(requester.getByRole('link', { name: 'Create an Offer' })).toHaveAttribute('href', '/offers/create')
       await expect(requester.getByRole('link', { name: 'Explore connections' })).toHaveAttribute('href', '/discover')
+      await expect(requester.getByRole('heading', { name: 'What happens after your first step?' })).toBeVisible()
+      await expect(requester.getByRole('heading', { name: 'Your comfort and boundaries come first' })).toBeVisible()
+      await expect(requester.getByRole('link', { name: 'Read safety guidance' })).toHaveAttribute('href', '/safety')
+      await expect(requester.getByRole('link', { name: 'Manage blocked members' })).toHaveAttribute('href', '/settings/blocked')
+      await expect(requester.getByText('Looking at a listing does not create a commitment.', { exact: false })).toBeVisible()
 
       await requester.setViewportSize({ width: 375, height: 812 })
       const mobileNav = requester.getByRole('navigation', { name: 'Member mobile navigation' })
