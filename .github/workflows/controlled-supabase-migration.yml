@@ -44,8 +44,8 @@ jobs:
           [[ "$TARGET_REF" == "ylutogygxpbpqgfnovpe" ]] || { echo 'Refusing a different Supabase project'; exit 1; }
           protected="$(gh api "repos/$GITHUB_REPOSITORY/branches/master" --jq '.protected')"
           [[ "$protected" == "true" ]] || { echo 'master is not protected; refusing privileged migration'; exit 1; }
-          rules="$(gh api "repos/$GITHUB_REPOSITORY/rulesets" --jq 'length')"
-          [[ "$rules" =~ ^[0-9]+$ ]] && (( rules > 0 )) || { echo 'No enforced repository ruleset'; exit 1; }
+          rules="$(gh api "repos/$GITHUB_REPOSITORY/rulesets" --jq '[.[] | select(.enforcement == "active")] | length')"
+          [[ "$rules" =~ ^[0-9]+$ ]] && (( rules > 0 )) || { echo 'No active repository ruleset'; exit 1; }
 
       - name: Checkout reviewed revision
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
