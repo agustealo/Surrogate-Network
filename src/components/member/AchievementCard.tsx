@@ -41,7 +41,7 @@ export function AchievementCard({ definition, award }: AchievementCardProps) {
           <Sparkles className="h-4 w-4 text-muted-foreground" aria-hidden="true" />
           {definition.target} {definition.target === 1 ? 'eligible Feedback submission' : 'distinct eligible Feedback submissions'}
         </p>
-        {earned && (
+        {earned && award && (
           <p className="text-xs text-muted-foreground">
             Earned {new Date(award.earned_at).toLocaleDateString()}. Rule version {award.rule_version}.
           </p>
