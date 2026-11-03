@@ -50,6 +50,7 @@ export const routes = {
     dashboard: '/admin',
     reports: '/admin/reports',
     fyp: '/admin/fyp',
+    achievements: '/admin/achievements',
   },
 } as const
 
