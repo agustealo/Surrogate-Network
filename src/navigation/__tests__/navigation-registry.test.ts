@@ -13,11 +13,11 @@ import { routes } from '@/lib/routes'
 describe('Navigation Registry', () => {
   it('advertises only implemented admin routes', () => {
     const ids = adminNavigation.filter((item) => 'href' in item).map((item) => item.id)
-    expect(ids).toEqual(expect.arrayContaining(['dashboard', 'fyp', 'reports']))
-    expect(adminNavigation).toHaveLength(3)
-    expect(adminNavigation[0]).toMatchObject({ id: 'dashboard', href: routes.admin.dashboard })
-    expect(adminNavigation[1]).toMatchObject({ id: 'fyp', href: routes.admin.fyp })
-    expect(adminNavigation[2]).toMatchObject({ id: 'reports', href: routes.admin.reports })
+    expect(ids).toEqual(expect.arrayContaining(['dashboard', 'fyp', 'reports', 'achievements']))
+    expect(adminNavigation).toHaveLength(Object.keys(routes.admin).length)
+    for (const href of Object.values(routes.admin)) {
+      expect(adminNavigation.some((item) => 'href' in item && item.href === href)).toBe(true)
+    }
   })
 
   it('contains every shipped consumer member destination that belongs in primary navigation', () => {
