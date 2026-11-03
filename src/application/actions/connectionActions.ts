@@ -110,6 +110,7 @@ export async function submitFeedbackAction(input: unknown): Promise<ActionResult
 
     revalidatePath('/surrogacies')
     revalidatePath('/rewards')
+    revalidatePath('/home')
     revalidatePath('/discover')
     return { ok: true, data: { id: data } }
   } catch (error) {
