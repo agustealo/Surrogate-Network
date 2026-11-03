@@ -60,6 +60,7 @@ const memberActionRoutes = {
 export const adminNavigation: (NavigationItem | NavigationAction)[] = [
   { id: 'dashboard', label: 'Dashboard', href: routes.admin.dashboard, surfaces: ['admin'], modes: ['desktop'], section: 'Overview' },
   { id: 'fyp', label: 'FYP Experiment', href: routes.admin.fyp, surfaces: ['admin'], modes: ['desktop'], section: 'Intelligence' },
+  { id: 'achievements', label: 'Achievements', href: routes.admin.achievements, surfaces: ['admin'], modes: ['desktop'], section: 'Engagement' },
   { id: 'reports', label: 'Reports', href: routes.admin.reports, surfaces: ['admin'], modes: ['desktop'], section: 'Safety' },
 ]
 
