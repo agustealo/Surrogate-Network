@@ -35,9 +35,13 @@ verification.
   The member UI displays it separately, marked as not independently verified.
 - private.grant_feedback_achievements responds only to persisted canonical
   Feedback inserts and serializes evaluation by member.
-- public.set_achievement_rule_enabled is service-role-only, checks an
-  authorized active admin in SQL, bumps the rule version and atomically
+- public.set_achievement_rule_enabled is the authenticated wrapper that
+  derives the operator from auth.uid(). It calls the postgres-only trusted
+  core, public.set_achievement_rule_enabled_trusted, which verifies an
+  active authorized admin in SQL, bumps the rule version, and atomically
   writes an audit record with the required justification.
+- Human server actions use the session-scoped Supabase client, never the
+  service role or caller-supplied actor identity.
 - Existing XP, Exchange, Feedback, auth, audit and account deletion authority
   remains the sole owner of those respective lifecycles.
 
