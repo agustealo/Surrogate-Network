@@ -4,7 +4,6 @@ import { revalidatePath } from 'next/cache'
 import { z } from 'zod'
 import { requireAdmin } from '@/application/actions/adminContext'
 import { actionFailure, type ActionResult } from '@/application/actions/memberContext'
-import { createServiceClient } from '@/infrastructure/supabase/server'
 
 const achievementPolicySchema = z.object({
   code: z.string().regex(/^[a-z][a-z0-9_]{2,63}$/),
@@ -16,9 +15,7 @@ export async function setAchievementRuleEnabledAction(input: unknown): Promise<A
   try {
     const admin = await requireAdmin()
     const values = achievementPolicySchema.parse(input)
-    const service = createServiceClient()
-    const { error } = await service.rpc('set_achievement_rule_enabled', {
-      p_admin_id: admin.id,
+    const { error } = await admin.supabase.rpc('set_achievement_rule_enabled', {
       p_code: values.code,
       p_enabled: values.enabled,
       p_reason: values.reason,
