@@ -402,9 +402,9 @@ export type Database = {
           evidence_event_type: string
           evidence_feedback_id: string | null
           id: string
+          revocation_reason: string | null
           revoked_at: string | null
           revoked_by: string | null
-          revocation_reason: string | null
           rule_version: number
           status: string
           user_id: string
@@ -416,9 +416,9 @@ export type Database = {
           evidence_event_type: string
           evidence_feedback_id?: string | null
           id?: string
+          revocation_reason?: string | null
           revoked_at?: string | null
           revoked_by?: string | null
-          revocation_reason?: string | null
           rule_version: number
           status?: string
           user_id: string
@@ -430,9 +430,9 @@ export type Database = {
           evidence_event_type?: string
           evidence_feedback_id?: string | null
           id?: string
+          revocation_reason?: string | null
           revoked_at?: string | null
           revoked_by?: string | null
-          revocation_reason?: string | null
           rule_version?: number
           status?: string
           user_id?: string
