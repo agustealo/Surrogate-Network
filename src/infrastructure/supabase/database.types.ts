@@ -1428,6 +1428,10 @@ export type Database = {
         Returns: undefined
       }
       set_achievement_rule_enabled: {
+        Args: { p_code: string; p_enabled: boolean; p_reason: string }
+        Returns: undefined
+      }
+      set_achievement_rule_enabled_trusted: {
         Args: {
           p_admin_id: string
           p_code: string
