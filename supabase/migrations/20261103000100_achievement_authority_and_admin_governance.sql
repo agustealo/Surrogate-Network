@@ -239,7 +239,7 @@ ON CONFLICT (user_id, achievement_code) DO NOTHING;
 -- This is an admin-only configuration action, not an arbitrary rule editor.
 -- Rules remain versioned/migration-owned; operators can pause or resume
 -- issuance with a reason and an audit trail. Already-earned badges persist.
-CREATE OR REPLACE FUNCTION public.set_achievement_rule_enabled(
+CREATE OR REPLACE FUNCTION public.set_achievement_rule_enabled_trusted(
   p_admin_id uuid,
   p_code text,
   p_enabled boolean,
@@ -299,10 +299,41 @@ BEGIN
 END;
 $$;
 
-REVOKE ALL ON FUNCTION public.set_achievement_rule_enabled(uuid, text, boolean, text)
-FROM PUBLIC, anon, authenticated;
-GRANT EXECUTE ON FUNCTION public.set_achievement_rule_enabled(uuid, text, boolean, text)
-TO service_role, postgres;
+REVOKE ALL ON FUNCTION public.set_achievement_rule_enabled_trusted(uuid, text, boolean, text)
+FROM PUBLIC, anon, authenticated, service_role;
+GRANT EXECUTE ON FUNCTION public.set_achievement_rule_enabled_trusted(uuid, text, boolean, text)
+TO postgres;
+
+-- Canonical authenticated-actor boundary: a signed-in human cannot pass an
+-- arbitrary administrator ID. SECURITY DEFINER is narrowly restricted here,
+-- while the trusted core remains callable by postgres only.
+CREATE OR REPLACE FUNCTION public.set_achievement_rule_enabled(
+  p_code text,
+  p_enabled boolean,
+  p_reason text
+)
+RETURNS void
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = ''
+AS $
+DECLARE
+  v_admin uuid := auth.uid();
+BEGIN
+  IF v_admin IS NULL THEN
+    RAISE EXCEPTION 'Authenticated administrator required';
+  END IF;
+
+  PERFORM public.set_achievement_rule_enabled_trusted(
+    v_admin, p_code, p_enabled, p_reason
+  );
+END;
+$;
+
+REVOKE ALL ON FUNCTION public.set_achievement_rule_enabled(text, boolean, text)
+FROM PUBLIC, anon, service_role;
+GRANT EXECUTE ON FUNCTION public.set_achievement_rule_enabled(text, boolean, text)
+TO authenticated;
 
 DO $$
 BEGIN
@@ -311,7 +342,7 @@ BEGIN
      OR has_table_privilege('authenticated', 'public.achievement_definitions', 'UPDATE')
      OR has_function_privilege(
        'authenticated',
-       'public.set_achievement_rule_enabled(uuid, text, boolean, text)',
+       'public.set_achievement_rule_enabled_trusted(uuid, text, boolean, text)',
        'EXECUTE'
      ) THEN
     RAISE EXCEPTION 'Achievement authority leaked to public clients';
