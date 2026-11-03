@@ -175,7 +175,7 @@ test.describe('Consumer trial smoke @smoke', () => {
 
       const oldCredentialLogin = await oldCredentialContext.newPage()
       await signIn(oldCredentialLogin, member)
-      await expect(oldCredentialLogin.getByRole('alert')).toBeVisible({ timeout: 20_000 })
+      await expect(oldCredentialLogin.getByText('Invalid login credentials', { exact: true })).toBeVisible({ timeout: 20_000 })
       await expect(oldCredentialLogin).toHaveURL(/\/login$/)
 
       const newCredentialLogin = await newCredentialContext.newPage()
@@ -207,6 +207,7 @@ test.describe('Consumer trial smoke @smoke', () => {
     }
     const needTitle = 'Weekly Planning Companion'
     const offerTitle = 'Conversation & Planning Support'
+    const reportDescription = `Persistent contact after I declined an additional request. Reference ${runId}`
 
     const requesterContext = await browser.newContext()
     const providerContext = await browser.newContext()
@@ -328,7 +329,7 @@ test.describe('Consumer trial smoke @smoke', () => {
       await expect(requester.getByText(offerTitle, { exact: true })).toBeVisible()
       const safetyControls = requester.getByText('Safety controls', { exact: true }).locator('..').locator('..')
       await safetyControls.getByRole('button', { name: 'Report' }).click()
-      await safetyControls.getByPlaceholder('Describe what happened and include relevant context.').fill('Persistent contact after I declined an additional request.')
+      await safetyControls.getByPlaceholder('Describe what happened and include relevant context.').fill(reportDescription)
       await requester.evaluate(() => window.scrollTo(0, 0))
       await captureVisualEvidence(requester, '11-member-profile-safety.png', { fullPage: true })
       await safetyControls.getByRole('button', { name: 'Submit report' }).click()
@@ -344,7 +345,7 @@ test.describe('Consumer trial smoke @smoke', () => {
 
       await admin.goto('/admin/reports')
       await expect(admin.getByRole('heading', { name: 'Moderation Reports' })).toBeVisible()
-      await expect(admin.getByText('Persistent contact after I declined an additional request.', { exact: true })).toBeVisible()
+      await expect(admin.getByText(reportDescription, { exact: true })).toBeVisible()
       await admin.evaluate(() => window.scrollTo(0, 0))
       await captureVisualEvidence(admin, '15-moderation-reports.png', { fullPage: true })
 
@@ -426,7 +427,7 @@ test.describe('Consumer trial smoke @smoke', () => {
       await expect(provider.getByRole('heading', { name: 'Account deleted' })).toBeVisible()
 
       await signIn(provider, memberA)
-      await expect(provider.getByRole('alert')).toBeVisible({ timeout: 20_000 })
+      await expect(provider.getByText('Invalid login credentials', { exact: true })).toBeVisible({ timeout: 20_000 })
       await expect(provider).toHaveURL(/\/login$/)
 
       await requester.goto(surrogacyUrl)
