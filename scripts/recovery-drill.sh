@@ -58,6 +58,12 @@ INSERT INTO public.needs (
   'active'::public.need_status,
   ARRAY['recovery-drill']
 );
+
+-- Catalog configuration must survive logical backup and restore. Mutate a
+-- rule to a non-default state so a reset without restoration is insufficient.
+UPDATE public.achievement_definitions
+SET enabled = false, rule_version = 2, updated_at = now()
+WHERE code = 'first_reflection';
 SQL
 
 fingerprint() {
@@ -80,6 +86,12 @@ SQL
 }
 
 BEFORE="$(fingerprint)"
+CATALOG_BEFORE="$(psql "$DB_URL" --tuples-only --no-align --set ON_ERROR_STOP=1 -c "SELECT enabled::text || '|' || rule_version::text FROM public.achievement_definitions WHERE code = 'first_reflection';")"
+if [[ "$CATALOG_BEFORE" != "false|2" ]]; then
+  echo "Modified achievement configuration did not reach the expected pre-backup state" >&2
+  exit 1
+fi
+
 EXPECTED="$PROFILE_ID|Recovery Drill Member|recovery-drill@example.invalid|$NEED_ID|Recovery drill need|$PROFILE_ID|active|recovery-drill"
 
 if [[ "$BEFORE" != "$EXPECTED" ]]; then
@@ -109,13 +121,24 @@ if [[ "$ABSENT" != "0" ]]; then
   exit 1
 fi
 
+# The canonical migrations install the default achievement catalog. The
+# backup contains the operator's actual catalog state, which must replace
+# those defaults within the same atomic restore transaction.
 psql \
   "$DB_URL" \
   --single-transaction \
   --set ON_ERROR_STOP=1 \
+  --command "DELETE FROM public.achievement_definitions;" \
   --file "$BACKUP_FILE"
 
 AFTER="$(fingerprint)"
+CATALOG_AFTER="$(psql "$DB_URL" --tuples-only --no-align --set ON_ERROR_STOP=1 -c "SELECT enabled::text || '|' || rule_version::text FROM public.achievement_definitions WHERE code = 'first_reflection';")"
+if [[ "$CATALOG_AFTER" != "$CATALOG_BEFORE" ]]; then
+  echo "Recovered achievement configuration does not match the operator state" >&2
+  echo "before: $CATALOG_BEFORE" >&2
+  echo "after:  $CATALOG_AFTER" >&2
+  exit 1
+fi
 if [[ "$AFTER" != "$BEFORE" ]]; then
   echo "Recovered application data does not match the pre-backup sentinel" >&2
   echo "before: $BEFORE" >&2
@@ -130,6 +153,12 @@ supabase db reset --no-seed
 FINAL="$(psql "$DB_URL" --tuples-only --no-align --set ON_ERROR_STOP=1 -c "SELECT count(*) FROM public.profiles WHERE id = '$PROFILE_ID';")"
 if [[ "$FINAL" != "0" ]]; then
   echo "Recovery drill cleanup failed" >&2
+  exit 1
+fi
+
+CATALOG_RESET="$(psql "$DB_URL" --tuples-only --no-align --set ON_ERROR_STOP=1 -c "SELECT enabled::text || '|' || rule_version::text FROM public.achievement_definitions WHERE code = 'first_reflection';")"
+if [[ "$CATALOG_RESET" != "true|1" ]]; then
+  echo "Recovery drill did not restore clean migration-owned catalog defaults" >&2
   exit 1
 fi
 
