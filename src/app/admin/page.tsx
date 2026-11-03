@@ -1,5 +1,8 @@
-import { Activity, AlertTriangle, Heart, Users } from 'lucide-react'
+import { Activity, AlertTriangle, Heart, Trophy, Users } from 'lucide-react'
+import Link from 'next/link'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { Button } from '@/components/ui/button'
+import { routes } from '@/lib/routes'
 import { createServiceClient } from '@/infrastructure/supabase/server'
 
 export default async function AdminDashboard() {
@@ -32,6 +35,13 @@ export default async function AdminDashboard() {
           <Card key={label}><CardHeader className="flex flex-row items-center justify-between"><CardTitle className="text-sm font-medium">{label}</CardTitle><Icon className="h-4 w-4 text-muted-foreground" /></CardHeader><CardContent><div className="text-3xl font-bold">{value}</div></CardContent></Card>
         ))}
       </div>
+      <Card className="mt-6">
+        <CardHeader><CardTitle className="flex items-center gap-2"><Trophy className="h-5 w-5" />Engagement operations</CardTitle></CardHeader>
+        <CardContent className="flex flex-wrap items-center justify-between gap-3">
+          <p className="max-w-lg text-sm text-muted-foreground">Review evidence-backed achievements, issuance status and administrator audit history.</p>
+          <Button asChild variant="outline"><Link href={routes.admin.achievements}>Manage achievements</Link></Button>
+        </CardContent>
+      </Card>
     </div>
   )
 }
