@@ -373,6 +373,12 @@ test.describe('Consumer trial smoke @smoke', () => {
       await requester.evaluate(() => window.scrollBy(0, -260))
       await captureVisualEvidence(requester, '04-completed-exchange.png')
 
+      await requester.goto('/rewards')
+      await expect(requester.getByRole('heading', { name: 'Rewards & Progression' })).toBeVisible()
+      await expect(requester.getByText('10 XP', { exact: true })).toBeVisible()
+      await expect(requester.getByText('Next rank at 100 XP', { exact: true })).toBeVisible()
+      await expect(requester.getByText('+10', { exact: true })).toBeVisible()
+
       await provider.goto('/surrogacies')
       await expect(provider.getByText(`${needTitle} ↔ ${offerTitle}`, { exact: true })).toBeVisible()
 
