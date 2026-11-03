@@ -187,7 +187,7 @@ test.describe('Consumer trial smoke @smoke', () => {
   })
 
   test('two real members complete the canonical marketplace lifecycle and expose the showcase product surfaces', async ({ browser }) => {
-    test.setTimeout(120_000)
+    test.setTimeout(160_000)
 
     const runId = `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`
     const memberA: TrialMember = {
@@ -379,6 +379,26 @@ test.describe('Consumer trial smoke @smoke', () => {
       await expect(requester.getByText('10 XP', { exact: true })).toBeVisible()
       await expect(requester.getByText('Next rank at 100 XP', { exact: true })).toBeVisible()
       await expect(requester.getByText('+10', { exact: true })).toBeVisible()
+      await expect(requester.getByRole('heading', { name: 'Achievement gallery' })).toBeVisible()
+      await expect(requester.getByLabel('First Reflection: Earned')).toBeVisible()
+      await expect(requester.getByLabel('Thoughtful Participant: Not earned')).toBeVisible()
+
+      await admin.goto('/admin/achievements')
+      await expect(admin.getByRole('heading', { name: 'Achievement governance' })).toBeVisible()
+      await admin.locator('#achievement-reason-first_reflection')
+        .fill('Review new awards without removing recognition already earned')
+      await admin.getByRole('button', { name: 'Pause first_reflection achievement awards' }).click()
+      await expect(admin.getByRole('button', { name: 'Resume first_reflection achievement awards' }))
+        .toBeVisible({ timeout: 20_000 })
+
+      await requester.reload()
+      await expect(requester.getByLabel('First Reflection: Earned')).toBeVisible()
+
+      await admin.locator('#achievement-reason-first_reflection')
+        .fill('Policy review finished and award issuance may resume')
+      await admin.getByRole('button', { name: 'Resume first_reflection achievement awards' }).click()
+      await expect(admin.getByRole('button', { name: 'Pause first_reflection achievement awards' }))
+        .toBeVisible({ timeout: 20_000 })
 
       await provider.goto('/surrogacies')
       await expect(provider.getByText(`${needTitle} ↔ ${offerTitle}`, { exact: true })).toBeVisible()
