@@ -38,6 +38,7 @@ const ICON_MAP: Record<string, React.ElementType> = {
   tokens: Coins,
   ledger: FileText,
   ranks: Trophy,
+  achievements: Trophy,
   xp: Clock,
   audit: FileText,
   settings: Settings,
