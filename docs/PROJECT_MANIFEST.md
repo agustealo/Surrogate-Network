@@ -64,7 +64,7 @@ Authenticated consumer experience, explicit trial consent, Needs/Offers, discove
 
 ### Admin
 
-Separate authorized operational console for live operational counts and moderation. Admin authority never leaks into the member shell.
+Separate authorized operational console for live operational counts, moderation, and achievement issuance governance. Admin authority never leaks into the member shell.
 
 ### Operations
 
@@ -94,6 +94,7 @@ A feature may be present in consumer navigation only when its end-to-end behavio
 Current decisions:
 
 - **Rewards & Progress:** shipped. It reads real `member_progression` and `xp_transactions` state and is surfaced through member navigation, dashboard, and account menu.
+- **Evidence-backed achievements:** first-class nonmonetary recognition is stored in `achievement_definitions` and member-owned `member_achievements` records with real Feedback evidence. Earlier `member_progression.achievements` text remains separately visible as unverified historical recognition. An authorized admin may pause/resume issuance with a reason and audit trail; arbitrary badge revocation/appeals is not yet a consumer workflow.
 - **Messaging:** not shipped. There is no `/messages` placeholder route.
 - **Notifications:** not shipped. The dormant notifications table/type and Data API privileges are retired from the final schema.
 - **Token economy:** not shipped. Token transaction state, profile token balance, and token mutation authority are retired from the final schema.
@@ -168,7 +169,7 @@ A consumer-trial candidate requires:
 - real authentication and recovery behavior;
 - explicit age/Terms/Privacy consent;
 - real Need/Offer/Proposal/Surrogacy/Moment/Exchange/Feedback persistence;
-- visible real Rewards/Progression behavior;
+- visible real Rewards/Progression and evidence-linked achievement behavior;
 - blocking/reporting and actionable admin moderation;
 - suspension/self-deactivation/deletion boundaries;
 - honest public/member/admin navigation;

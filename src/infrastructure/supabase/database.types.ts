@@ -79,6 +79,45 @@ export type Database = {
           },
         ]
       }
+      achievement_definitions: {
+        Row: {
+          category: string
+          code: string
+          created_at: string
+          description: string
+          enabled: boolean
+          metric: string
+          rule_version: number
+          target: number
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          category?: string
+          code: string
+          created_at?: string
+          description: string
+          enabled?: boolean
+          metric?: string
+          rule_version?: number
+          target: number
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          category?: string
+          code?: string
+          created_at?: string
+          description?: string
+          enabled?: boolean
+          metric?: string
+          rule_version?: number
+          target?: number
+          title?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       audit_events: {
         Row: {
           action: string
@@ -349,6 +388,94 @@ export type Database = {
           {
             foreignKeyName: "feedback_to_user_id_fkey"
             columns: ["to_user_id"]
+            isOneToOne: false
+            referencedRelation: "public_profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      member_achievements: {
+        Row: {
+          achievement_code: string
+          earned_at: string
+          evidence_event_id: string
+          evidence_event_type: string
+          evidence_feedback_id: string | null
+          id: string
+          revocation_reason: string | null
+          revoked_at: string | null
+          revoked_by: string | null
+          rule_version: number
+          status: string
+          user_id: string
+        }
+        Insert: {
+          achievement_code: string
+          earned_at?: string
+          evidence_event_id: string
+          evidence_event_type: string
+          evidence_feedback_id?: string | null
+          id?: string
+          revocation_reason?: string | null
+          revoked_at?: string | null
+          revoked_by?: string | null
+          rule_version: number
+          status?: string
+          user_id: string
+        }
+        Update: {
+          achievement_code?: string
+          earned_at?: string
+          evidence_event_id?: string
+          evidence_event_type?: string
+          evidence_feedback_id?: string | null
+          id?: string
+          revocation_reason?: string | null
+          revoked_at?: string | null
+          revoked_by?: string | null
+          rule_version?: number
+          status?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "member_achievements_achievement_code_fkey"
+            columns: ["achievement_code"]
+            isOneToOne: false
+            referencedRelation: "achievement_definitions"
+            referencedColumns: ["code"]
+          },
+          {
+            foreignKeyName: "member_achievements_evidence_feedback_id_fkey"
+            columns: ["evidence_feedback_id"]
+            isOneToOne: false
+            referencedRelation: "feedback"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "member_achievements_revoked_by_fkey"
+            columns: ["revoked_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "member_achievements_revoked_by_fkey"
+            columns: ["revoked_by"]
+            isOneToOne: false
+            referencedRelation: "public_profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "member_achievements_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "member_achievements_user_id_fkey"
+            columns: ["user_id"]
             isOneToOne: false
             referencedRelation: "public_profiles"
             referencedColumns: ["id"]
@@ -1298,6 +1425,19 @@ export type Database = {
       }
       record_trial_auth_deletion_attempt: {
         Args: { p_auth_deleted: boolean; p_error?: string; p_user_id: string }
+        Returns: undefined
+      }
+      set_achievement_rule_enabled: {
+        Args: { p_code: string; p_enabled: boolean; p_reason: string }
+        Returns: undefined
+      }
+      set_achievement_rule_enabled_trusted: {
+        Args: {
+          p_admin_id: string
+          p_code: string
+          p_enabled: boolean
+          p_reason: string
+        }
         Returns: undefined
       }
       set_trial_account_participation: {
