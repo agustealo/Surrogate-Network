@@ -316,7 +316,7 @@ RETURNS void
 LANGUAGE plpgsql
 SECURITY DEFINER
 SET search_path = ''
-AS $
+AS $$
 DECLARE
   v_admin uuid := auth.uid();
 BEGIN
@@ -328,7 +328,7 @@ BEGIN
     v_admin, p_code, p_enabled, p_reason
   );
 END;
-$;
+$$;
 
 REVOKE ALL ON FUNCTION public.set_achievement_rule_enabled(text, boolean, text)
 FROM PUBLIC, anon, service_role;
