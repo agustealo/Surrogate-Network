@@ -18,7 +18,7 @@ export default async function RewardsPage() {
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) redirect(routes.public.login)
 
-  const [progressionResult, xpResult, definitionsResult, awardsResult] = await Promise.all([
+  const [progressionResult, xpResult, definitionsResult, awardsResult, feedbackResult] = await Promise.all([
     supabase.from('member_progression')
       .select('current_rank,total_xp,achievements,level')
       .eq('user_id', user.id)
@@ -35,15 +35,20 @@ export default async function RewardsPage() {
       .select('id,achievement_code,rule_version,status,earned_at,revoked_at')
       .eq('user_id', user.id)
       .order('earned_at', { ascending: false }),
+    supabase.from('feedback')
+      .select('id,exchanges!inner(status)', { count: 'exact', head: true })
+      .eq('from_user_id', user.id)
+      .in('exchanges.status', ['completed', 'partial']),
   ])
 
-  const failed = [progressionResult, xpResult, definitionsResult, awardsResult]
+  const failed = [progressionResult, xpResult, definitionsResult, awardsResult, feedbackResult]
     .find((result) => result.error)
   if (failed?.error) throw new Error('Unable to load your reward history and achievements.')
 
   const progression = progressionResult.data
   const xpRows = xpResult.data ?? []
   const definitions = definitionsResult.data ?? []
+  const eligibleFeedbackCount = feedbackResult.count ?? 0
   const awards = awardsResult.data ?? []
   const awardByCode = new Map(awards.map((award) => [award.achievement_code, award]))
   const earnedCount = awards.filter((award) => award.status === 'earned').length
@@ -115,6 +120,7 @@ export default async function RewardsPage() {
                 key={definition.code}
                 definition={definition}
                 award={awardByCode.get(definition.code)}
+                eligibleFeedbackCount={eligibleFeedbackCount}
               />
             ))}
           </div>
