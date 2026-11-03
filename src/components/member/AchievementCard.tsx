@@ -1,6 +1,7 @@
 import { CheckCircle2, LockKeyhole, PauseCircle, ShieldAlert, Sparkles } from 'lucide-react'
 import { Badge } from '@/components/ui/badge'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { Progress } from '@/components/ui/progress'
 import type { Database } from '@/infrastructure/supabase/database.types'
 
 type Definition = Pick<
@@ -15,14 +16,17 @@ type Award = Pick<
 export type AchievementCardProps = {
   definition: Definition
   award?: Award
+  eligibleFeedbackCount: number
 }
 
-export function AchievementCard({ definition, award }: AchievementCardProps) {
+export function AchievementCard({ definition, award, eligibleFeedbackCount }: AchievementCardProps) {
   const earned = award?.status === 'earned'
   const revoked = award?.status === 'revoked'
   const paused = !definition.enabled && !earned && !revoked
   const Icon = revoked ? ShieldAlert : earned ? CheckCircle2 : paused ? PauseCircle : LockKeyhole
   const status = revoked ? 'Revoked' : earned ? 'Earned' : paused ? 'Paused' : 'Not earned'
+  const qualifyingCount = earned ? Math.max(eligibleFeedbackCount, definition.target) : eligibleFeedbackCount
+  const progress = Math.min(100, (qualifyingCount / definition.target) * 100)
 
   return (
     <Card className="h-full" aria-label={definition.title + ': ' + status}>
@@ -41,6 +45,10 @@ export function AchievementCard({ definition, award }: AchievementCardProps) {
           <Sparkles className="h-4 w-4 text-muted-foreground" aria-hidden="true" />
           {definition.target} {definition.target === 1 ? 'eligible Feedback submission' : 'distinct eligible Feedback submissions'}
         </p>
+        <div className="space-y-1.5" aria-label={definition.title + ' progress'}>
+          <div className="flex justify-between text-xs text-muted-foreground"><span>Recorded progress</span><span>{Math.min(qualifyingCount, definition.target)} / {definition.target}</span></div>
+          <Progress value={progress} aria-label={definition.title + ' milestone progress'} />
+        </div>
         {earned && award && (
           <p className="text-xs text-muted-foreground">
             Earned {new Date(award.earned_at).toLocaleDateString()}. Rule version {award.rule_version}.
