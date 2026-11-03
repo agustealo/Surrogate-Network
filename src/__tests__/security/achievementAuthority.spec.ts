@@ -12,6 +12,7 @@ describe('SN-ENG-02 evidence-linked achievements and governance', () => {
   let service: SupabaseClient
   let member: SupabaseClient
   let outsider: SupabaseClient
+  let adminClient: SupabaseClient
   let contributor: Principal
   let partner: Principal
   let administrator: Principal
@@ -141,6 +142,7 @@ describe('SN-ENG-02 evidence-linked achievements and governance', () => {
 
     member = await clientFor(contributor)
     outsider = await clientFor(another)
+    adminClient = await clientFor(administrator)
   })
 
   it('exposes only read-only catalog and owned award records to signed-in members', async () => {
@@ -172,12 +174,27 @@ describe('SN-ENG-02 evidence-linked achievements and governance', () => {
     expect(forgedAward.error).toBeTruthy()
 
     const spoofedAdmin = await member.rpc('set_achievement_rule_enabled', {
-      p_admin_id: administrator.id,
       p_code: 'first_reflection',
       p_enabled: false,
       p_reason: 'Attempt to impersonate the system administrator',
     })
     expect(spoofedAdmin.error).toBeTruthy()
+
+    const forgedIdentity = await member.rpc('set_achievement_rule_enabled', {
+      p_admin_id: administrator.id,
+      p_code: 'first_reflection',
+      p_enabled: false,
+      p_reason: 'Forge administrator identity with an injected parameter',
+    })
+    expect(forgedIdentity.error).toBeTruthy()
+
+    const trustedCoreFromService = await service.rpc('set_achievement_rule_enabled_trusted', {
+      p_admin_id: administrator.id,
+      p_code: 'first_reflection',
+      p_enabled: false,
+      p_reason: 'Attempt to reach a postgres-only privileged core',
+    })
+    expect(trustedCoreFromService.error).toBeTruthy()
   })
 
   it('awards First Reflection once against persisted eligible Feedback evidence', async () => {
@@ -220,16 +237,14 @@ describe('SN-ENG-02 evidence-linked achievements and governance', () => {
   })
 
   it('pauses new awards without deleting earned achievements, and resumes at a new rule version', async () => {
-    const denyBadReason = await service.rpc('set_achievement_rule_enabled', {
-      p_admin_id: administrator.id,
+    const denyBadReason = await adminClient.rpc('set_achievement_rule_enabled', {
       p_code: 'thoughtful_participant',
       p_enabled: false,
       p_reason: 'short',
     })
     expect(denyBadReason.error).toBeTruthy()
 
-    const pause = await service.rpc('set_achievement_rule_enabled', {
-      p_admin_id: administrator.id,
+    const pause = await adminClient.rpc('set_achievement_rule_enabled', {
       p_code: 'thoughtful_participant',
       p_enabled: false,
       p_reason: 'Temporarily suspend milestone issuance for governance review',
@@ -251,8 +266,7 @@ describe('SN-ENG-02 evidence-linked achievements and governance', () => {
       .single()
     expect(firstReflection?.status).toBe('earned')
 
-    const resume = await service.rpc('set_achievement_rule_enabled', {
-      p_admin_id: administrator.id,
+    const resume = await adminClient.rpc('set_achievement_rule_enabled', {
       p_code: 'thoughtful_participant',
       p_enabled: true,
       p_reason: 'Validation complete and future milestone issuance approved',
