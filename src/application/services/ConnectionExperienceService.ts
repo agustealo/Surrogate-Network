@@ -8,12 +8,13 @@ export type ConnectionMomentSummary = {
 export type ConnectionExchangeSummary = {
   id: string
   status: string | null
+  confirmation_state?: string | null
 }
 
 export type ConnectionNextStep = {
   heading: string
   description: string
-  kind: 'feedback' | 'moment' | 'schedule' | 'inactive'
+  kind: 'feedback' | 'confirmation' | 'moment' | 'schedule' | 'inactive'
 }
 
 export function connectionStatusLabel(status: string | null): string {
@@ -34,9 +35,18 @@ export function getConnectionNextStep(input: {
 }): ConnectionNextStep {
   const { status, moments, exchanges, reviewedExchangeIds } = input
   const needsFeedback = exchanges.some(
-    exchange => (exchange.status === 'completed' || exchange.status === 'partial')
+    exchange => exchange.confirmation_state === 'confirmed'
+      && (exchange.status === 'completed' || exchange.status === 'partial')
       && !reviewedExchangeIds.has(exchange.id),
   )
+  const awaitingConfirmation = exchanges.some(exchange => exchange.confirmation_state === 'pending')
+  if (awaitingConfirmation) {
+    return {
+      kind: 'confirmation',
+      heading: 'Exchange awaiting confirmation',
+      description: 'One participant reported an outcome. Both must confirm it before feedback or new rewards become available. Review the Exchange below.',
+    }
+  }
   if (needsFeedback) {
     return {
       kind: 'feedback',
