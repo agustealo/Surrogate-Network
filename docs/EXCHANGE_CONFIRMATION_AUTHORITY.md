@@ -73,10 +73,11 @@ of legacy evidence.
 Two-party confirmation is necessary but not sufficient to stop collusion.
 One person can coordinate multiple accounts or voluntarily verify
 fabricated activity. High-value rewards remain disabled. The next
-separate engineering slice must implement rolling pair and member
-velocity limits, fraud-review evidence, timed dispute escalation,
-authorized adjudication and revocation, member appeal workflows, and
-reversible reward accounting when permitted by policy.
+separate engineering slices add the versioned rolling member and pair
+reward-credit limits described in REWARD_CREDIT_VELOCITY.md, while
+fraud-review adjudication, timed dispute escalation, authorized
+revocation, member appeals, and compensating reward accounting remain
+unimplemented. Reward limits do not prohibit Feedback or identify fraud.
 
 A disputed Exchange is frozen, not magically resolved. The current
 existing member report and moderation controls remain available; there
