@@ -110,9 +110,9 @@ export default async function RewardsPage() {
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div>
             <h2 id="achievement-gallery-heading" className="text-2xl font-semibold">Achievement gallery</h2>
-            <p className="text-sm text-muted-foreground">Each achievement includes its actual earning requirement and status.</p>
+            <p className="text-sm text-muted-foreground">New awards require two-party confirmation. Recognition earned before this safeguard remains in your history, but does not establish independently verified participation or safety.</p>
           </div>
-          <Badge variant="outline">Verified participation</Badge>
+          <Badge variant="outline">Participation recognition</Badge>
         </div>
         {definitions.length ? (
           <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
