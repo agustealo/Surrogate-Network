@@ -362,7 +362,20 @@ test.describe('Consumer trial smoke @smoke', () => {
 
       const momentCard = requester.getByText('Moment: scheduled', { exact: true }).locator('..').locator('..').locator('..')
       await momentCard.getByRole('button', { name: 'Complete' }).click()
-      await expect(requester.getByText('Exchange: completed', { exact: true })).toBeVisible({ timeout: 20_000 })
+      await expect(requester.getByText('Outcome reported: completed', { exact: true }))
+        .toBeVisible({ timeout: 20_000 })
+      await expect(requester.getByText('Awaiting peer confirmation', { exact: true })).toBeVisible()
+      await expect(requester.getByText(`Feedback for ${memberA.name}`, { exact: true })).toHaveCount(0)
+
+      await provider.goto(surrogacyUrl)
+      await expect(provider.getByRole('button', { name: 'Confirm outcome' })).toBeVisible()
+      await provider.getByRole('button', { name: 'Confirm outcome' }).click()
+      await expect(provider.getByText('Confirmed by both participants', { exact: true }))
+        .toBeVisible({ timeout: 20_000 })
+
+      await requester.reload()
+      await expect(requester.getByText('Exchange: completed', { exact: true })).toBeVisible()
+      await expect(requester.getByText('Confirmed by both participants', { exact: true })).toBeVisible()
 
       const feedbackTitle = requester.getByText(`Feedback for ${memberA.name}`, { exact: true })
       const feedbackCard = feedbackTitle.locator('..').locator('..')
