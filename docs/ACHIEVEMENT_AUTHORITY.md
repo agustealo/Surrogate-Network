@@ -12,8 +12,9 @@ Commercial status: no payments, wallets, point redemption, or seller earnings.
 | thoughtful_participant | Thoughtful Participant | 3 distinct eligible Feedback submissions |
 | consistent_reflector | Consistent Reflector | 10 distinct eligible Feedback submissions |
 
-All milestones require Feedback recorded against an actual completed or partial
-Exchange with both reviewer and recipient present in the owning Connection.
+All **new** milestones require Feedback recorded against a jointly confirmed
+completed or partial Exchange, with two distinct authenticated participants
+and the reviewer/recipient present in the owning Connection.
 Feedback already permits only one submission per participant and Exchange.
 The user's star rating is never an achievement factor.
 
@@ -77,13 +78,13 @@ No frontend may offer fake appeals or arbitrary moderation grants.
 
 ## Risk limits and follow-up
 
-The current Exchange completion flow may be unilateral. Even though Feedback
-is validated and uniqueness-protected, members could collude to fabricate
-a series of exchanges. Therefore these badges are low-stakes and
+The current Exchange outcome flow requires confirmation by both participants
+for **new** Feedback and achievement milestones. It does not eliminate
+collusion: cooperating members can still fabricate a series of Exchanges. Therefore these badges are low-stakes and
 nonmonetary. They cannot enable payouts, material privileges, trust badges
 or high-value competitions.
 
-Before high-value rewards, add bilateral confirmation, dispute timing,
+Before high-value rewards, add dispute timing and adjudication,
 per-connection velocity limits, suspicious-account review, policy appeals,
 and independent adverse-event evaluation. Keep this follow-up within
 SN-ENG-02; do not mix it into SN-COM-01 Stripe/PayPal checkout.
