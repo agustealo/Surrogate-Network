@@ -34,7 +34,7 @@ export default async function MemberHomePage() {
         .in('surrogacy_id', connectionIds).in('status', ['scheduled', 'in_progress']).order('scheduled_time', { ascending: true }).limit(100)
       : Promise.resolve({ data: [], error: null }),
     connectionIds.length
-      ? supabase.from('exchanges').select('id,surrogacy_id,status,completed_at')
+      ? supabase.from('exchanges').select('id,surrogacy_id,status,completed_at,confirmation_state,recorded_by')
         .in('surrogacy_id', connectionIds).in('status', ['completed', 'partial']).order('completed_at', { ascending: false }).limit(100)
       : Promise.resolve({ data: [], error: null }),
   ])
