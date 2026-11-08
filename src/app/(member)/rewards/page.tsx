@@ -36,9 +36,10 @@ export default async function RewardsPage() {
       .eq('user_id', user.id)
       .order('earned_at', { ascending: false }),
     supabase.from('feedback')
-      .select('id,exchanges!inner(status)', { count: 'exact', head: true })
+      .select('id,exchanges!inner(status,confirmation_state)', { count: 'exact', head: true })
       .eq('from_user_id', user.id)
-      .in('exchanges.status', ['completed', 'partial']),
+      .in('exchanges.status', ['completed', 'partial'])
+      .eq('exchanges.confirmation_state', 'confirmed'),
   ])
 
   const failed = [progressionResult, xpResult, definitionsResult, awardsResult, feedbackResult]
