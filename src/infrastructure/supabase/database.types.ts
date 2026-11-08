@@ -276,22 +276,37 @@ export type Database = {
       exchanges: {
         Row: {
           completed_at: string | null
+          confirmation_state: string
+          confirmed_at: string | null
+          confirmed_by: string | null
+          disputed_by: string | null
           id: string
           moment_id: string
+          recorded_by: string | null
           status: Database["public"]["Enums"]["exchange_status"] | null
           surrogacy_id: string
         }
         Insert: {
           completed_at?: string | null
+          confirmation_state?: string
+          confirmed_at?: string | null
+          confirmed_by?: string | null
+          disputed_by?: string | null
           id?: string
           moment_id: string
+          recorded_by?: string | null
           status?: Database["public"]["Enums"]["exchange_status"] | null
           surrogacy_id: string
         }
         Update: {
           completed_at?: string | null
+          confirmation_state?: string
+          confirmed_at?: string | null
+          confirmed_by?: string | null
+          disputed_by?: string | null
           id?: string
           moment_id?: string
+          recorded_by?: string | null
           status?: Database["public"]["Enums"]["exchange_status"] | null
           surrogacy_id?: string
         }
@@ -1361,6 +1376,14 @@ export type Database = {
           p_exchange_status?: Database["public"]["Enums"]["exchange_status"]
           p_moment_id: string
         }
+        Returns: string
+      }
+      confirm_exchange_for_trial: {
+        Args: { p_decision: string; p_exchange_id: string }
+        Returns: string
+      }
+      confirm_exchange_for_trial_trusted: {
+        Args: { p_actor_id: string; p_decision: string; p_exchange_id: string }
         Returns: string
       }
       consume_trial_action_budget: {
