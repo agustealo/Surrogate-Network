@@ -64,7 +64,7 @@ DECLARE
   v_exchange_id uuid;
   v_confirmation_state text;
 BEGIN
-  IF p_exchange_status NOT IN ('completed', 'partial', 'disputed') THEN
+  IF p_exchange_status IS NULL OR p_exchange_status NOT IN ('completed', 'partial', 'disputed') THEN
     RAISE EXCEPTION 'Unsupported exchange status';
   END IF;
   IF NOT public.is_active_member(p_actor_id) THEN
@@ -86,7 +86,11 @@ BEGIN
   FROM public.exchanges WHERE moment_id = p_moment_id;
   IF FOUND THEN
     IF v_exchange.recorded_by = p_actor_id THEN
-      RETURN v_exchange.id;
+      IF v_exchange.status = p_exchange_status
+         AND v_exchange.confirmation_state IN ('pending', 'disputed') THEN
+        RETURN v_exchange.id;
+      END IF;
+      RAISE EXCEPTION 'Reported Exchange outcomes cannot be changed by retrying completion';
     END IF;
     RAISE EXCEPTION 'The other participant must use exchange confirmation';
   END IF;
