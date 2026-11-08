@@ -3,7 +3,7 @@ import { connectionStatusLabel, displayConnectionAgreement, getConnectionNextSte
 const base = {
   status: 'active',
   moments: [] as { status: string; scheduled_time: string }[],
-  exchanges: [] as { id: string; status: string }[],
+  exchanges: [] as { id: string; status: string; confirmation_state?: string }[],
   reviewedExchangeIds: new Set<string>(),
 }
 
@@ -29,9 +29,16 @@ describe('Connection experience projection', () => {
   })
 
   it('prioritizes eligible feedback but excludes already reviewed and disputed Exchanges', () => {
-    const exchanges = [{ id: 'exchange-1', status: 'completed' }, { id: 'exchange-2', status: 'disputed' }]
+    const exchanges = [{ id: 'exchange-1', status: 'completed', confirmation_state: 'confirmed' }, { id: 'exchange-2', status: 'disputed' }]
     expect(getConnectionNextStep({ ...base, exchanges }).kind).toBe('feedback')
     expect(getConnectionNextStep({ ...base, exchanges, reviewedExchangeIds: new Set(['exchange-1']) }).kind).toBe('schedule')
+  })
+
+  it('routes reported outcomes to peer confirmation before feedback', () => {
+    const pending = [{ id: 'exchange-3', status: 'completed', confirmation_state: 'pending' }]
+    expect(getConnectionNextStep({ ...base, exchanges: pending }).kind).toBe('confirmation')
+    const legacy = [{ id: 'exchange-3', status: 'completed', confirmation_state: 'legacy_unverified' }]
+    expect(getConnectionNextStep({ ...base, exchanges: legacy }).kind).toBe('schedule')
   })
 
   it('never offers scheduling on a nonactive connection', () => {
