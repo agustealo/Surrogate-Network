@@ -1416,6 +1416,15 @@ export type Database = {
         }
         Returns: string
       }
+      get_my_reward_credit_summary: {
+        Args: never
+        Returns: {
+          credited_count: number
+          excluded_count: number
+          member_seven_day_limit: number
+          pair_seven_day_limit: number
+        }[]
+      }
       has_current_trial_consent: {
         Args: { p_user_id?: string }
         Returns: boolean

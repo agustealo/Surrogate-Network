@@ -18,7 +18,7 @@ export default async function RewardsPage() {
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) redirect(routes.public.login)
 
-  const [progressionResult, xpResult, definitionsResult, awardsResult, feedbackResult] = await Promise.all([
+  const [progressionResult, xpResult, definitionsResult, awardsResult, creditSummaryResult] = await Promise.all([
     supabase.from('member_progression')
       .select('current_rank,total_xp,achievements,level')
       .eq('user_id', user.id)
@@ -35,21 +35,20 @@ export default async function RewardsPage() {
       .select('id,achievement_code,rule_version,status,earned_at,revoked_at')
       .eq('user_id', user.id)
       .order('earned_at', { ascending: false }),
-    supabase.from('feedback')
-      .select('id,exchanges!inner(status,confirmation_state)', { count: 'exact', head: true })
-      .eq('from_user_id', user.id)
-      .in('exchanges.status', ['completed', 'partial'])
-      .eq('exchanges.confirmation_state', 'confirmed'),
+    supabase.rpc('get_my_reward_credit_summary').single(),
   ])
 
-  const failed = [progressionResult, xpResult, definitionsResult, awardsResult, feedbackResult]
+  const failed = [progressionResult, xpResult, definitionsResult, awardsResult, creditSummaryResult]
     .find((result) => result.error)
   if (failed?.error) throw new Error('Unable to load your reward history and achievements.')
 
   const progression = progressionResult.data
   const xpRows = xpResult.data ?? []
   const definitions = definitionsResult.data ?? []
-  const eligibleFeedbackCount = feedbackResult.count ?? 0
+  const eligibleFeedbackCount = creditSummaryResult.data?.credited_count ?? 0
+  const uncreditedFeedbackCount = creditSummaryResult.data?.excluded_count ?? 0
+  const pairWeeklyLimit = creditSummaryResult.data?.pair_seven_day_limit ?? 4
+  const memberWeeklyLimit = creditSummaryResult.data?.member_seven_day_limit ?? 10
   const awards = awardsResult.data ?? []
   const awardByCode = new Map(awards.map((award) => [award.achievement_code, award]))
   const earnedCount = awards.filter((award) => award.status === 'earned').length
@@ -90,7 +89,7 @@ export default async function RewardsPage() {
               Next rank at {nextMilestone.toLocaleString()} XP
             </p>
             <p className="text-xs text-muted-foreground">
-              Submitting eligible Exchange feedback earns 10 XP, regardless of rating. XP has no cash value.
+              Eligible, jointly confirmed Exchange feedback can earn 10 XP, regardless of rating. To discourage farming, up to {pairWeeklyLimit} credits per pair and {memberWeeklyLimit} per member are issued in a rolling seven-day window. You can still submit honest feedback after reaching those limits. XP has no cash value.
             </p>
           </CardContent>
         </Card>
@@ -100,6 +99,7 @@ export default async function RewardsPage() {
             <CardDescription>Evidence-linked achievements only</CardDescription>
           </CardHeader>
           <CardContent className="space-y-2">
+            {uncreditedFeedbackCount > 0 && <p className="text-sm text-muted-foreground" role="status">{uncreditedFeedbackCount} saved {uncreditedFeedbackCount === 1 ? 'feedback submission has' : 'feedback submissions have'} not earned XP under the rolling participation limits. This is not a misconduct finding.</p>}
             <p className="text-3xl font-bold">{earnedCount} <span className="text-base font-normal text-muted-foreground">of {definitions.length} earned</span></p>
             <p className="text-xs text-muted-foreground">Completed Exchanges alone do not issue high-value awards. Recognition follows recorded eligible Feedback.</p>
           </CardContent>
