@@ -116,7 +116,7 @@ export default async function SurrogacyDetailPage({ params }: SurrogacyDetailPag
             <Card key={moment.id}>
               <CardHeader>
                 <div className="flex flex-wrap gap-2">
-                  <Badge variant="outline">Moment: {moment.status}</Badge>
+                  <Badge variant="outline">Moment: {exchange?.confirmation_state === 'pending' ? 'outcome reported' : exchange?.confirmation_state === 'disputed' ? 'outcome disputed' : moment.status}</Badge>
                   {exchange && <Badge>{exchange.confirmation_state === 'pending' ? `Outcome reported: ${exchange.status}` : `Exchange: ${exchange.status}`}</Badge>}
                   {exchange && <Badge variant="secondary">{exchange.confirmation_state === 'confirmed' ? 'Confirmed by both participants' : exchange.confirmation_state === 'pending' ? 'Awaiting peer confirmation' : exchange.confirmation_state === 'disputed' ? 'Disputed' : 'Historical: not jointly verified'}</Badge>}
                 </div>
