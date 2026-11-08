@@ -128,6 +128,25 @@ describe('SN-ENG-02B bilateral Exchange evidence and reward safety', () => {
     expect(exchangeId).toEqual(expect.any(String))
     initialExchangeId = exchangeId as string
 
+    const repeatedReport = await reporter.rpc('complete_moment_for_trial', {
+      p_moment_id: initialMomentId,
+      p_exchange_status: 'completed',
+    })
+    expect(repeatedReport.error).toBeNull()
+    expect(repeatedReport.data).toBe(initialExchangeId)
+
+    const changedReport = await reporter.rpc('complete_moment_for_trial', {
+      p_moment_id: initialMomentId,
+      p_exchange_status: 'disputed',
+    })
+    expect(changedReport.error).toBeTruthy()
+
+    const otherMemberRewrite = await peer.rpc('complete_moment_for_trial', {
+      p_moment_id: initialMomentId,
+      p_exchange_status: 'partial',
+    })
+    expect(otherMemberRewrite.error).toBeTruthy()
+
     const { data: exchange, error: exchangeReadError } = await reporter
       .from('exchanges')
       .select('confirmation_state,recorded_by,confirmed_by,status')
