@@ -37,6 +37,8 @@ export type HomeExchange = {
   surrogacy_id: string
   status: string | null
   completed_at: string | null
+  confirmation_state?: string | null
+  recorded_by?: string | null
 }
 
 export function selectHomeActions(input: {
@@ -72,7 +74,21 @@ export function selectHomeActions(input: {
 
   for (const exchange of exchanges) {
     if (!activeIds.has(exchange.surrogacy_id)) continue
-    if (!['completed', 'partial'].includes(exchange.status ?? '') || reviewedExchangeIds.has(exchange.id)) continue
+    if (!['completed', 'partial'].includes(exchange.status ?? '')) continue
+    if (exchange.confirmation_state === 'pending') {
+      if (exchange.recorded_by === userId) continue
+      result.push({
+        key: `confirmation:${exchange.id}`,
+        title: 'Confirm an Exchange outcome',
+        description: 'Your Connection reported an outcome. Confirm or dispute it before any new rewards can be issued.',
+        href: routes.memberDynamic.surrogacy(exchange.surrogacy_id),
+        label: 'Review outcome',
+        priority: 1,
+        sortAt: exchange.completed_at ?? '',
+      })
+      continue
+    }
+    if (exchange.confirmation_state !== 'confirmed' || reviewedExchangeIds.has(exchange.id)) continue
     result.push({
       key: `feedback:${exchange.id}`,
       title: 'Share feedback on an exchange',
