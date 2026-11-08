@@ -18,8 +18,8 @@ and the reviewer/recipient present in the owning Connection.
 Feedback already permits only one submission per participant and Exchange.
 The user's star rating is never an achievement factor.
 
-The existing XP reward remains 10 XP per eligible Feedback submission,
-governed by SN-ENG-01. Achievements do not add XP, money, exchange privileges,
+Eligible Feedback may earn 10 XP under the versioned rolling member/pair credit limits,
+governed by SN-ENG-01 and SN-ENG-02B2A. Feedback remains available even when no new XP is credited. Achievements do not add XP, money, exchange privileges,
 safety credentials, licensure, or seller eligibility. These initial badges
 are participation recognition, not a substitute for quality and anti-abuse
 verification.
@@ -35,7 +35,8 @@ verification.
 - public.member_progression.achievements remains untouched legacy recognition.
   The member UI displays it separately, marked as not independently verified.
 - private.grant_feedback_achievements responds only to persisted canonical
-  Feedback inserts and serializes evaluation by member.
+  Feedback with a real credited XP event; capped Feedback never produces new
+  achievements. Its issuer uses the existing actor/pair-serialized reward journal.
 - public.set_achievement_rule_enabled is the authenticated wrapper that
   derives the operator from auth.uid(). It calls the postgres-only trusted
   core, public.set_achievement_rule_enabled_trusted, which verifies an
@@ -85,7 +86,7 @@ nonmonetary. They cannot enable payouts, material privileges, trust badges
 or high-value competitions.
 
 Before high-value rewards, add dispute timing and adjudication,
-per-connection velocity limits, suspicious-account review, policy appeals,
+independent collusion investigation, suspicious-account review, policy appeals,
 and independent adverse-event evaluation. Keep this follow-up within
 SN-ENG-02; do not mix it into SN-COM-01 Stripe/PayPal checkout.
 
