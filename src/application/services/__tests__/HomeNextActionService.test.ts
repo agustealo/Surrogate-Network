@@ -3,7 +3,7 @@ import { selectHomeActions, type HomeProposal, type HomeConnection, type HomeMom
 const userId = 'member-one'
 const connection: HomeConnection = { id: 'connection-a', status: 'active', started_at: '2026-10-20T12:00:00Z' }
 const moment: HomeMoment = { id: 'moment-a', surrogacy_id: connection.id, status: 'scheduled', scheduled_time: '2026-11-02T15:00:00Z' }
-const exchange: HomeExchange = { id: 'exchange-a', surrogacy_id: connection.id, status: 'completed', completed_at: '2026-10-25T15:00:00Z' }
+const exchange: HomeExchange = { id: 'exchange-a', surrogacy_id: connection.id, status: 'completed', completed_at: '2026-10-25T15:00:00Z', confirmation_state: 'confirmed', recorded_by: 'member-two' }
 
 function project(options: {
   proposals?: HomeProposal[]
@@ -41,6 +41,14 @@ describe('Home next-action projection', () => {
     const countered = { ...pending, status: 'countered', countered_by_user_id: 'member-two' }
     expect(project({ proposals: [countered] }).map(a => a.key)).toEqual(['proposal:proposal-a'])
     expect(project({ proposals: [{ ...countered, countered_by_user_id: userId }] })).toEqual([])
+  })
+
+  it('does not offer feedback for pending or legacy-unverified Exchanges', () => {
+    const pending = { ...exchange, confirmation_state: 'pending' }
+    const legacy = { ...exchange, confirmation_state: 'legacy_unverified' }
+    expect(project({ connections: [connection], exchanges: [pending] }).map(a => a.key)).toContain('confirmation:exchange-a')
+    expect(project({ connections: [connection], exchanges: [{ ...pending, recorded_by: userId }] }).some(a => a.key.startsWith('confirmation:'))).toBe(false)
+    expect(project({ connections: [connection], exchanges: [legacy] }).some(a => a.key.startsWith('feedback:'))).toBe(false)
   })
 
   it('does not ask for feedback twice or on disputed exchanges', () => {

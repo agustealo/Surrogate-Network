@@ -33,11 +33,11 @@ export default async function SubmitFeedbackPage({ searchParams }: SubmitFeedbac
 
   const { data: exchange, error: exchangeError } = await supabase
     .from('exchanges')
-    .select('id,surrogacy_id,status')
+    .select('id,surrogacy_id,status,confirmation_state')
     .eq('id', exchangeId)
     .maybeSingle()
-  if (exchangeError || !exchange || !exchange.status || !['completed', 'partial'].includes(exchange.status)) {
-    return <PageWrapper title="Feedback unavailable" className="mx-auto max-w-xl"><p className="text-muted-foreground">That Exchange is not available for feedback.</p></PageWrapper>
+  if (exchangeError || !exchange || !exchange.status || !['completed', 'partial'].includes(exchange.status) || exchange.confirmation_state !== 'confirmed') {
+    return <PageWrapper title="Feedback unavailable" className="mx-auto max-w-xl"><p className="text-muted-foreground">That Exchange is not jointly confirmed and available for feedback. Review the confirmation status in Connections.</p></PageWrapper>
   }
 
   const { data: relationship, error: relationshipError } = await supabase

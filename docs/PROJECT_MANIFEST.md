@@ -7,7 +7,7 @@
 Canonical lifecycle:
 
 ```text
-Need + Offer -> Discovery -> Proposal -> Surrogacy -> Moment -> Exchange -> Feedback
+Need + Offer -> Discovery -> Proposal -> Surrogacy -> Moment -> Exchange outcome -> Peer confirmation -> Feedback
 ```
 
 Rewards/progression, moderation, administration, account lifecycle, safety, and operational controls support that lifecycle. They are not parallel product models.
@@ -94,6 +94,7 @@ A feature may be present in consumer navigation only when its end-to-end behavio
 Current decisions:
 
 - **Rewards & Progress:** shipped. It reads real `member_progression` and `xp_transactions` state and is surfaced through member navigation, dashboard, and account menu.
+- **Bilateral Exchange evidence:** new completed/partial outcomes are reported by one member and confirmed by the other before Feedback and new rewards become eligible. Disputes freeze the outcome. Historical Exchanges remain labeled legacy-unverified; no past XP or award is fabricated or erased.
 - **Evidence-backed achievements:** first-class nonmonetary recognition is stored in `achievement_definitions` and member-owned `member_achievements` records with real Feedback evidence. Earlier `member_progression.achievements` text remains separately visible as unverified historical recognition. An authorized admin may pause/resume issuance with a reason and audit trail; arbitrary badge revocation/appeals is not yet a consumer workflow.
 - **Messaging:** not shipped. There is no `/messages` placeholder route.
 - **Notifications:** not shipped. The dormant notifications table/type and Data API privileges are retired from the final schema.

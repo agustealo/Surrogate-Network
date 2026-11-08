@@ -103,7 +103,7 @@ describe('SN-ENG-01 nonmonetary reward authority', () => {
         surrogacy_id: connection.id,
         scheduled_time: new Date(Date.now() - 60_000).toISOString(),
         duration: 30,
-        status: 'completed',
+        status: 'scheduled',
       })
       .select('id')
       .single()
@@ -111,19 +111,34 @@ describe('SN-ENG-01 nonmonetary reward authority', () => {
       throw momentError ?? new Error('Could not create proof Moment')
     }
 
-    const { data: exchange, error: exchangeError } = await service
-      .from('exchanges')
-      .insert({
-        moment_id: moment.id,
-        surrogacy_id: connection.id,
-        status: 'completed',
-      })
-      .select('id')
-      .single()
-    if (exchangeError || !exchange) {
-      throw exchangeError ?? new Error('Could not create proof Exchange')
+    const { data: newExchangeId, error: exchangeError } = await memberClient.rpc(
+      'complete_moment_for_trial', {
+        p_moment_id: moment.id,
+        p_exchange_status: 'completed',
+      },
+    )
+    if (exchangeError || !newExchangeId) {
+      throw exchangeError ?? new Error('Could not report proof Exchange')
     }
-    exchangeId = exchange.id
+    exchangeId = newExchangeId
+
+    const partnerSession = createClient(url, anonKey, {
+      auth: { persistSession: false, autoRefreshToken: false },
+    })
+    const { error: partnerSignInError } = await partnerSession.auth.signInWithPassword({
+      email: partner.email,
+      password: partner.password,
+    })
+    if (partnerSignInError) throw partnerSignInError
+    const { data: state, error: confirmationError } = await partnerSession.rpc(
+      'confirm_exchange_for_trial', {
+        p_exchange_id: exchangeId,
+        p_decision: 'confirm',
+      },
+    )
+    if (confirmationError || state !== 'confirmed') {
+      throw confirmationError ?? new Error('Proof Exchange was not jointly confirmed')
+    }
   })
 
   it('starts with the existing journal and synchronized zero progression', async () => {

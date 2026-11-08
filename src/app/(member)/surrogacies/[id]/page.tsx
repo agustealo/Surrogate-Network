@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { FeedbackForm } from '@/components/forms/FeedbackForm'
 import { MomentActions } from '@/components/connections/MomentActions'
+import { ExchangeConfirmationActions } from '@/components/connections/ExchangeConfirmationActions'
 import { MomentScheduler } from '@/components/connections/MomentScheduler'
 import { createClient } from '@/infrastructure/supabase/server'
 import { routes } from '@/lib/routes'
@@ -41,7 +42,7 @@ export default async function SurrogacyDetailPage({ params }: SurrogacyDetailPag
     supabase.from('needs').select('id,title,user_id,user_name').eq('id', relationship.need_id).single(),
     supabase.from('offers').select('id,title,user_id,user_name').eq('id', relationship.offer_id).single(),
     supabase.from('moments').select('id,scheduled_time,duration,status,location,notes,created_at').eq('surrogacy_id', id).order('scheduled_time', { ascending: false }),
-    supabase.from('exchanges').select('id,moment_id,status,completed_at').eq('surrogacy_id', id).order('completed_at', { ascending: false }),
+    supabase.from('exchanges').select('id,moment_id,status,completed_at,confirmation_state,recorded_by,confirmed_at').eq('surrogacy_id', id).order('completed_at', { ascending: false }),
   ])
 
   if (needError || !need) throw new Error('The Need attached to this relationship is unavailable.')
@@ -108,18 +109,36 @@ export default async function SurrogacyDetailPage({ params }: SurrogacyDetailPag
         {!(momentsResult.data ?? []).length && <p className="rounded-md border p-4 text-muted-foreground">No Moments have been recorded for this Connection.</p>}
         {(momentsResult.data ?? []).map((moment) => {
           const exchange = exchangeByMoment.get(moment.id)
-          const canReview = exchange && (exchange.status === 'completed' || exchange.status === 'partial') && !reviewedExchangeIds.has(exchange.id)
+          const canReview = exchange && exchange.confirmation_state === 'confirmed' && (exchange.status === 'completed' || exchange.status === 'partial') && !reviewedExchangeIds.has(exchange.id)
+          const pendingConfirmation = exchange?.confirmation_state === 'pending'
+          const peerCanConfirm = pendingConfirmation && exchange.recorded_by !== user.id
           return (
             <Card key={moment.id}>
               <CardHeader>
-                <div className="flex flex-wrap gap-2"><Badge variant="outline">Moment: {moment.status}</Badge>{exchange && <Badge>Exchange: {exchange.status}</Badge>}</div>
+                <div className="flex flex-wrap gap-2">
+                  <Badge variant="outline">Moment: {exchange?.confirmation_state === 'pending' ? 'outcome reported' : exchange?.confirmation_state === 'disputed' ? 'outcome disputed' : moment.status}</Badge>
+                  {exchange && <Badge>{exchange.confirmation_state === 'pending' ? `Outcome reported: ${exchange.status}` : `Exchange: ${exchange.status}`}</Badge>}
+                  {exchange && <Badge variant="secondary">{exchange.confirmation_state === 'confirmed' ? 'Confirmed by both participants' : exchange.confirmation_state === 'pending' ? 'Awaiting peer confirmation' : exchange.confirmation_state === 'disputed' ? 'Disputed' : 'Historical: not jointly verified'}</Badge>}
+                </div>
                 <CardTitle>{new Date(moment.scheduled_time).toLocaleString()}</CardTitle>
                 <CardDescription>{moment.duration} minutes{moment.location ? ` · ${moment.location}` : ''}</CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
                 {moment.notes && <p className="whitespace-pre-wrap text-sm">{moment.notes}</p>}
                 {moment.status === 'scheduled' && !exchange && <MomentActions momentId={moment.id} surrogacyId={relationship.id} />}
-                {exchange && <p className="text-sm text-muted-foreground">Recorded {formatDateTime(exchange.completed_at)}.</p>}
+                {exchange && <p className="text-sm text-muted-foreground">Recorded {formatDateTime(exchange.completed_at)}.{exchange.confirmed_at ? ` Both participants confirmed ${formatDateTime(exchange.confirmed_at)}.` : ''}</p>}
+                {peerCanConfirm && (exchange.status === 'completed' || exchange.status === 'partial') && (
+                  <ExchangeConfirmationActions exchangeId={exchange.id} surrogacyId={relationship.id} reportedStatus={exchange.status} />
+                )}
+                {pendingConfirmation && !peerCanConfirm && (
+                  <p className="text-sm text-muted-foreground">You reported this outcome. The other participant has not confirmed it yet. Feedback, XP, and new achievements are unavailable until they confirm.</p>
+                )}
+                {exchange?.confirmation_state === 'disputed' && (
+                  <p className="text-sm text-muted-foreground">This Exchange is disputed. It does not qualify for new rewards or feedback. Existing member safety and report controls remain available.</p>
+                )}
+                {exchange?.confirmation_state === 'legacy_unverified' && (
+                  <p className="text-sm text-muted-foreground">This historical Exchange predates two-party confirmation. Earlier recorded feedback is preserved, but new feedback cannot be submitted without joint verification.</p>
+                )}
                 {canReview && <FeedbackForm exchangeId={exchange.id} toUserId={otherUserId} companionName={otherName} />}
                 {exchange && reviewedExchangeIds.has(exchange.id) && <p className="text-sm text-muted-foreground">You submitted feedback for this Exchange.</p>}
               </CardContent>

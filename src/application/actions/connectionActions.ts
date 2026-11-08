@@ -86,6 +86,40 @@ export async function completeMomentAction(
   }
 }
 
+const exchangeConfirmationSchema = z.object({
+  exchangeId: z.string().uuid(),
+  surrogacyId: z.string().uuid(),
+  decision: z.enum(['confirm', 'dispute']),
+}).strict()
+
+/**
+ * The outcome reporter cannot confirm their own Exchange. The canonical
+ * database wrapper derives the actor from auth.uid() and locks the Exchange.
+ */
+export async function confirmExchangeAction(
+  input: unknown,
+): Promise<ActionResult<{ state: 'confirmed' | 'disputed' }>> {
+  try {
+    const actor = await requireActiveMember()
+    const values = exchangeConfirmationSchema.parse(input)
+    const { data, error } = await actor.supabase.rpc('confirm_exchange_for_trial', {
+      p_exchange_id: values.exchangeId,
+      p_decision: values.decision,
+    })
+    if (error || !data || !['confirmed', 'disputed'].includes(data)) {
+      throw new Error(error?.message ?? 'The Exchange confirmation could not be recorded.')
+    }
+
+    revalidatePath('/surrogacies/' + values.surrogacyId)
+    revalidatePath('/surrogacies')
+    revalidatePath('/rewards')
+    revalidatePath('/home')
+    return { ok: true, data: { state: data as 'confirmed' | 'disputed' } }
+  } catch (error) {
+    return actionFailure(error)
+  }
+}
+
 export async function submitFeedbackAction(input: unknown): Promise<ActionResult<{ id: string }>> {
   try {
     const actor = await requireActiveMember()

@@ -11,6 +11,7 @@ type Principal = {
 describe('SN-ENG-02 evidence-linked achievements and governance', () => {
   let service: SupabaseClient
   let member: SupabaseClient
+  let partnerClient: SupabaseClient
   let outsider: SupabaseClient
   let adminClient: SupabaseClient
   let contributor: Principal
@@ -91,25 +92,33 @@ describe('SN-ENG-02 evidence-linked achievements and governance', () => {
         surrogacy_id: connection.id,
         scheduled_time: new Date(Date.now() - 120000).toISOString(),
         duration: 30,
-        status: 'completed',
+        status: 'scheduled',
       })
       .select('id')
       .single()
     if (momentError || !moment) throw momentError ?? new Error('Moment creation failed')
 
-    const { data: exchange, error: exchangeError } = await service
-      .from('exchanges')
-      .insert({
-        moment_id: moment.id,
-        surrogacy_id: connection.id,
-        status: 'completed',
-      })
-      .select('id')
-      .single()
-    if (exchangeError || !exchange) throw exchangeError ?? new Error('Exchange creation failed')
+    const { data: exchangeId, error: exchangeError } = await member.rpc(
+      'complete_moment_for_trial', {
+        p_moment_id: moment.id,
+        p_exchange_status: 'completed',
+      },
+    )
+    if (exchangeError || !exchangeId) {
+      throw exchangeError ?? new Error('Unable to report Exchange')
+    }
+    const { data: state, error: confirmError } = await partnerClient.rpc(
+      'confirm_exchange_for_trial', {
+        p_exchange_id: exchangeId,
+        p_decision: 'confirm',
+      },
+    )
+    if (confirmError || state !== 'confirmed') {
+      throw confirmError ?? new Error('Exchange was not jointly confirmed')
+    }
 
     const { data, error } = await member.rpc('submit_feedback_for_trial', {
-      p_exchange_id: exchange.id,
+      p_exchange_id: exchangeId,
       p_to_user_id: partner.id,
       p_rating: 2,
       p_breakdown: {},
@@ -141,6 +150,7 @@ describe('SN-ENG-02 evidence-linked achievements and governance', () => {
     if (promotionError) throw promotionError
 
     member = await clientFor(contributor)
+    partnerClient = await clientFor(partner)
     outsider = await clientFor(another)
     adminClient = await clientFor(administrator)
   })
