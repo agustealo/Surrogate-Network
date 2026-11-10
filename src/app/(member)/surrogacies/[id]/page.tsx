@@ -6,8 +6,9 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { FeedbackForm } from '@/components/forms/FeedbackForm'
 import { MomentActions } from '@/components/connections/MomentActions'
 import { ExchangeConfirmationActions } from '@/components/connections/ExchangeConfirmationActions'
+import { ExchangeCaseAppealForm } from '@/components/connections/ExchangeCaseAppealForm'
 import { MomentScheduler } from '@/components/connections/MomentScheduler'
-import { createClient } from '@/infrastructure/supabase/server'
+import { createClient, createServiceClient } from '@/infrastructure/supabase/server'
 import { routes } from '@/lib/routes'
 import { connectionStatusLabel, displayConnectionAgreement, getConnectionNextStep } from '@/application/services/ConnectionExperienceService'
 
@@ -36,7 +37,7 @@ export default async function SurrogacyDetailPage({ params }: SurrogacyDetailPag
     .maybeSingle()
 
   if (relationshipError) throw new Error(`Failed to load relationship: ${relationshipError.message}`)
-  if (!relationship) notFound()
+  if (!relationship || !relationship.partner_ids.includes(user.id)) notFound()
 
   const [{ data: need, error: needError }, { data: offer, error: offerError }, momentsResult, exchangesResult] = await Promise.all([
     supabase.from('needs').select('id,title,user_id,user_name').eq('id', relationship.need_id).single(),
@@ -55,6 +56,26 @@ export default async function SurrogacyDetailPage({ params }: SurrogacyDetailPag
     ? await supabase.from('feedback').select('id,exchange_id,from_user_id').eq('from_user_id', user.id).in('exchange_id', exchangeIds)
     : { data: [], error: null }
   if (feedbackResult.error) throw new Error(`Failed to load Feedback state: ${feedbackResult.error.message}`)
+
+  const disputedIds = (exchangesResult.data ?? []).filter((exchange) => exchange.confirmation_state === 'disputed').map((exchange) => exchange.id)
+  const service = disputedIds.length ? createServiceClient() : null
+  const caseResult = service
+    ? await service.from('reports')
+      .select('id,exchange_id,status,adjudication,action_taken,resolved_at')
+      .eq('case_origin', 'exchange_dispute')
+      .in('exchange_id', disputedIds)
+    : { data: [], error: null }
+  if (caseResult.error) throw new Error('Failed to load independent Exchange case status.')
+  const casesByExchange = new Map((caseResult.data ?? []).map((report) => [report.exchange_id, report]))
+  const caseIds = (caseResult.data ?? []).map((report) => report.id)
+  const appealsResult = service && caseIds.length
+    ? await service.from('report_appeals')
+      .select('id,report_id,status,decision_reason')
+      .eq('appellant_user_id', user.id)
+      .in('report_id', caseIds)
+    : { data: [], error: null }
+  if (appealsResult.error) throw new Error('Failed to load your Exchange appeal status.')
+  const myAppeals = new Map((appealsResult.data ?? []).map((appeal) => [appeal.report_id, appeal]))
 
   const exchangeByMoment = new Map((exchangesResult.data ?? []).map((exchange) => [exchange.moment_id, exchange]))
   const reviewedExchangeIds = new Set((feedbackResult.data ?? []).map((feedback) => feedback.exchange_id))
@@ -112,6 +133,11 @@ export default async function SurrogacyDetailPage({ params }: SurrogacyDetailPag
           const canReview = exchange && exchange.confirmation_state === 'confirmed' && (exchange.status === 'completed' || exchange.status === 'partial') && !reviewedExchangeIds.has(exchange.id)
           const pendingConfirmation = exchange?.confirmation_state === 'pending'
           const peerCanConfirm = pendingConfirmation && exchange.recorded_by !== user.id
+          const caseReport = exchange ? casesByExchange.get(exchange.id) : null
+          const myAppeal = caseReport ? myAppeals.get(caseReport.id) : null
+          const withinAppealWindow = caseReport?.resolved_at
+            ? new Date(caseReport.resolved_at).getTime() >= Date.now() - 30 * 24 * 60 * 60 * 1000
+            : false
           return (
             <Card key={moment.id}>
               <CardHeader>
@@ -134,7 +160,28 @@ export default async function SurrogacyDetailPage({ params }: SurrogacyDetailPag
                   <p className="text-sm text-muted-foreground">You reported this outcome. The other participant has not confirmed it yet. Feedback, XP, and new achievements are unavailable until they confirm.</p>
                 )}
                 {exchange?.confirmation_state === 'disputed' && (
-                  <p className="text-sm text-muted-foreground">This Exchange is disputed. It does not qualify for new rewards or feedback. Existing member safety and report controls remain available.</p>
+                  <div className="space-y-3 rounded-md border p-4">
+                    <h3 className="font-semibold">Exchange dispute review</h3>
+                    <p className="text-sm text-muted-foreground">This Exchange remains disputed. Feedback and new rewards are unavailable. An administrative decision will not manufacture the other participant’s confirmation.</p>
+                    {caseReport ? (
+                      <>
+                        <p className="text-sm">Case status: <strong>{caseReport.status}</strong></p>
+                        {caseReport.adjudication && <p className="text-sm">Previous outcome: {caseReport.adjudication}</p>}
+                        {caseReport.action_taken && <p className="whitespace-pre-wrap text-sm text-muted-foreground">Decision rationale: {caseReport.action_taken}</p>}
+                        {myAppeal ? (
+                          <div className="space-y-1 rounded-md bg-muted p-3 text-sm">
+                            <p>Your appeal: <strong>{myAppeal.status}</strong></p>
+                            {myAppeal.decision_reason && <p>{myAppeal.decision_reason}</p>}
+                          </div>
+                        ) : ((caseReport.status === 'resolved' || caseReport.status === 'dismissed') && withinAppealWindow && (
+                          <ExchangeCaseAppealForm reportId={caseReport.id} />
+                        ))}
+                        {(caseReport.status === 'resolved' || caseReport.status === 'dismissed') && !withinAppealWindow && !myAppeal && (
+                          <p className="text-xs text-muted-foreground">The 30-day case appeal window has ended.</p>
+                        )}
+                      </>
+                    ) : <p className="text-sm text-muted-foreground">No review case is available for this historical Exchange dispute.</p>}
+                  </div>
                 )}
                 {exchange?.confirmation_state === 'legacy_unverified' && (
                   <p className="text-sm text-muted-foreground">This historical Exchange predates two-party confirmation. Earlier recorded feedback is preserved, but new feedback cannot be submitted without joint verification.</p>
