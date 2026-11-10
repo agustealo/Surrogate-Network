@@ -681,7 +681,6 @@ export type Database = {
           created_at?: string | null
           current_capacity?: number | null
           description: string
-          exchange_id?: string | null
           id?: string
           location_mode?: Database["public"]["Enums"]["location_mode"]
           rating?: number | null
@@ -1096,6 +1095,7 @@ export type Database = {
           case_origin?: string
           created_at?: string | null
           description: string
+          exchange_id?: string | null
           id?: string
           reported_user_id: string
           reporter_user_id: string
