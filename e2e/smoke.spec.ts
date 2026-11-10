@@ -187,7 +187,7 @@ test.describe('Consumer trial smoke @smoke', () => {
   })
 
   test('two real members complete the canonical marketplace lifecycle and expose the showcase product surfaces', async ({ browser }) => {
-    test.setTimeout(160_000)
+    test.setTimeout(240_000)
 
     const runId = `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`
     const memberA: TrialMember = {
@@ -212,12 +212,14 @@ test.describe('Consumer trial smoke @smoke', () => {
     const requesterContext = await browser.newContext()
     const providerContext = await browser.newContext()
     const adminContext = await browser.newContext()
-    const contexts = [requesterContext, providerContext, adminContext]
+    const appealAdminContext = await browser.newContext()
+    const contexts = [requesterContext, providerContext, adminContext, appealAdminContext]
 
     try {
       const requester = await requesterContext.newPage()
       const provider = await providerContext.newPage()
       const admin = await adminContext.newPage()
+      const appealAdmin = await appealAdminContext.newPage()
 
       await signUp(requester, memberB)
       await expect(requester.getByRole('heading', { name: /Welcome/ })).toBeVisible()
@@ -412,6 +414,58 @@ test.describe('Consumer trial smoke @smoke', () => {
       await admin.getByRole('button', { name: 'Resume first_reflection achievement awards' }).click()
       await expect(admin.getByRole('button', { name: 'Pause first_reflection achievement awards' }))
         .toBeVisible({ timeout: 20_000 })
+
+      // A separate disputed outcome must open the existing moderation queue,
+      // never grant feedback/XP, and allow an independently reviewed appeal.
+      await requester.goto(surrogacyUrl)
+      const disputedScheduler = requester.getByText('Schedule a Moment', { exact: true }).locator('..').locator('..')
+      await disputedScheduler.locator('input[type="datetime-local"]')
+        .fill(new Date(Date.now() - 5 * 60_000).toISOString().slice(0, 16))
+      await disputedScheduler.getByRole('spinbutton').fill('30')
+      await disputedScheduler.getByRole('button', { name: 'Schedule Moment' }).click()
+      await expect(requester.getByText('Moment: scheduled', { exact: true })).toBeVisible({ timeout: 20_000 })
+      const disputedMoment = requester.getByText('Moment: scheduled', { exact: true }).locator('..').locator('..').locator('..')
+      await disputedMoment.getByRole('button', { name: 'Complete' }).click()
+      await expect(requester.getByText('Awaiting peer confirmation', { exact: true })).toBeVisible({ timeout: 20_000 })
+
+      await provider.goto(surrogacyUrl)
+      await provider.getByRole('button', { name: 'Dispute outcome' }).click()
+      await expect(provider.getByText('Exchange dispute review', { exact: true })).toBeVisible({ timeout: 20_000 })
+      await expect(provider.getByText('Case status:', { exact: false })).toBeVisible()
+
+      await admin.goto('/admin/reports')
+      const disputeCaseCard = admin.getByText('Disputed Exchange case', { exact: true }).locator('..').locator('..')
+      await expect(disputeCaseCard).toBeVisible()
+      await disputeCaseCard.getByLabel('Independent Exchange case determination rationale')
+        .fill('The participants contest the completion outcome. Keep the event disputed pending further evidence.')
+      await disputeCaseCard.getByRole('button', { name: 'Uphold the dispute' }).click()
+      await expect(disputeCaseCard.getByText('Recorded outcome:', { exact: false })).toBeVisible({ timeout: 20_000 })
+
+      await requester.reload()
+      await expect(requester.getByText('Case status:', { exact: false })).toBeVisible()
+      await requester.getByLabel('Reason for appeal')
+        .fill('The original agreement and session notes should be reviewed by another administrator.')
+      await requester.getByRole('button', { name: 'Submit appeal' }).click()
+      await expect(requester.getByText('Your appeal:', { exact: false })).toBeVisible({ timeout: 20_000 })
+
+      const independentAdminMember: TrialMember = {
+        name: 'Taylor Appeal Reviewer',
+        email: `trial-appeal-reviewer-${runId}@test.local`,
+        password: 'Consumer-Trial-Appeal-321!',
+      }
+      await signUp(appealAdmin, independentAdminMember)
+      await provisionScreenshotAdmin(independentAdminMember.email)
+      await appealAdmin.goto('/admin/reports')
+      const independentCaseCard = appealAdmin.getByText('Disputed Exchange case', { exact: true }).locator('..').locator('..')
+      await expect(independentCaseCard.getByText('Appeal: pending', { exact: true })).toBeVisible()
+      await independentCaseCard.getByLabel('Independent appeal review rationale')
+        .fill('The appeal contains additional evidence that warrants an independent reconsideration of the outcome.')
+      await independentCaseCard.getByRole('button', { name: 'Accept and reopen case' }).click()
+      await expect(independentCaseCard.getByText('Appeal: accepted', { exact: true })).toBeVisible({ timeout: 20_000 })
+
+      await requester.reload()
+      await expect(requester.getByText('Your appeal:', { exact: false })).toContainText('accepted')
+      await expect(requester.getByText('Case status:', { exact: false })).toContainText('investigating')
 
       await provider.goto('/surrogacies')
       await expect(provider.getByText(`${needTitle} ↔ ${offerTitle}`, { exact: true })).toBeVisible()
