@@ -681,6 +681,7 @@ export type Database = {
           created_at?: string | null
           current_capacity?: number | null
           description: string
+          exchange_id?: string | null
           id?: string
           location_mode?: Database["public"]["Enums"]["location_mode"]
           rating?: number | null
@@ -1462,7 +1463,12 @@ export type Database = {
         Returns: string
       }
       adjudicate_exchange_dispute_trusted: {
-        Args: { p_admin_id: string; p_decision: string; p_reason: string; p_report_id: string }
+        Args: {
+          p_admin_id: string
+          p_decision: string
+          p_reason: string
+          p_report_id: string
+        }
         Returns: string
       }
       are_users_blocked: {
@@ -1579,7 +1585,12 @@ export type Database = {
         Returns: string
       }
       review_exchange_case_appeal_trusted: {
-        Args: { p_admin_id: string; p_appeal_id: string; p_decision: string; p_reason: string }
+        Args: {
+          p_admin_id: string
+          p_appeal_id: string
+          p_decision: string
+          p_reason: string
+        }
         Returns: string
       }
       set_achievement_rule_enabled: {
