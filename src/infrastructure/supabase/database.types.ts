@@ -1071,11 +1071,11 @@ export type Database = {
       }
       reports: {
         Row: {
+          action_taken: string | null
           adjudicated_at: string | null
           adjudicated_by: string | null
           adjudication: string | null
           case_origin: string
-          action_taken: string | null
           created_at: string | null
           description: string
           exchange_id: string | null
@@ -1088,11 +1088,11 @@ export type Database = {
           type: Database["public"]["Enums"]["report_type"]
         }
         Insert: {
+          action_taken?: string | null
           adjudicated_at?: string | null
           adjudicated_by?: string | null
           adjudication?: string | null
           case_origin?: string
-          action_taken?: string | null
           created_at?: string | null
           description: string
           id?: string
@@ -1104,11 +1104,11 @@ export type Database = {
           type: Database["public"]["Enums"]["report_type"]
         }
         Update: {
+          action_taken?: string | null
           adjudicated_at?: string | null
           adjudicated_by?: string | null
           adjudication?: string | null
           case_origin?: string
-          action_taken?: string | null
           created_at?: string | null
           description?: string
           exchange_id?: string | null
