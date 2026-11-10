@@ -3,6 +3,8 @@ import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { ReportModerationControls } from '@/components/admin/ReportModerationControls'
+import { ExchangeCaseDecisionControls, ExchangeCaseAppealReviewControls } from '@/components/admin/ExchangeCaseDecisionControls'
+import { requireAdmin } from '@/application/actions/adminContext'
 import { createServiceClient } from '@/infrastructure/supabase/server'
 
 function formatDateTime(value: string | null): string {
@@ -10,10 +12,11 @@ function formatDateTime(value: string | null): string {
 }
 
 export default async function AdminReportsPage() {
+  await requireAdmin()
   const service = createServiceClient()
   const { data: reports, error } = await service
     .from('reports')
-    .select('id,reported_user_id,reporter_user_id,type,severity,description,status,created_at,resolved_at,action_taken')
+    .select('id,reported_user_id,reporter_user_id,type,severity,description,status,created_at,resolved_at,action_taken,case_origin,exchange_id,adjudication,adjudicated_by')
     .order('created_at', { ascending: false })
     .limit(100)
 
@@ -24,6 +27,21 @@ export default async function AdminReportsPage() {
     ? await service.from('profiles').select('id,name').in('id', userIds)
     : { data: [], error: null }
   if (profilesResult.error) throw new Error(`Unable to load moderation member labels: ${profilesResult.error.message}`)
+
+  const caseIds = (reports ?? []).filter((report) => report.case_origin === 'exchange_dispute').map((report) => report.id)
+  const appealsResult = caseIds.length
+    ? await service.from('report_appeals')
+      .select('id,report_id,appellant_user_id,reason,status,decision_reason,reviewed_at')
+      .in('report_id', caseIds)
+      .order('created_at', { ascending: true })
+    : { data: [], error: null }
+  if (appealsResult.error) throw new Error('Unable to load Exchange case appeals.')
+  const appealByCase = new Map<string, NonNullable<typeof appealsResult.data>>()
+  for (const appeal of appealsResult.data ?? []) {
+    const current = appealByCase.get(appeal.report_id) ?? []
+    current.push(appeal)
+    appealByCase.set(appeal.report_id, current)
+  }
 
   const names = new Map((profilesResult.data ?? []).map((profile) => [profile.id, profile.name]))
   const openCount = (reports ?? []).filter((report) => report.status === 'pending' || report.status === 'investigating').length
@@ -54,9 +72,9 @@ export default async function AdminReportsPage() {
                 <div className="flex flex-wrap gap-2">
                   <Badge>{status}</Badge>
                   <Badge variant="outline">{report.severity}</Badge>
-                  <Badge variant="secondary">{report.type.replace(/_/g, ' ')}</Badge>
+                  <Badge variant="secondary">{report.case_origin === 'exchange_dispute' ? 'Exchange dispute' : report.type.replace(/_/g, ' ')}</Badge>
                 </div>
-                <CardTitle className="text-xl">Report concerning {reportedName}</CardTitle>
+                <CardTitle className="text-xl">{report.case_origin === 'exchange_dispute' ? 'Disputed Exchange case' : 'Report concerning ' + reportedName}</CardTitle>
                 <CardDescription>
                   Submitted by {reporterName} on {formatDateTime(report.created_at)}.
                 </CardDescription>
@@ -67,10 +85,31 @@ export default async function AdminReportsPage() {
                   <Button asChild size="sm" variant="outline"><Link href={`/profile/${report.reported_user_id}`}>Reported member profile</Link></Button>
                   <Button asChild size="sm" variant="outline"><Link href={`/profile/${report.reporter_user_id}`}>Reporter profile</Link></Button>
                 </div>
+                {report.exchange_id && (
+                  <div className="rounded-md border p-3 text-sm">
+                    <p className="font-medium">Exchange: {report.exchange_id}</p>
+                    <p className="text-muted-foreground">The Exchange remains disputed regardless of case disposition. Neither decision creates two-party confirmation or rewards.</p>
+                  </div>
+                )}
                 {report.action_taken && (
                   <div className="rounded-md border p-3 text-sm"><span className="font-medium">Recorded outcome:</span> {report.action_taken}</div>
                 )}
-                <ReportModerationControls reportId={report.id} currentStatus={status} />
+                {report.case_origin === 'exchange_dispute' ? (
+                  <div className="space-y-4">
+                    {report.adjudication && <p className="text-sm">Previous determination: <strong>{report.adjudication}</strong></p>}
+                    {(status === 'pending' || status === 'investigating') && (
+                      <ExchangeCaseDecisionControls reportId={report.id} />
+                    )}
+                    {(appealByCase.get(report.id) ?? []).map((appeal) => (
+                      <div key={appeal.id} className="space-y-3 rounded-md border p-4">
+                        <div className="flex flex-wrap items-center gap-2"><Badge variant="secondary">Appeal: {appeal.status}</Badge><span className="text-xs text-muted-foreground">Member {appeal.appellant_user_id}</span></div>
+                        <p className="whitespace-pre-wrap text-sm">{appeal.reason}</p>
+                        {appeal.decision_reason && <p className="text-sm text-muted-foreground">Review rationale: {appeal.decision_reason}</p>}
+                        {appeal.status === 'pending' && <ExchangeCaseAppealReviewControls appealId={appeal.id} />}
+                      </div>
+                    ))}
+                  </div>
+                ) : <ReportModerationControls reportId={report.id} currentStatus={status} />}
               </CardContent>
             </Card>
           )
