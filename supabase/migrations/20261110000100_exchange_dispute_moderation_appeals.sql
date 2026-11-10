@@ -192,6 +192,29 @@ CREATE TRIGGER open_disputed_exchange_case
 AFTER INSERT OR UPDATE OF confirmation_state ON public.exchanges
 FOR EACH ROW EXECUTE FUNCTION private.open_disputed_exchange_case();
 
+-- Historical disputed Exchanges already exist. Establish their moderation
+-- cases without changing their Exchange or confirmation timestamps.
+-- This privileged migration backfill is a single atomic transaction; the
+-- member-forgery trigger is immediately reenabled before commit.
+ALTER TABLE public.reports DISABLE TRIGGER a_guard_exchange_case_report_insert;
+INSERT INTO public.reports (
+  reporter_user_id, reported_user_id, type, severity,
+  status, description, exchange_id, case_origin
+)
+SELECT
+  e.disputed_by, peer.id, 'other', 'medium', 'pending',
+  'Previously disputed Exchange awaiting independent moderation review.',
+  e.id, 'exchange_dispute'
+FROM public.exchanges e
+JOIN public.surrogacies s ON s.id = e.surrogacy_id
+CROSS JOIN LATERAL unnest(s.partner_ids) AS peer(id)
+WHERE e.confirmation_state = 'disputed'
+  AND cardinality(s.partner_ids) = 2
+  AND e.disputed_by = ANY(s.partner_ids)
+  AND peer.id <> e.disputed_by
+ON CONFLICT (exchange_id) WHERE exchange_id IS NOT NULL DO NOTHING;
+ALTER TABLE public.reports ENABLE TRIGGER a_guard_exchange_case_report_insert;
+
 -- Reuse the existing moderation RPC for ordinary safety reports, but
 -- prohibit editing exchange-case outcomes through that generic path.
 CREATE OR REPLACE FUNCTION public.moderate_report_for_trial_trusted(
