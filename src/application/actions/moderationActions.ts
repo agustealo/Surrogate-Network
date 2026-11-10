@@ -2,7 +2,7 @@
 
 import { revalidatePath } from 'next/cache'
 import { z } from 'zod'
-import { actionFailure, type ActionResult } from '@/application/actions/memberContext'
+import { actionFailure, requireActiveMember, type ActionResult } from '@/application/actions/memberContext'
 import { requireAdmin } from '@/application/actions/adminContext'
 
 const moderationSchema = z.object({
@@ -30,6 +30,84 @@ export async function moderateReportAction(input: unknown): Promise<ActionResult
 
     revalidatePath('/admin')
     revalidatePath('/admin/reports')
+    return { ok: true, data: undefined }
+  } catch (error) {
+    return actionFailure(error)
+  }
+}
+
+const caseDecisionSchema = z.object({
+  reportId: z.string().uuid(),
+  decision: z.enum(['uphold', 'dismiss']),
+  reason: z.string().trim().min(12).max(2000),
+}).strict()
+
+const caseAppealSchema = z.object({
+  reportId: z.string().uuid(),
+  reason: z.string().trim().min(12).max(2000),
+}).strict()
+
+const appealReviewSchema = z.object({
+  appealId: z.string().uuid(),
+  decision: z.enum(['accept', 'deny']),
+  reason: z.string().trim().min(12).max(2000),
+}).strict()
+
+/** Independently adjudicate a linked Exchange case; no reward writes. */
+export async function adjudicateExchangeCaseAction(input: unknown): Promise<ActionResult> {
+  try {
+    const admin = await requireAdmin()
+    const values = caseDecisionSchema.parse(input)
+    const { error } = await admin.supabase.rpc('adjudicate_exchange_dispute', {
+      p_report_id: values.reportId,
+      p_decision: values.decision,
+      p_reason: values.reason,
+    })
+    if (error) throw new Error('Unable to adjudicate Exchange case: ' + error.message)
+
+    revalidatePath('/admin/reports')
+    revalidatePath('/surrogacies')
+    return { ok: true, data: undefined }
+  } catch (error) {
+    return actionFailure(error)
+  }
+}
+
+/** An actual Exchange participant asks for independent review. */
+export async function submitExchangeCaseAppealAction(
+  input: unknown,
+): Promise<ActionResult<{ id: string }>> {
+  try {
+    const member = await requireActiveMember()
+    const values = caseAppealSchema.parse(input)
+    const { data, error } = await member.supabase.rpc('submit_exchange_case_appeal', {
+      p_report_id: values.reportId,
+      p_reason: values.reason,
+    })
+    if (error || !data) throw new Error(error?.message ?? 'Unable to file this appeal.')
+
+    revalidatePath('/admin/reports')
+    revalidatePath('/surrogacies')
+    return { ok: true, data: { id: data } }
+  } catch (error) {
+    return actionFailure(error)
+  }
+}
+
+/** A second authorized reviewer may accept an appeal for re-investigation. */
+export async function reviewExchangeCaseAppealAction(input: unknown): Promise<ActionResult> {
+  try {
+    const admin = await requireAdmin()
+    const values = appealReviewSchema.parse(input)
+    const { error } = await admin.supabase.rpc('review_exchange_case_appeal', {
+      p_appeal_id: values.appealId,
+      p_decision: values.decision,
+      p_reason: values.reason,
+    })
+    if (error) throw new Error('Unable to review case appeal: ' + error.message)
+
+    revalidatePath('/admin/reports')
+    revalidatePath('/surrogacies')
     return { ok: true, data: undefined }
   } catch (error) {
     return actionFailure(error)
