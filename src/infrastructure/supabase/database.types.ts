@@ -997,11 +997,88 @@ export type Database = {
           },
         ]
       }
+      report_appeals: {
+        Row: {
+          appellant_user_id: string
+          created_at: string
+          decision_reason: string | null
+          id: string
+          reason: string
+          report_id: string
+          reviewed_at: string | null
+          reviewer_id: string | null
+          status: string
+        }
+        Insert: {
+          appellant_user_id: string
+          created_at?: string
+          decision_reason?: string | null
+          id?: string
+          reason: string
+          report_id: string
+          reviewed_at?: string | null
+          reviewer_id?: string | null
+          status?: string
+        }
+        Update: {
+          appellant_user_id?: string
+          created_at?: string
+          decision_reason?: string | null
+          id?: string
+          reason?: string
+          report_id?: string
+          reviewed_at?: string | null
+          reviewer_id?: string | null
+          status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "report_appeals_appellant_user_id_fkey"
+            columns: ["appellant_user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "report_appeals_appellant_user_id_fkey"
+            columns: ["appellant_user_id"]
+            isOneToOne: false
+            referencedRelation: "public_profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "report_appeals_report_id_fkey"
+            columns: ["report_id"]
+            isOneToOne: false
+            referencedRelation: "reports"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "report_appeals_reviewer_id_fkey"
+            columns: ["reviewer_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "report_appeals_reviewer_id_fkey"
+            columns: ["reviewer_id"]
+            isOneToOne: false
+            referencedRelation: "public_profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       reports: {
         Row: {
+          adjudicated_at: string | null
+          adjudicated_by: string | null
+          adjudication: string | null
+          case_origin: string
           action_taken: string | null
           created_at: string | null
           description: string
+          exchange_id: string | null
           id: string
           reported_user_id: string
           reporter_user_id: string
@@ -1011,6 +1088,10 @@ export type Database = {
           type: Database["public"]["Enums"]["report_type"]
         }
         Insert: {
+          adjudicated_at?: string | null
+          adjudicated_by?: string | null
+          adjudication?: string | null
+          case_origin?: string
           action_taken?: string | null
           created_at?: string | null
           description: string
@@ -1023,9 +1104,14 @@ export type Database = {
           type: Database["public"]["Enums"]["report_type"]
         }
         Update: {
+          adjudicated_at?: string | null
+          adjudicated_by?: string | null
+          adjudication?: string | null
+          case_origin?: string
           action_taken?: string | null
           created_at?: string | null
           description?: string
+          exchange_id?: string | null
           id?: string
           reported_user_id?: string
           reporter_user_id?: string
@@ -1035,6 +1121,27 @@ export type Database = {
           type?: Database["public"]["Enums"]["report_type"]
         }
         Relationships: [
+          {
+            foreignKeyName: "reports_adjudicated_by_fkey"
+            columns: ["adjudicated_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "reports_adjudicated_by_fkey"
+            columns: ["adjudicated_by"]
+            isOneToOne: false
+            referencedRelation: "public_profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "reports_exchange_id_fkey"
+            columns: ["exchange_id"]
+            isOneToOne: false
+            referencedRelation: "exchanges"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "reports_reported_user_id_fkey"
             columns: ["reported_user_id"]
@@ -1350,6 +1457,14 @@ export type Database = {
         Args: { p_actor_id: string; p_proposal_id: string }
         Returns: string
       }
+      adjudicate_exchange_dispute: {
+        Args: { p_decision: string; p_reason: string; p_report_id: string }
+        Returns: string
+      }
+      adjudicate_exchange_dispute_trusted: {
+        Args: { p_admin_id: string; p_decision: string; p_reason: string; p_report_id: string }
+        Returns: string
+      }
       are_users_blocked: {
         Args: { p_user_a: string; p_user_b: string }
         Returns: boolean
@@ -1459,6 +1574,14 @@ export type Database = {
         Args: { p_auth_deleted: boolean; p_error?: string; p_user_id: string }
         Returns: undefined
       }
+      review_exchange_case_appeal: {
+        Args: { p_appeal_id: string; p_decision: string; p_reason: string }
+        Returns: string
+      }
+      review_exchange_case_appeal_trusted: {
+        Args: { p_admin_id: string; p_appeal_id: string; p_decision: string; p_reason: string }
+        Returns: string
+      }
       set_achievement_rule_enabled: {
         Args: { p_code: string; p_enabled: boolean; p_reason: string }
         Returns: undefined
@@ -1479,6 +1602,14 @@ export type Database = {
       set_trial_account_participation_trusted: {
         Args: { p_active: boolean; p_user_id: string }
         Returns: undefined
+      }
+      submit_exchange_case_appeal: {
+        Args: { p_reason: string; p_report_id: string }
+        Returns: string
+      }
+      submit_exchange_case_appeal_trusted: {
+        Args: { p_actor_id: string; p_reason: string; p_report_id: string }
+        Returns: string
       }
       submit_feedback_for_trial: {
         Args: {
