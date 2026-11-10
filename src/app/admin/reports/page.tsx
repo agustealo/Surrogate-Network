@@ -36,7 +36,8 @@ export default async function AdminReportsPage() {
       .order('created_at', { ascending: true })
     : { data: [], error: null }
   if (appealsResult.error) throw new Error('Unable to load Exchange case appeals.')
-  const appealByCase = new Map<string, NonNullable<typeof appealsResult.data>>()
+  type AppealRow = NonNullable<typeof appealsResult.data>[number]
+  const appealByCase = new Map<string, AppealRow[]>()
   for (const appeal of appealsResult.data ?? []) {
     const current = appealByCase.get(appeal.report_id) ?? []
     current.push(appeal)
