@@ -1083,6 +1083,7 @@ export type Database = {
           reported_user_id: string
           reporter_user_id: string
           resolved_at: string | null
+          reward_feedback_id: string | null
           severity: Database["public"]["Enums"]["severity"]
           status: Database["public"]["Enums"]["report_status"] | null
           type: Database["public"]["Enums"]["report_type"]
@@ -1100,6 +1101,7 @@ export type Database = {
           reported_user_id: string
           reporter_user_id: string
           resolved_at?: string | null
+          reward_feedback_id?: string | null
           severity: Database["public"]["Enums"]["severity"]
           status?: Database["public"]["Enums"]["report_status"] | null
           type: Database["public"]["Enums"]["report_type"]
@@ -1117,6 +1119,7 @@ export type Database = {
           reported_user_id?: string
           reporter_user_id?: string
           resolved_at?: string | null
+          reward_feedback_id?: string | null
           severity?: Database["public"]["Enums"]["severity"]
           status?: Database["public"]["Enums"]["report_status"] | null
           type?: Database["public"]["Enums"]["report_type"]
@@ -1169,6 +1172,99 @@ export type Database = {
             columns: ["reporter_user_id"]
             isOneToOne: false
             referencedRelation: "public_profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "reports_reward_feedback_id_fkey"
+            columns: ["reward_feedback_id"]
+            isOneToOne: true
+            referencedRelation: "feedback"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      reward_corrections: {
+        Row: {
+          action: string
+          created_at: string
+          feedback_id: string
+          id: string
+          member_id: string
+          reason: string
+          report_id: string
+          reviewer_id: string | null
+          xp_transaction_id: string
+        }
+        Insert: {
+          action: string
+          created_at?: string
+          feedback_id: string
+          id?: string
+          member_id: string
+          reason: string
+          report_id: string
+          reviewer_id?: string | null
+          xp_transaction_id: string
+        }
+        Update: {
+          action?: string
+          created_at?: string
+          feedback_id?: string
+          id?: string
+          member_id?: string
+          reason?: string
+          report_id?: string
+          reviewer_id?: string | null
+          xp_transaction_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "reward_corrections_feedback_id_fkey"
+            columns: ["feedback_id"]
+            isOneToOne: false
+            referencedRelation: "feedback"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "reward_corrections_member_id_fkey"
+            columns: ["member_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "reward_corrections_member_id_fkey"
+            columns: ["member_id"]
+            isOneToOne: false
+            referencedRelation: "public_profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "reward_corrections_report_id_fkey"
+            columns: ["report_id"]
+            isOneToOne: false
+            referencedRelation: "reports"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "reward_corrections_reviewer_id_fkey"
+            columns: ["reviewer_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "reward_corrections_reviewer_id_fkey"
+            columns: ["reviewer_id"]
+            isOneToOne: false
+            referencedRelation: "public_profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "reward_corrections_xp_transaction_id_fkey"
+            columns: ["xp_transaction_id"]
+            isOneToOne: true
+            referencedRelation: "xp_transactions"
             referencedColumns: ["id"]
           },
         ]
@@ -1471,6 +1567,19 @@ export type Database = {
         }
         Returns: string
       }
+      adjudicate_reward_review: {
+        Args: { p_decision: string; p_reason: string; p_report_id: string }
+        Returns: string
+      }
+      adjudicate_reward_review_trusted: {
+        Args: {
+          p_admin_id: string
+          p_decision: string
+          p_reason: string
+          p_report_id: string
+        }
+        Returns: string
+      }
       are_users_blocked: {
         Args: { p_user_a: string; p_user_b: string }
         Returns: boolean
@@ -1571,6 +1680,10 @@ export type Database = {
         }
         Returns: undefined
       }
+      open_reward_feedback_review: {
+        Args: { p_feedback_id: string; p_reason: string }
+        Returns: string
+      }
       prepare_trial_account_deletion: { Args: never; Returns: undefined }
       prepare_trial_account_deletion_trusted: {
         Args: { p_user_id: string }
@@ -1585,6 +1698,19 @@ export type Database = {
         Returns: string
       }
       review_exchange_case_appeal_trusted: {
+        Args: {
+          p_admin_id: string
+          p_appeal_id: string
+          p_decision: string
+          p_reason: string
+        }
+        Returns: string
+      }
+      review_reward_review_appeal: {
+        Args: { p_appeal_id: string; p_decision: string; p_reason: string }
+        Returns: string
+      }
+      review_reward_review_appeal_trusted: {
         Args: {
           p_admin_id: string
           p_appeal_id: string
@@ -1643,6 +1769,10 @@ export type Database = {
           p_skill_endorsements?: string[]
           p_to_user_id: string
         }
+        Returns: string
+      }
+      submit_reward_review_appeal: {
+        Args: { p_reason: string; p_report_id: string }
         Returns: string
       }
       transition_proposal_for_trial: {
