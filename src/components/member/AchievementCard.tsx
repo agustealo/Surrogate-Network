@@ -58,7 +58,7 @@ export function AchievementCard({ definition, award, eligibleFeedbackCount }: Ac
           <p className="text-xs text-muted-foreground">New awards are currently paused by the network administrators. Existing recognition is preserved.</p>
         )}
         {revoked && (
-          <p className="text-xs text-muted-foreground">This award was withdrawn. Contact support to request a review.</p>
+          <p className="text-xs text-muted-foreground">This achievement was withdrawn after a documented reward review. See Reward reviews and corrections for the decision and any available appeal.</p>
         )}
       </CardContent>
     </Card>
