@@ -430,15 +430,14 @@ test.describe('Consumer trial smoke @smoke', () => {
       await provider.goto(surrogacyUrl)
       await expect(provider.getByRole('heading', { name: "Question this Feedback's reward eligibility" }))
         .toBeVisible({ timeout: 20_000 })
-      await provider.getByLabel('Evidence and reasoning').fill(
-        'Please verify this credited Feedback against the recorded participants and session context.',
-      )
+      const rewardReviewReason = `Please verify this credited Feedback against the recorded participants and session context. Reference ${runId}.`
+      await provider.getByLabel('Evidence and reasoning').fill(rewardReviewReason)
       await provider.getByRole('button', { name: 'Submit evidence review request' }).click()
       await expect(provider.getByText('Reward review request:', { exact: false }))
         .toBeVisible({ timeout: 20_000 })
 
       await admin.goto('/admin/reports')
-      const rewardCaseCard = admin.getByText('Feedback reward eligibility review', { exact: true })
+      const rewardCaseCard = admin.getByText(rewardReviewReason, { exact: true })
         .locator('..').locator('..')
       await expect(rewardCaseCard).toBeVisible()
       await rewardCaseCard.getByLabel('Evidence and reasoning').fill(
@@ -462,7 +461,7 @@ test.describe('Consumer trial smoke @smoke', () => {
 
       await appealAdmin.goto('/admin/reports')
       const independentRewardCard = appealAdmin
-        .getByText('Feedback reward eligibility review', { exact: true })
+        .getByText(rewardReviewReason, { exact: true })
         .locator('..').locator('..')
       await expect(independentRewardCard.getByText('Appeal: pending', { exact: true }))
         .toBeVisible()
