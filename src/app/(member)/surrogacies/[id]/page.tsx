@@ -7,6 +7,7 @@ import { FeedbackForm } from '@/components/forms/FeedbackForm'
 import { MomentActions } from '@/components/connections/MomentActions'
 import { ExchangeConfirmationActions } from '@/components/connections/ExchangeConfirmationActions'
 import { ExchangeCaseAppealForm } from '@/components/connections/ExchangeCaseAppealForm'
+import { RewardReviewRequestForm } from '@/components/rewards/RewardReviewControls'
 import { MomentScheduler } from '@/components/connections/MomentScheduler'
 import { createClient, createServiceClient } from '@/infrastructure/supabase/server'
 import { routes } from '@/lib/routes'
@@ -56,6 +57,22 @@ export default async function SurrogacyDetailPage({ params }: SurrogacyDetailPag
     ? await supabase.from('feedback').select('id,exchange_id,from_user_id').eq('from_user_id', user.id).in('exchange_id', exchangeIds)
     : { data: [], error: null }
   if (feedbackResult.error) throw new Error(`Failed to load Feedback state: ${feedbackResult.error.message}`)
+
+  const receivedFeedbackResult = exchangeIds.length
+    ? await supabase.from('feedback')
+      .select('id,exchange_id,from_user_id')
+      .eq('to_user_id', user.id).in('exchange_id', exchangeIds)
+    : { data: [], error: null }
+  if (receivedFeedbackResult.error) throw new Error('Unable to load Feedback involving your account.')
+  const receivedFeedbackIds = (receivedFeedbackResult.data ?? []).map((entry) => entry.id)
+  const rewardReviewResult = receivedFeedbackIds.length
+    ? await supabase.from('reports')
+      .select('id,reward_feedback_id,status')
+      .eq('case_origin', 'reward_review').in('reward_feedback_id', receivedFeedbackIds)
+    : { data: [], error: null }
+  if (rewardReviewResult.error) throw new Error('Unable to load your Feedback review requests.')
+  const receivedFeedbackByExchange = new Map((receivedFeedbackResult.data ?? []).map((entry) => [entry.exchange_id, entry]))
+  const rewardReviewByFeedback = new Map((rewardReviewResult.data ?? []).map((entry) => [entry.reward_feedback_id, entry]))
 
   const disputedIds = (exchangesResult.data ?? []).filter((exchange) => exchange.confirmation_state === 'disputed').map((exchange) => exchange.id)
   const service = disputedIds.length ? createServiceClient() : null
@@ -133,6 +150,8 @@ export default async function SurrogacyDetailPage({ params }: SurrogacyDetailPag
           const canReview = exchange && exchange.confirmation_state === 'confirmed' && (exchange.status === 'completed' || exchange.status === 'partial') && !reviewedExchangeIds.has(exchange.id)
           const pendingConfirmation = exchange?.confirmation_state === 'pending'
           const peerCanConfirm = pendingConfirmation && exchange.recorded_by !== user.id
+          const receivedFeedback = exchange ? receivedFeedbackByExchange.get(exchange.id) : null
+          const rewardReview = receivedFeedback ? rewardReviewByFeedback.get(receivedFeedback.id) : null
           const caseReport = exchange ? casesByExchange.get(exchange.id) : null
           const myAppeal = caseReport ? myAppeals.get(caseReport.id) : null
           const withinAppealWindow = caseReport?.resolved_at
@@ -185,6 +204,14 @@ export default async function SurrogacyDetailPage({ params }: SurrogacyDetailPag
                 )}
                 {exchange?.confirmation_state === 'legacy_unverified' && (
                   <p className="text-sm text-muted-foreground">This historical Exchange predates two-party confirmation. Earlier recorded feedback is preserved, but new feedback cannot be submitted without joint verification.</p>
+                )}
+                {receivedFeedback && exchange?.confirmation_state === 'confirmed' && (
+                  <div className="space-y-3 rounded-md bg-muted/30 p-3">
+                    <p className="text-sm text-muted-foreground">Your counterpart submitted Feedback about this Exchange. If the underlying participation record is inaccurate, you can request an evidence-based reward review. Ratings alone are not grounds for removing recognition.</p>
+                    {rewardReview ? (
+                      <p className="text-sm">Reward review request: <strong>{rewardReview.status}</strong>. Decisions and appeals are tracked in the affected member's Rewards history.</p>
+                    ) : <RewardReviewRequestForm feedbackId={receivedFeedback.id} />}
+                  </div>
                 )}
                 {canReview && <FeedbackForm exchangeId={exchange.id} toUserId={otherUserId} companionName={otherName} />}
                 {exchange && reviewedExchangeIds.has(exchange.id) && <p className="text-sm text-muted-foreground">You submitted feedback for this Exchange.</p>}
