@@ -2,6 +2,7 @@ import Link from 'next/link'
 import { ArrowRight, Trophy } from 'lucide-react'
 import { redirect } from 'next/navigation'
 import { AchievementCard } from '@/components/member/AchievementCard'
+import { RewardReviewAppealForm } from '@/components/rewards/RewardReviewControls'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
@@ -18,7 +19,7 @@ export default async function RewardsPage() {
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) redirect(routes.public.login)
 
-  const [progressionResult, xpResult, definitionsResult, awardsResult, creditSummaryResult] = await Promise.all([
+  const [progressionResult, xpResult, definitionsResult, awardsResult, creditSummaryResult, correctionsResult, rewardReviewResult] = await Promise.all([
     supabase.from('member_progression')
       .select('current_rank,total_xp,achievements,level')
       .eq('user_id', user.id)
@@ -36,11 +37,29 @@ export default async function RewardsPage() {
       .eq('user_id', user.id)
       .order('earned_at', { ascending: false }),
     supabase.rpc('get_my_reward_credit_summary').single(),
+    supabase.from('reward_corrections')
+      .select('id,action,reason,created_at,report_id,feedback_id')
+      .eq('member_id', user.id).order('created_at', { ascending: false }).limit(20),
+    supabase.from('reports')
+      .select('id,status,adjudication,action_taken,resolved_at,reward_feedback_id')
+      .eq('case_origin', 'reward_review')
+      .eq('reported_user_id', user.id).order('created_at', { ascending: false }).limit(20),
   ])
 
-  const failed = [progressionResult, xpResult, definitionsResult, awardsResult, creditSummaryResult]
+  const failed = [progressionResult, xpResult, definitionsResult, awardsResult, creditSummaryResult, correctionsResult, rewardReviewResult]
     .find((result) => result.error)
   if (failed?.error) throw new Error('Unable to load your reward history and achievements.')
+
+  const reviewCaseIds = (rewardReviewResult.data ?? []).map((review) => review.id)
+  const appealsResult = reviewCaseIds.length
+    ? await supabase.from('report_appeals')
+      .select('id,report_id,status,decision_reason')
+      .eq('appellant_user_id', user.id).in('report_id', reviewCaseIds)
+    : { data: [], error: null }
+  if (appealsResult.error) throw new Error('Unable to load reward review appeals.')
+  const myAppeals = new Map((appealsResult.data ?? []).map((appeal) => [appeal.report_id, appeal]))
+  const corrections = correctionsResult.data ?? []
+  const reviews = rewardReviewResult.data ?? []
 
   const progression = progressionResult.data
   const xpRows = xpResult.data ?? []
@@ -139,6 +158,51 @@ export default async function RewardsPage() {
             </CardContent>
           </Card>
         )}
+      </section>
+
+      <section aria-labelledby="reward-review-history-heading">
+        <Card>
+          <CardHeader>
+            <CardTitle id="reward-review-history-heading">Reward reviews and corrections</CardTitle>
+            <CardDescription>Decisions affecting your own participation record, independent appeals, and compensating XP history. A review is not a misconduct finding.</CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            {!reviews.length && !corrections.length && (
+              <p className="text-sm text-muted-foreground">No reward corrections or Feedback eligibility reviews have been recorded for your account.</p>
+            )}
+            {reviews.map((review) => {
+              const appeal = myAppeals.get(review.id)
+              const canAppeal = (review.status === 'resolved' || review.status === 'dismissed')
+                && !!review.resolved_at
+                && new Date(review.resolved_at).getTime() >= Date.now() - 30 * 24 * 60 * 60 * 1000
+              return (
+                <div key={review.id} className="space-y-3 rounded-md border p-4">
+                  <div className="flex flex-wrap gap-2"><Badge variant="outline">Case: {review.status}</Badge>{review.adjudication && <Badge variant="secondary">Outcome: {review.adjudication}</Badge>}</div>
+                  <p className="text-sm text-muted-foreground">Linked Feedback: {review.reward_feedback_id}</p>
+                  {review.action_taken && <p className="whitespace-pre-wrap text-sm">Recorded rationale: {review.action_taken}</p>}
+                  {appeal ? (
+                    <p className="text-sm">Your appeal: <strong>{appeal.status}</strong>{appeal.decision_reason ? '. ' + appeal.decision_reason : ''}</p>
+                  ) : canAppeal ? <RewardReviewAppealForm reportId={review.id} /> : null}
+                  {!appeal && !canAppeal && (review.status === 'resolved' || review.status === 'dismissed') && (
+                    <p className="text-xs text-muted-foreground">The 30-day appeal period has ended.</p>
+                  )}
+                </div>
+              )
+            })}
+            {!!corrections.length && (
+              <div className="space-y-2">
+                <h3 className="font-semibold">Compensating journal entries</h3>
+                {corrections.map((correction) => (
+                  <div key={correction.id} className="space-y-1 rounded-md border p-3 text-sm">
+                    <p className="font-medium">{correction.action === 'reversed' ? '−10 XP correction' : '+10 XP restored'} · {formatDate(correction.created_at)}</p>
+                    <p className="text-muted-foreground">{correction.reason}</p>
+                    <p className="text-xs text-muted-foreground">Case {correction.report_id}</p>
+                  </div>
+                ))}
+              </div>
+            )}
+          </CardContent>
+        </Card>
       </section>
 
       <section aria-labelledby="xp-history-heading">
