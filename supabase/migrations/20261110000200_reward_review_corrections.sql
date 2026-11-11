@@ -568,3 +568,200 @@ FROM PUBLIC, anon, service_role;
 GRANT EXECUTE ON FUNCTION public.adjudicate_reward_review(uuid, text, text)
 TO authenticated;
 
+
+-- Reuse public.report_appeals and its existing RLS/unique evidence owner.
+-- Only participants of the reviewed Feedback can appeal a closed case.
+CREATE OR REPLACE FUNCTION public.submit_reward_review_appeal(
+  p_report_id uuid, p_reason text
+)
+RETURNS uuid
+LANGUAGE plpgsql SECURITY DEFINER SET search_path = ''
+AS $$
+DECLARE
+  v_actor uuid := auth.uid();
+  v_case public.reports%ROWTYPE;
+  v_reason text := NULLIF(btrim(p_reason), '');
+  v_appeal_id uuid;
+BEGIN
+  IF v_actor IS NULL OR NOT EXISTS (
+    SELECT 1 FROM public.profiles
+    WHERE id = v_actor AND trial_deleted_at IS NULL
+  ) THEN RAISE EXCEPTION 'Authenticated member required for appeal'; END IF;
+  IF v_reason IS NULL OR length(v_reason) NOT BETWEEN 20 AND 2000 THEN
+    RAISE EXCEPTION 'An appeal requires 20 to 2000 characters of explanation';
+  END IF;
+
+  SELECT * INTO v_case
+  FROM public.reports WHERE id = p_report_id FOR UPDATE;
+  IF NOT FOUND OR v_case.case_origin <> 'reward_review'
+     OR v_actor NOT IN (v_case.reporter_user_id, v_case.reported_user_id)
+     OR NOT EXISTS (
+       SELECT 1 FROM public.feedback f
+       WHERE f.id = v_case.reward_feedback_id
+         AND (v_actor = f.from_user_id OR v_actor = f.to_user_id)
+     ) THEN
+    RAISE EXCEPTION 'Only an affected Feedback participant may appeal';
+  END IF;
+  IF v_case.status NOT IN ('resolved', 'dismissed')
+     OR v_case.resolved_at IS NULL
+     OR v_case.resolved_at < now() - interval '30 days' THEN
+    RAISE EXCEPTION 'Only a decision within the past 30 days may be appealed';
+  END IF;
+
+  INSERT INTO public.report_appeals(report_id, appellant_user_id, reason)
+  VALUES (p_report_id, v_actor, v_reason)
+  RETURNING id INTO v_appeal_id;
+
+  INSERT INTO public.audit_events(
+    actor_id, action, target_id, target_type, after, timestamp
+  ) VALUES (
+    v_actor, 'reward_review_appeal_submitted',
+    v_appeal_id::text, 'report_appeal',
+    jsonb_build_object(
+      'report_id', p_report_id,
+      'feedback_id', v_case.reward_feedback_id
+    ), now()
+  );
+  RETURN v_appeal_id;
+END;
+$$;
+REVOKE ALL ON FUNCTION public.submit_reward_review_appeal(uuid, text)
+FROM PUBLIC, anon, service_role;
+GRANT EXECUTE ON FUNCTION public.submit_reward_review_appeal(uuid, text)
+TO authenticated;
+
+CREATE OR REPLACE FUNCTION public.review_reward_review_appeal_trusted(
+  p_appeal_id uuid, p_admin_id uuid, p_decision text, p_reason text
+)
+RETURNS text
+LANGUAGE plpgsql SECURITY INVOKER SET search_path = ''
+AS $$
+DECLARE
+  v_appeal public.report_appeals%ROWTYPE;
+  v_case public.reports%ROWTYPE;
+  v_reason text := NULLIF(btrim(p_reason), '');
+  v_status text;
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM public.profiles
+    WHERE id = p_admin_id AND is_admin = true AND is_suspended = false
+      AND trial_deactivated_at IS NULL AND trial_deleted_at IS NULL
+  ) THEN RAISE EXCEPTION 'Independent administrator required'; END IF;
+  IF p_decision IS NULL OR p_decision NOT IN ('accept', 'deny') THEN
+    RAISE EXCEPTION 'Appeal review decision must be accept or deny';
+  END IF;
+  IF v_reason IS NULL OR length(v_reason) NOT BETWEEN 20 AND 2000 THEN
+    RAISE EXCEPTION 'Explain the independent review in 20 to 2000 characters';
+  END IF;
+
+  SELECT * INTO v_appeal
+  FROM public.report_appeals WHERE id = p_appeal_id FOR UPDATE;
+  IF NOT FOUND OR v_appeal.status <> 'pending' THEN
+    RAISE EXCEPTION 'The appeal is missing or already reviewed';
+  END IF;
+  SELECT * INTO v_case
+  FROM public.reports WHERE id = v_appeal.report_id FOR UPDATE;
+  IF NOT FOUND OR v_case.case_origin <> 'reward_review'
+     OR v_case.status NOT IN ('resolved', 'dismissed') THEN
+    RAISE EXCEPTION 'An independently decided reward review is required';
+  END IF;
+  IF p_admin_id = v_case.adjudicated_by
+     OR p_admin_id IN (v_case.reporter_user_id, v_case.reported_user_id) THEN
+    RAISE EXCEPTION 'The original reviewer or a participant cannot review the appeal';
+  END IF;
+
+  v_status := CASE WHEN p_decision = 'accept' THEN 'accepted' ELSE 'denied' END;
+  UPDATE public.report_appeals
+  SET status = v_status, reviewer_id = p_admin_id,
+      decision_reason = v_reason, reviewed_at = now()
+  WHERE id = p_appeal_id;
+
+  IF p_decision = 'accept' THEN
+    UPDATE public.reports
+    SET status = 'investigating', resolved_at = NULL,
+        action_taken = 'Reopened after independent reward review appeal'
+    WHERE id = v_case.id;
+  END IF;
+
+  INSERT INTO public.audit_events (
+    actor_id, action, target_id, target_type, before, after, reason, timestamp
+  ) VALUES (
+    p_admin_id, 'reward_review_appeal_reviewed',
+    p_appeal_id::text, 'report_appeal',
+    jsonb_build_object(
+      'prior_case_status', v_case.status,
+      'prior_adjudication', v_case.adjudication,
+      'prior_adjudicator', v_case.adjudicated_by
+    ),
+    jsonb_build_object(
+      'status', v_status, 'case_id', v_case.id,
+      'case_status', CASE WHEN v_status = 'accepted' THEN 'investigating'
+        ELSE v_case.status::text END
+    ), v_reason, now()
+  );
+  RETURN v_status;
+END;
+$$;
+REVOKE ALL ON FUNCTION public.review_reward_review_appeal_trusted(uuid, uuid, text, text)
+FROM PUBLIC, anon, authenticated, service_role;
+GRANT EXECUTE ON FUNCTION public.review_reward_review_appeal_trusted(uuid, uuid, text, text)
+TO postgres;
+
+CREATE OR REPLACE FUNCTION public.review_reward_review_appeal(
+  p_appeal_id uuid, p_decision text, p_reason text
+)
+RETURNS text
+LANGUAGE plpgsql SECURITY DEFINER SET search_path = ''
+AS $$
+DECLARE
+  v_actor uuid := auth.uid();
+BEGIN
+  IF v_actor IS NULL THEN RAISE EXCEPTION 'Authenticated administrator required'; END IF;
+  RETURN public.review_reward_review_appeal_trusted(
+    p_appeal_id, v_actor, p_decision, p_reason
+  );
+END;
+$$;
+REVOKE ALL ON FUNCTION public.review_reward_review_appeal(uuid, text, text)
+FROM PUBLIC, anon, service_role;
+GRANT EXECUTE ON FUNCTION public.review_reward_review_appeal(uuid, text, text)
+TO authenticated;
+
+-- No reward correction evidence can outlive a deleted member's
+-- nonmonetary journal. Existing account deletion removes XP first;
+-- the FK cascades correction rows; the following also handles future
+-- tombstone paths that preserve journal rows.
+CREATE OR REPLACE FUNCTION private.purge_deleted_member_reward_corrections()
+RETURNS trigger
+LANGUAGE plpgsql SECURITY DEFINER SET search_path = ''
+AS $$
+BEGIN
+  IF OLD.trial_deleted_at IS NULL AND NEW.trial_deleted_at IS NOT NULL THEN
+    DELETE FROM public.reward_corrections WHERE member_id = NEW.id;
+  END IF;
+  RETURN NEW;
+END;
+$$;
+REVOKE ALL ON FUNCTION private.purge_deleted_member_reward_corrections()
+FROM PUBLIC, anon, authenticated, service_role;
+CREATE TRIGGER purge_deleted_member_reward_corrections
+AFTER UPDATE OF trial_deleted_at ON public.profiles
+FOR EACH ROW EXECUTE FUNCTION private.purge_deleted_member_reward_corrections();
+
+DO $$
+BEGIN
+  IF has_table_privilege('authenticated', 'public.reward_corrections', 'INSERT')
+     OR has_table_privilege('authenticated', 'public.reward_corrections', 'UPDATE')
+     OR has_function_privilege('service_role', 'public.adjudicate_reward_review(uuid, text, text)', 'EXECUTE')
+     OR has_function_privilege('authenticated', 'public.adjudicate_reward_review_trusted(uuid, uuid, text, text)', 'EXECUTE')
+     OR has_function_privilege('anon', 'public.open_reward_feedback_review(uuid, text)', 'EXECUTE') THEN
+    RAISE EXCEPTION 'Reward-review mutation privileges leaked';
+  END IF;
+END;
+$$;
+
+COMMENT ON TABLE public.reward_corrections IS
+  'Audited nonmonetary correction evidence linked to immutable positive and negative entries in the existing XP journal';
+COMMENT ON FUNCTION public.adjudicate_reward_review(uuid, text, text) IS
+  'Session-bound independent review of feedback-specific recognition, with append-only XP compensation and derived badge status';
+
