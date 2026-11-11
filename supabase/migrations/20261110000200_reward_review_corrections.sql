@@ -765,3 +765,143 @@ COMMENT ON TABLE public.reward_corrections IS
 COMMENT ON FUNCTION public.adjudicate_reward_review(uuid, text, text) IS
   'Session-bound independent review of feedback-specific recognition, with append-only XP compensation and derived badge status';
 
+-- Consumer projections count only ACTIVE credited Feedback. Anti-farming
+-- weekly budgets intentionally count historic issuance to avoid farming a
+-- revolving reversal/reset loophole.
+CREATE OR REPLACE FUNCTION private.grant_feedback_achievements()
+RETURNS trigger
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = ''
+AS $$
+DECLARE
+  v_eligible_count integer;
+  v_definition record;
+  v_award_id uuid;
+BEGIN
+  IF NOT public.is_active_member(NEW.from_user_id) THEN RETURN NEW; END IF;
+
+  IF NOT EXISTS (
+    SELECT 1 FROM private.reward_awards a
+    WHERE a.recipient_user_id = NEW.from_user_id
+      AND a.source_event_type = 'feedback'
+      AND a.source_event_id = NEW.id
+      AND a.xp_transaction_id IS NOT NULL
+      AND private.active_feedback_reward_credit(NEW.id)
+  ) THEN
+    RETURN NEW;
+  END IF;
+
+  IF NOT EXISTS (
+    SELECT 1 FROM public.exchanges e
+    JOIN public.surrogacies s ON s.id = e.surrogacy_id
+    WHERE e.id = NEW.exchange_id
+      AND e.surrogacy_id = NEW.surrogacy_id
+      AND e.status IN ('completed', 'partial')
+      AND e.confirmation_state = 'confirmed'
+      AND NEW.from_user_id <> NEW.to_user_id
+      AND NEW.from_user_id = ANY(s.partner_ids)
+      AND NEW.to_user_id = ANY(s.partner_ids)
+  ) THEN RETURN NEW; END IF;
+
+  -- Already serialized by the XP-awarding trigger's profile/pair locks.
+  SELECT count(*)::integer INTO v_eligible_count
+  FROM private.reward_awards a
+  JOIN public.feedback f ON f.id = a.source_event_id
+  JOIN public.exchanges e ON e.id = f.exchange_id
+  WHERE a.recipient_user_id = NEW.from_user_id
+    AND a.source_event_type = 'feedback'
+    AND a.xp_transaction_id IS NOT NULL
+    AND f.from_user_id = NEW.from_user_id
+    AND e.surrogacy_id = f.surrogacy_id
+    AND e.status IN ('completed', 'partial')
+    AND e.confirmation_state = 'confirmed'
+    AND private.active_feedback_reward_credit(f.id);
+
+  FOR v_definition IN
+    SELECT code, rule_version
+    FROM public.achievement_definitions
+    WHERE metric = 'eligible_feedback'
+      AND enabled = true
+      AND target <= v_eligible_count
+    ORDER BY target, code
+  LOOP
+    v_award_id := NULL;
+    INSERT INTO public.member_achievements (
+      user_id, achievement_code, rule_version,
+      evidence_event_type, evidence_event_id, evidence_feedback_id
+    ) VALUES (
+      NEW.from_user_id, v_definition.code, v_definition.rule_version,
+      'feedback', NEW.id, NEW.id
+    )
+    ON CONFLICT (user_id, achievement_code) DO NOTHING
+    RETURNING id INTO v_award_id;
+
+    IF v_award_id IS NOT NULL THEN
+      INSERT INTO public.audit_events (
+        actor_id, action, target_id, target_type, after, timestamp
+      ) VALUES (
+        NEW.from_user_id, 'achievement_earned', v_award_id::text,
+        'member_achievement',
+        jsonb_build_object(
+          'code', v_definition.code,
+          'rule_version', v_definition.rule_version,
+          'evidence_feedback_id', NEW.id
+        ),
+        now()
+      );
+    END IF;
+  END LOOP;
+
+  RETURN NEW;
+END;
+$$;
+
+
+CREATE OR REPLACE FUNCTION public.get_my_reward_credit_summary()
+RETURNS TABLE (
+  credited_count integer,
+  excluded_count integer,
+  member_seven_day_limit integer,
+  pair_seven_day_limit integer
+)
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = ''
+AS $$
+DECLARE
+  v_actor uuid := auth.uid();
+BEGIN
+  IF v_actor IS NULL THEN
+    RAISE EXCEPTION 'Authenticated member required';
+  END IF;
+
+  RETURN QUERY
+  SELECT
+    (
+      SELECT count(*)::integer
+      FROM private.reward_awards a
+      JOIN public.feedback f ON f.id = a.source_event_id
+      JOIN public.exchanges e ON e.id = f.exchange_id
+      WHERE a.recipient_user_id = v_actor
+        AND a.source_event_type = 'feedback'
+        AND a.xp_transaction_id IS NOT NULL
+        AND f.from_user_id = v_actor
+        AND e.surrogacy_id = f.surrogacy_id
+        AND e.status IN ('completed', 'partial')
+        AND e.confirmation_state = 'confirmed'
+        AND private.active_feedback_reward_credit(f.id)
+    ),
+    (
+      SELECT count(*)::integer
+      FROM private.reward_credit_exclusions x
+      JOIN public.feedback f ON f.id = x.feedback_id
+      WHERE f.from_user_id = v_actor
+    ),
+    10,
+    4;
+END;
+$$;
+
+
+COMMIT;
