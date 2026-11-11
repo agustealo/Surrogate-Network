@@ -1177,8 +1177,53 @@ export type Database = {
           {
             foreignKeyName: "reports_reward_feedback_id_fkey"
             columns: ["reward_feedback_id"]
-            isOneToOne: true
+            isOneToOne: false
             referencedRelation: "feedback"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      restrictions: {
+        Row: {
+          active: boolean | null
+          created_at: string | null
+          expires_at: string | null
+          id: string
+          reason: string
+          type: Database["public"]["Enums"]["restriction_type"]
+          user_id: string
+        }
+        Insert: {
+          active?: boolean | null
+          created_at?: string | null
+          expires_at?: string | null
+          id?: string
+          reason: string
+          type: Database["public"]["Enums"]["restriction_type"]
+          user_id: string
+        }
+        Update: {
+          active?: boolean | null
+          created_at?: string | null
+          expires_at?: string | null
+          id?: string
+          reason?: string
+          type?: Database["public"]["Enums"]["restriction_type"]
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "restrictions_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "restrictions_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "public_profiles"
             referencedColumns: ["id"]
           },
         ]
@@ -1265,51 +1310,6 @@ export type Database = {
             columns: ["xp_transaction_id"]
             isOneToOne: true
             referencedRelation: "xp_transactions"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      restrictions: {
-        Row: {
-          active: boolean | null
-          created_at: string | null
-          expires_at: string | null
-          id: string
-          reason: string
-          type: Database["public"]["Enums"]["restriction_type"]
-          user_id: string
-        }
-        Insert: {
-          active?: boolean | null
-          created_at?: string | null
-          expires_at?: string | null
-          id?: string
-          reason: string
-          type: Database["public"]["Enums"]["restriction_type"]
-          user_id: string
-        }
-        Update: {
-          active?: boolean | null
-          created_at?: string | null
-          expires_at?: string | null
-          id?: string
-          reason?: string
-          type?: Database["public"]["Enums"]["restriction_type"]
-          user_id?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "restrictions_user_id_fkey"
-            columns: ["user_id"]
-            isOneToOne: false
-            referencedRelation: "profiles"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "restrictions_user_id_fkey"
-            columns: ["user_id"]
-            isOneToOne: false
-            referencedRelation: "public_profiles"
             referencedColumns: ["id"]
           },
         ]
