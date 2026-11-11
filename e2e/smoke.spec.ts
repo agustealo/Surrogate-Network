@@ -483,7 +483,8 @@ test.describe('Consumer trial smoke @smoke', () => {
       await expect(requester.getByText('10 XP', { exact: true })).toBeVisible()
       await expect(requester.getByLabel('First Reflection: Earned')).toBeVisible()
       await expect(requester.getByText('−10 XP correction', { exact: false })).toBeVisible()
-      await expect(requester.getByText('+10 XP restored', { exact: false })).toBeVisible()
+      await expect(requester.locator('section[aria-labelledby="reward-review-history-heading"]')
+        .getByText('+10 XP restored', { exact: false })).toBeVisible()
 
       // A separate disputed outcome must open the existing moderation queue,
       // never grant feedback/XP, and allow an independently reviewed appeal.
