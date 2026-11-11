@@ -163,7 +163,7 @@ export default async function RewardsPage() {
       <section aria-labelledby="reward-review-history-heading">
         <Card>
           <CardHeader>
-            <CardTitle id="reward-review-history-heading">Reward reviews and corrections</CardTitle>
+            <h2 id="reward-review-history-heading" className="text-2xl font-semibold leading-none tracking-tight">Reward reviews and corrections</h2>
             <CardDescription>Decisions affecting your own participation record, independent appeals, and compensating XP history. A review is not a misconduct finding.</CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
