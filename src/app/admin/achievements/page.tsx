@@ -57,7 +57,7 @@ export default async function AchievementAdministrationPage() {
         <h1 className="text-3xl font-bold">Achievement governance</h1>
         <p className="mt-2 max-w-3xl text-muted-foreground">
           Supervise nonmonetary achievement rules and inspect the verified award count.
-          All criteria are versioned in migrations; only new issuance may be paused or resumed here.
+          All criteria are versioned in migrations. New issuance can be paused here; individual reward reviews, badge revocations and restored credits are independently adjudicated under Moderation Reports.
         </p>
       </div>
 

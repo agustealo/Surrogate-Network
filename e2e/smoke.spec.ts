@@ -187,7 +187,7 @@ test.describe('Consumer trial smoke @smoke', () => {
   })
 
   test('two real members complete the canonical marketplace lifecycle and expose the showcase product surfaces', async ({ browser }) => {
-    test.setTimeout(240_000)
+    test.setTimeout(320_000)
 
     const runId = `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`
     const memberA: TrialMember = {
@@ -415,6 +415,77 @@ test.describe('Consumer trial smoke @smoke', () => {
       await expect(admin.getByRole('button', { name: 'Pause first_reflection achievement awards' }))
         .toBeVisible({ timeout: 20_000 })
 
+      const independentAdminMember: TrialMember = {
+        name: 'Taylor Appeal Reviewer',
+        email: `trial-appeal-reviewer-${runId}@test.local`,
+        password: 'Consumer-Trial-Appeal-321!',
+      }
+      await signUp(appealAdmin, independentAdminMember)
+      await provisionScreenshotAdmin(independentAdminMember.email)
+
+
+      // Reward review must use real Feedback evidence, independently
+      // reverse a nonmonetary journal entry and restore after a second
+      // reviewer accepts the affected member's appeal.
+      await provider.goto(surrogacyUrl)
+      await expect(provider.getByRole('heading', { name: "Question this Feedback's reward eligibility" }))
+        .toBeVisible({ timeout: 20_000 })
+      const rewardReviewReason = `Please verify this credited Feedback against the recorded participants and session context. Reference ${runId}.`
+      await provider.getByLabel('Evidence and reasoning').fill(rewardReviewReason)
+      await provider.getByRole('button', { name: 'Submit evidence review request' }).click()
+      await expect(provider.getByText('Reward review request:', { exact: false }))
+        .toBeVisible({ timeout: 20_000 })
+
+      await admin.goto('/admin/reports')
+      const rewardCaseCard = admin.getByText(rewardReviewReason, { exact: true })
+        .locator('..').locator('..')
+      await expect(rewardCaseCard).toBeVisible()
+      await rewardCaseCard.getByLabel('Evidence and reasoning').fill(
+        'Initial evidence review found insufficient support for this specific Feedback credit.',
+      )
+      await rewardCaseCard.getByRole('button', { name: 'Invalidate credited reward' }).click()
+      await expect(rewardCaseCard.getByText('Recorded outcome:', { exact: false }))
+        .toBeVisible({ timeout: 20_000 })
+
+      await requester.goto('/rewards')
+      await expect(requester.getByText('0 XP', { exact: true })).toBeVisible()
+      await expect(requester.getByLabel('First Reflection: Revoked')).toBeVisible()
+      await expect(requester.getByRole('heading', { name: 'Reward reviews and corrections' }))
+        .toBeVisible()
+      await requester.getByLabel('Evidence and reasoning').fill(
+        'The recorded session and related participant statements support reinstating my earned XP.',
+      )
+      await requester.getByRole('button', { name: 'Request independent appeal' }).click()
+      await expect(requester.getByText('Your appeal:', { exact: false }))
+        .toContainText('pending', { timeout: 20_000 })
+
+      await appealAdmin.goto('/admin/reports')
+      const independentRewardCard = appealAdmin
+        .getByText(rewardReviewReason, { exact: true })
+        .locator('..').locator('..')
+      await expect(independentRewardCard.getByText('Appeal: pending', { exact: true }))
+        .toBeVisible()
+      await independentRewardCard.getByLabel('Evidence and reasoning').fill(
+        'The appeal provides materially new participation records meriting a second independent determination.',
+      )
+      await independentRewardCard.getByRole('button', { name: 'Accept appeal and reopen' }).click()
+      await expect(independentRewardCard.getByText('Appeal: accepted', { exact: true }))
+        .toBeVisible({ timeout: 20_000 })
+
+      await independentRewardCard.getByLabel('Evidence and reasoning').fill(
+        'Independent reconsideration supports preserving this correctly earned feedback credit and achievement.',
+      )
+      await independentRewardCard.getByRole('button', { name: 'Dismiss review or restore credit' }).click()
+      await expect(independentRewardCard.getByText('Recorded outcome:', { exact: false }))
+        .toBeVisible({ timeout: 20_000 })
+
+      await requester.reload()
+      await expect(requester.getByText('10 XP', { exact: true })).toBeVisible()
+      await expect(requester.getByLabel('First Reflection: Earned')).toBeVisible()
+      await expect(requester.getByText('−10 XP correction', { exact: false })).toBeVisible()
+      await expect(requester.locator('section[aria-labelledby="reward-review-history-heading"]')
+        .getByText('+10 XP restored', { exact: false })).toBeVisible()
+
       // A separate disputed outcome must open the existing moderation queue,
       // never grant feedback/XP, and allow an independently reviewed appeal.
       await requester.goto(surrogacyUrl)
@@ -448,13 +519,6 @@ test.describe('Consumer trial smoke @smoke', () => {
       await requester.getByRole('button', { name: 'Submit appeal' }).click()
       await expect(requester.getByText('Your appeal:', { exact: false })).toBeVisible({ timeout: 20_000 })
 
-      const independentAdminMember: TrialMember = {
-        name: 'Taylor Appeal Reviewer',
-        email: `trial-appeal-reviewer-${runId}@test.local`,
-        password: 'Consumer-Trial-Appeal-321!',
-      }
-      await signUp(appealAdmin, independentAdminMember)
-      await provisionScreenshotAdmin(independentAdminMember.email)
       await appealAdmin.goto('/admin/reports')
       const independentCaseCard = appealAdmin.getByText('Disputed Exchange case', { exact: true }).locator('..').locator('..')
       await expect(independentCaseCard.getByText('Appeal: pending', { exact: true })).toBeVisible()
