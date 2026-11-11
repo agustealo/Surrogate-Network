@@ -212,7 +212,7 @@ Test the escalation path once before unrestricted launch.
 ### Deferred product features
 
 - Messaging stays outside primary navigation until real production behavior is complete.
-- Rewards/economic UX stays outside primary navigation until its authority and consumer experience are complete.
+- Nonmonetary Rewards & Progress is a shipped member route (`/rewards`), linked from Home and the account menu and shown in desktop primary navigation. Its XP journal, eligibility controls, achievements, corrections, and appeals are distinct from an economic/payment system. Mobile exposes Rewards through Home/account entry points rather than a dedicated bottom-navigation tab; verify mobile discovery and comprehension in human consumer acceptance before changing the tab architecture. Unimplemented monetary commerce, wallets, payouts, and earnings remain outside primary navigation.
 
 Do not add these systems merely to make the product look larger.
 
