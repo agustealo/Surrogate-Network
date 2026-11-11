@@ -29,7 +29,7 @@ verification.
 - public.achievement_definitions is the versioned award catalog. Stable
   criteria are migration-owned; the admin UI can only pause/resume future
   issuance. Existing rows are not converted into arbitrary editor scripts.
-- public.member_achievements is the authoritative member award journal,
+- public.member_achievements is the authoritative member achievement-state projection,
   with eligibility evidence identity, rule version, earned/revoked status,
   and earning date.
 - public.member_progression.achievements remains untouched legacy recognition.
@@ -59,9 +59,17 @@ Operators cannot edit rule criteria in place through the UI. Rule definition
 changes require a reviewed versioned migration, adversarial tests and
 rollout policy.
 
-Award revocation status is represented in the persistence model and UI,
-but a dedicated adjudication/review/appeals workflow is NOT yet shipped.
-No frontend may offer fake appeals or arbitrary moderation grants.
+Specific credited Feedback can now be challenged by its receiving counterpart,
+then independently adjudicated through the existing Reports queue.
+A substantiated case can revoke unsupported achievements and append a
+-10 XP correction to the existing journal. A member may appeal once within
+30 days, and a distinct administrator can reopen the case for a second
+determination and +10 restoration. See REWARD_CORRECTION_AUTHORITY.md
+for the exact evidence, role, privacy and idempotency limits.
+
+The member's Rewards page displays the actual case, rationale, correction
+journal and available appeal controls. No interface claims push/email
+notifications, payouts, automatic fraud verdicts or arbitrary awards.
 
 ## Privacy and recovery
 
@@ -85,9 +93,10 @@ collusion: cooperating members can still fabricate a series of Exchanges. Theref
 nonmonetary. They cannot enable payouts, material privileges, trust badges
 or high-value competitions.
 
-Before high-value rewards, add dispute timing and adjudication,
-independent collusion investigation, suspicious-account review, policy appeals,
-and independent adverse-event evaluation. Keep this follow-up within
+Before high-value rewards, add independent collusion investigation,
+identity and offline-evidence verification, independent adverse-event evaluation
+and robust operational monitoring. Existing dispute and reward-review appeals
+are not proof of identity or safety. Keep this follow-up within
 SN-ENG-02; do not mix it into SN-COM-01 Stripe/PayPal checkout.
 
 ## Verification contract
