@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { ReportModerationControls } from '@/components/admin/ReportModerationControls'
 import { ExchangeCaseDecisionControls, ExchangeCaseAppealReviewControls } from '@/components/admin/ExchangeCaseDecisionControls'
+import { RewardReviewDecisionControls, RewardAppealDecisionControls } from '@/components/rewards/RewardReviewControls'
 import { requireAdmin } from '@/application/actions/adminContext'
 import { createServiceClient } from '@/infrastructure/supabase/server'
 
@@ -16,7 +17,7 @@ export default async function AdminReportsPage() {
   const service = createServiceClient()
   const { data: reports, error } = await service
     .from('reports')
-    .select('id,reported_user_id,reporter_user_id,type,severity,description,status,created_at,resolved_at,action_taken,case_origin,exchange_id,adjudication,adjudicated_by')
+    .select('id,reported_user_id,reporter_user_id,type,severity,description,status,created_at,resolved_at,action_taken,case_origin,exchange_id,reward_feedback_id,adjudication,adjudicated_by')
     .order('created_at', { ascending: false })
     .limit(100)
 
@@ -28,7 +29,7 @@ export default async function AdminReportsPage() {
     : { data: [], error: null }
   if (profilesResult.error) throw new Error(`Unable to load moderation member labels: ${profilesResult.error.message}`)
 
-  const caseIds = (reports ?? []).filter((report) => report.case_origin === 'exchange_dispute').map((report) => report.id)
+  const caseIds = (reports ?? []).filter((report) => report.case_origin !== 'member_report').map((report) => report.id)
   const appealsResult = caseIds.length
     ? await service.from('report_appeals')
       .select('id,report_id,appellant_user_id,reason,status,decision_reason,reviewed_at')
@@ -73,9 +74,9 @@ export default async function AdminReportsPage() {
                 <div className="flex flex-wrap gap-2">
                   <Badge>{status}</Badge>
                   <Badge variant="outline">{report.severity}</Badge>
-                  <Badge variant="secondary">{report.case_origin === 'exchange_dispute' ? 'Exchange dispute' : report.type.replace(/_/g, ' ')}</Badge>
+                  <Badge variant="secondary">{report.case_origin === 'exchange_dispute' ? 'Exchange dispute' : report.case_origin === 'reward_review' ? 'Reward review' : report.type.replace(/_/g, ' ')}</Badge>
                 </div>
-                <CardTitle className="text-xl">{report.case_origin === 'exchange_dispute' ? 'Disputed Exchange case' : 'Report concerning ' + reportedName}</CardTitle>
+                <CardTitle className="text-xl">{report.case_origin === 'exchange_dispute' ? 'Disputed Exchange case' : report.case_origin === 'reward_review' ? 'Feedback reward eligibility review' : 'Report concerning ' + reportedName}</CardTitle>
                 <CardDescription>
                   Submitted by {reporterName} on {formatDateTime(report.created_at)}.
                 </CardDescription>
@@ -90,6 +91,12 @@ export default async function AdminReportsPage() {
                   <div className="rounded-md border p-3 text-sm">
                     <p className="font-medium">Exchange: {report.exchange_id}</p>
                     <p className="text-muted-foreground">The Exchange remains disputed regardless of case disposition. Neither decision creates two-party confirmation or rewards.</p>
+                  </div>
+                )}
+                {report.reward_feedback_id && (
+                  <div className="rounded-md border p-3 text-sm">
+                    <p className="font-medium">Linked Feedback: {report.reward_feedback_id}</p>
+                    <p className="text-muted-foreground">Evidence review may revoke or restore an existing 10-XP credit. Feedback and original journal history remain unchanged. Neither a bad rating nor an unconnected dispute is sufficient evidence.</p>
                   </div>
                 )}
                 {report.action_taken && (
@@ -107,6 +114,26 @@ export default async function AdminReportsPage() {
                         <p className="whitespace-pre-wrap text-sm">{appeal.reason}</p>
                         {appeal.decision_reason && <p className="text-sm text-muted-foreground">Review rationale: {appeal.decision_reason}</p>}
                         {appeal.status === 'pending' && <ExchangeCaseAppealReviewControls appealId={appeal.id} />}
+                      </div>
+                    ))}
+                  </div>
+                ) : report.case_origin === 'reward_review' ? (
+                  <div className="space-y-4">
+                    {report.adjudication && <p className="text-sm">Previous determination: <strong>{report.adjudication}</strong></p>}
+                    {(status === 'pending' || status === 'investigating') && (
+                      <RewardReviewDecisionControls reportId={report.id} />
+                    )}
+                    {(appealByCase.get(report.id) ?? []).map((appeal) => (
+                      <div key={appeal.id} className="space-y-3 rounded-md border p-4">
+                        <div className="flex flex-wrap items-center gap-2">
+                          <Badge variant="secondary">Appeal: {appeal.status}</Badge>
+                          <span className="text-xs text-muted-foreground">Member {appeal.appellant_user_id}</span>
+                        </div>
+                        <p className="whitespace-pre-wrap text-sm">{appeal.reason}</p>
+                        {appeal.decision_reason && <p className="text-sm text-muted-foreground">Review rationale: {appeal.decision_reason}</p>}
+                        {appeal.status === 'pending' && (
+                          <RewardAppealDecisionControls appealId={appeal.id} />
+                        )}
                       </div>
                     ))}
                   </div>
