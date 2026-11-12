@@ -16,6 +16,8 @@ describe('MemberNavigation', () => {
   it('renders each desktop destination once without a duplicate General group', () => {
     const { container } = render(<MemberNavigation />)
     const nav = screen.getByRole('navigation', { name: 'Member primary navigation' })
+    fireEvent.click(screen.getByRole('button', { name: 'My Activity' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Account' }))
 
     for (const [label, href] of [
       ['Home', '/home'],
