@@ -2,6 +2,9 @@ import { fireEvent, render, screen } from '@testing-library/react';
 import { MobileNavigation } from '@/components/member/MobileNavigation';
 import { getMemberActionHref } from '@/navigation';
 
+// Inspect real icon SVGs: the shared Jest setup stubs Lucide icons to null.
+jest.mock('lucide-react', () => jest.requireActual('lucide-react'));
+
 jest.mock('next/navigation', () => ({
   usePathname: () => '/home',
 }));
