@@ -21,18 +21,23 @@ export function ResetPasswordForm() {
       return
     }
 
+    if (pending) return
     setPending(true)
     setError(null)
-    const result = await completePasswordRecoveryAction({ password })
-    setPending(false)
+    try {
+      const result = await completePasswordRecoveryAction({ password })
+      if (!result.ok) {
+        setError(result.error)
+        return
+      }
 
-    if (!result.ok) {
-      setError(result.error)
-      return
+      router.replace('/home')
+      router.refresh()
+    } catch {
+      setError('We could not update your password right now. Please try again.')
+    } finally {
+      setPending(false)
     }
-
-    router.replace('/home')
-    router.refresh()
   }
 
   return (
