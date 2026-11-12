@@ -35,32 +35,38 @@ export function SignUpForm() {
   });
 
   const handleFormSubmit = async ({ name, email, password }: SignUpFormValues) => {
-    const supabase = createClient();
-    const { data, error } = await supabase.auth.signUp({
-      email,
-      password,
-      options: {
-        data: {
-          name,
-          trial_terms_version: TRIAL_POLICY_VERSION,
-          trial_privacy_version: TRIAL_POLICY_VERSION,
-          trial_age_confirmed: true,
+    try {
+      const supabase = createClient();
+      const { data, error } = await supabase.auth.signUp({
+        email,
+        password,
+        options: {
+          data: {
+            name,
+            trial_terms_version: TRIAL_POLICY_VERSION,
+            trial_privacy_version: TRIAL_POLICY_VERSION,
+            trial_age_confirmed: true,
+          },
         },
-      },
-    });
+      });
 
-    if (error) {
-      form.setError("root", { message: error.message });
-      return;
+      if (error) {
+        form.setError("root", { message: error.message });
+        return;
+      }
+
+      if (data.session) {
+        router.replace("/profile/create");
+        router.refresh();
+        return;
+      }
+
+      toast({ title: "Check your email", description: "Confirm your email address to finish creating your account." });
+    } catch {
+      form.setError("root", {
+        message: "We could not create your account right now. Please check your connection and try again.",
+      });
     }
-
-    if (data.session) {
-      router.replace("/profile/create");
-      router.refresh();
-      return;
-    }
-
-    toast({ title: "Check your email", description: "Confirm your email address to finish creating your account." });
   };
 
   return (
