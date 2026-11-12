@@ -9,6 +9,7 @@ import {
 import { Button } from '@/components/ui/button';
 import { BRAND_NAME } from '@/lib/brand';
 import { cn } from '@/lib/utils';
+import { toast } from '@/hooks/use-toast';
 import {
   Collapsible,
   CollapsibleContent,
@@ -33,11 +34,16 @@ export function MemberNavigation() {
     try {
       const { createClient } = await import('@/infrastructure/supabase/browser');
       const supabase = createClient();
-      await supabase.auth.signOut();
+      const { error } = await supabase.auth.signOut();
+      if (error) throw error;
       router.push('/login');
       router.refresh();
-    } catch (error) {
-      console.error('Logout error:', error);
+    } catch {
+      toast({
+        variant: 'destructive',
+        title: 'Sign out failed',
+        description: 'Your session may still be active. Please try again.',
+      });
     }
   };
 

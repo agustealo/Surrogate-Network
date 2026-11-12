@@ -10,6 +10,7 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel,
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { BRAND_NAME } from '@/lib/brand';
 import { routes } from '@/lib/routes';
+import { toast } from '@/hooks/use-toast';
 
 type HeaderIdentity = { name: string; email: string; avatarUrl?: string };
 
@@ -43,9 +44,18 @@ export function MemberHeader() {
   }, []);
 
   async function logout() {
-    await createClient().auth.signOut();
-    router.replace(routes.public.login);
-    router.refresh();
+    try {
+      const { error } = await createClient().auth.signOut();
+      if (error) throw error;
+      router.replace(routes.public.login);
+      router.refresh();
+    } catch {
+      toast({
+        variant: 'destructive',
+        title: 'Sign out failed',
+        description: 'Your session may still be active. Please try again.',
+      });
+    }
   }
 
   const initials = identity?.name?.split(/\s+/).map((part) => part[0]).join('').slice(0, 2).toUpperCase() || 'SN';

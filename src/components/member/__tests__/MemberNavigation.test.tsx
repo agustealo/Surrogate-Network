@@ -1,16 +1,26 @@
 import { act, fireEvent, render, screen, within } from '@testing-library/react'
 import { MemberNavigation } from '@/components/member/MemberNavigation'
 
+const mockSignOut = jest.fn()
+const mockPush = jest.fn()
+const mockRefresh = jest.fn()
+const mockToast = jest.fn()
 let pathname = '/home'
 
 jest.mock('next/navigation', () => ({
   usePathname: () => pathname,
-  useRouter: () => ({ push: jest.fn(), refresh: jest.fn() }),
+  useRouter: () => ({ push: mockPush, refresh: mockRefresh }),
 }))
+
+jest.mock('@/infrastructure/supabase/browser', () => ({
+  createClient: () => ({ auth: { signOut: mockSignOut } }),
+}))
+jest.mock('@/hooks/use-toast', () => ({ toast: (options: unknown) => mockToast(options) }))
 
 describe('MemberNavigation', () => {
   beforeEach(() => {
     pathname = '/home'
+    jest.clearAllMocks()
   })
 
   it('renders each desktop destination once without a duplicate General group', () => {
@@ -56,4 +66,34 @@ describe('MemberNavigation', () => {
     fireEvent.click(section)
     expect(section).toHaveAttribute('aria-expanded', 'false')
   })
+  it('does not redirect or claim success when sign-out returns an error', async () => {
+    mockSignOut.mockResolvedValue({ error: new Error('Provider unavailable') })
+    render(<MemberNavigation />)
+
+    await act(async () => {
+      fireEvent.click(screen.getByRole('button', { name: 'Logout' }))
+    })
+
+    expect(mockSignOut).toHaveBeenCalledTimes(1)
+    expect(mockPush).not.toHaveBeenCalled()
+    expect(mockRefresh).not.toHaveBeenCalled()
+    expect(mockToast).toHaveBeenCalledWith(expect.objectContaining({
+      variant: 'destructive',
+      title: 'Sign out failed',
+    }))
+  })
+
+  it('redirects after confirmed sign-out', async () => {
+    mockSignOut.mockResolvedValue({ error: null })
+    render(<MemberNavigation />)
+
+    await act(async () => {
+      fireEvent.click(screen.getByRole('button', { name: 'Logout' }))
+    })
+
+    expect(mockPush).toHaveBeenCalledWith('/login')
+    expect(mockRefresh).toHaveBeenCalledTimes(1)
+    expect(mockToast).not.toHaveBeenCalled()
+  })
+
 })
