@@ -17,11 +17,29 @@ jest.mock('lucide-react', () => {
   };
 });
 
+let mockPathname = '/home';
+
 jest.mock('next/navigation', () => ({
-  usePathname: () => '/home',
+  usePathname: () => mockPathname,
 }));
 
 describe('MobileNavigation', () => {
+  beforeEach(() => { mockPathname = '/home'; });
+
+  it.each(['/needs/create', '/offers/create'])('highlights Create on %s without opening its menu', (path) => {
+    mockPathname = path;
+    render(<MobileNavigation />);
+
+    const trigger = screen.getByRole('button', { name: 'Create' });
+    expect(trigger).toHaveClass('text-primary');
+    expect(trigger).toHaveAttribute('aria-expanded', 'false');
+  });
+
+  it('keeps Create inactive on unrelated member pages', () => {
+    render(<MobileNavigation />);
+    expect(screen.getByRole('button', { name: 'Create' })).toHaveClass('text-muted-foreground');
+  });
+
   it('opens the create menu and points to canonical create routes', () => {
     render(<MobileNavigation />);
 
