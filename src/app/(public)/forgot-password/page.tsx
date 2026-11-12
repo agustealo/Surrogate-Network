@@ -16,13 +16,20 @@ export default function ForgotPasswordPage() {
 
   async function submit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault()
+    if (pending) return
     setPending(true)
     setStatus(null)
-    const supabase = createClient()
-    const redirectTo = `${window.location.origin}${routes.public.authRecovery}`
-    const { error } = await supabase.auth.resetPasswordForEmail(email, { redirectTo })
-    setPending(false)
-    setStatus(error ? error.message : 'If an account exists for that email, a password reset link has been sent.')
+    try {
+      const supabase = createClient()
+      const redirectTo = `${window.location.origin}${routes.public.authRecovery}`
+      const { error } = await supabase.auth.resetPasswordForEmail(email, { redirectTo })
+      if (error) throw error
+      setStatus('If an account exists for that email, a password reset link has been sent.')
+    } catch {
+      setStatus('We could not send the reset link right now. Please try again.')
+    } finally {
+      setPending(false)
+    }
   }
 
   return (
