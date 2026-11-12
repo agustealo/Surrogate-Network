@@ -35,17 +35,23 @@ export function LoginForm() {
   });
 
   const handleFormSubmit = async ({ email, password }: LoginFormValues) => {
-    const supabase = createClient();
-    const { error } = await supabase.auth.signInWithPassword({ email, password });
+    try {
+      const supabase = createClient();
+      const { error } = await supabase.auth.signInWithPassword({ email, password });
 
-    if (error) {
-      form.setError("root", { message: error.message });
-      return;
+      if (error) {
+        form.setError("root", { message: error.message });
+        return;
+      }
+
+      toast({ title: "Welcome back", description: "You are signed in." });
+      router.replace("/home");
+      router.refresh();
+    } catch {
+      form.setError("root", {
+        message: "We could not sign you in right now. Please check your connection and try again.",
+      });
     }
-
-    toast({ title: "Welcome back", description: "You are signed in." });
-    router.replace("/home");
-    router.refresh();
   };
 
   return (
