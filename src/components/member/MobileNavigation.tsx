@@ -32,6 +32,10 @@ export function MobileNavigation() {
   const mobileItems = filterNavigationItems(memberNavigation, 'member', 'mobile');
   const mobileActions = filterNavigationActions(memberActions, 'member', 'mobile');
   const createActions = mobileActions.filter((action) => action.id !== 'create' && getMemberActionHref(action.id));
+  const createRouteActive = createActions.some((action) => {
+    const href = getMemberActionHref(action.id);
+    return href !== null && isRouteActive(pathname, href);
+  });
 
   useEffect(() => {
     setCreateMenuOpen(false);
@@ -93,7 +97,7 @@ export function MobileNavigation() {
               onClick={() => setCreateMenuOpen((open) => !open)}
               className={cn(
                 'flex h-full w-full flex-col items-center justify-center gap-1 rounded-sm px-1 text-[11px] transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-ring',
-                createMenuOpen ? 'text-primary' : 'text-muted-foreground hover:text-foreground'
+                createMenuOpen || createRouteActive ? 'text-primary' : 'text-muted-foreground hover:text-foreground'
               )}
             >
               <Plus className="h-5 w-5" aria-hidden="true" />
