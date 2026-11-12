@@ -3,7 +3,7 @@
 import { useEffect, useId, useRef, useState } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { Home, Search, Plus, MessageSquare, User } from 'lucide-react';
+import { Home, Search, Plus, ClipboardList, Handshake, User } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import {
   memberNavigation,
@@ -17,7 +17,8 @@ import {
 const ICON_MAP: Record<string, React.ElementType> = {
   home: Home,
   discover: Search,
-  connections: MessageSquare,
+  proposals: ClipboardList,
+  connections: Handshake,
   me: User,
 };
 

@@ -2,6 +2,21 @@ import { fireEvent, render, screen } from '@testing-library/react';
 import { MobileNavigation } from '@/components/member/MobileNavigation';
 import { getMemberActionHref } from '@/navigation';
 
+// Render lightweight SVG icons to assert mapping without loading Lucide's ESM bundle.
+jest.mock('lucide-react', () => {
+  const React = require('react');
+  const icon = (name: string) => (props: Record<string, unknown>) =>
+    React.createElement('svg', { ...props, 'data-icon': name });
+  return {
+    Home: icon('home'),
+    Search: icon('search'),
+    Plus: icon('plus'),
+    ClipboardList: icon('clipboard-list'),
+    Handshake: icon('handshake'),
+    User: icon('user'),
+  };
+});
+
 jest.mock('next/navigation', () => ({
   usePathname: () => '/home',
 }));
@@ -41,6 +56,20 @@ describe('MobileNavigation', () => {
     render(<MobileNavigation />);
     expect(screen.getByRole('navigation', { name: 'Member mobile navigation' })).toBeInTheDocument();
     expect(screen.getByRole('link', { name: 'Home' })).toHaveAttribute('aria-current', 'page');
+  });
+
+  it('uses distinct, truthful icons for Proposals and Connections', () => {
+    render(<MobileNavigation />);
+
+    const proposals = screen.getByRole('link', { name: 'Proposals' });
+    const connections = screen.getByRole('link', { name: 'Connections' });
+
+    expect(proposals).toHaveAttribute('href', '/proposals');
+    expect(connections).toHaveAttribute('href', '/surrogacies');
+    expect(proposals.querySelector('svg[data-icon="clipboard-list"]')).toBeInTheDocument();
+    expect(connections.querySelector('svg[data-icon="handshake"]')).toBeInTheDocument();
+    expect(proposals.querySelector('svg[data-icon="home"]')).not.toBeInTheDocument();
+    expect(connections.querySelector('svg[data-icon="message-square"]')).not.toBeInTheDocument();
   });
 
   it('keeps member create actions free of placeholder hrefs', () => {
