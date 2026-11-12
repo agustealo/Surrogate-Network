@@ -13,6 +13,28 @@ describe('MemberNavigation', () => {
     pathname = '/home'
   })
 
+  it('renders each desktop destination once without a duplicate General group', () => {
+    const { container } = render(<MemberNavigation />)
+    const nav = screen.getByRole('navigation', { name: 'Member primary navigation' })
+
+    for (const [label, href] of [
+      ['Home', '/home'],
+      ['Discover', '/discover'],
+      ['Proposals', '/proposals'],
+      ['Connections', '/surrogacies'],
+      ['Rewards & Progress', '/rewards'],
+      ['Settings', '/settings'],
+    ]) {
+      const links = within(nav).getAllByRole('link', { name: label })
+      expect(links).toHaveLength(1)
+      expect(links[0]).toHaveAttribute('href', href)
+    }
+
+    expect(within(nav).queryByRole('button', { name: 'General' })).not.toBeInTheDocument()
+    expect(container.querySelectorAll('a[href="/settings"]')).toHaveLength(1)
+    expect(within(nav).getByRole('link', { name: 'Home' })).toHaveAttribute('aria-current', 'page')
+  })
+
   it('opens the relevant section when a member navigates into it', () => {
     const view = render(<MemberNavigation />)
     expect(screen.getByRole('navigation', { name: 'Member primary navigation' })).toBeInTheDocument()
