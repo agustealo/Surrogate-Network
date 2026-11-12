@@ -6,6 +6,13 @@ const mockReplace = jest.fn()
 const mockRefresh = jest.fn()
 const mockToast = jest.fn()
 
+// The shared Jest Lucide stub omits LogIn, which this form renders.
+jest.mock('lucide-react', () => ({
+  LogIn: () => null,
+  Mail: () => null,
+  Lock: () => null,
+}))
+
 jest.mock('@/infrastructure/supabase/browser', () => ({
   createClient: () => ({ auth: { signInWithPassword: mockSignInWithPassword } }),
 }))
