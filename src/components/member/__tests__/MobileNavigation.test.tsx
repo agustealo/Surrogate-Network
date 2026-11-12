@@ -43,6 +43,20 @@ describe('MobileNavigation', () => {
     expect(screen.getByRole('link', { name: 'Home' })).toHaveAttribute('aria-current', 'page');
   });
 
+  it('uses distinct, truthful icons for Proposals and Connections', () => {
+    render(<MobileNavigation />);
+
+    const proposals = screen.getByRole('link', { name: 'Proposals' });
+    const connections = screen.getByRole('link', { name: 'Connections' });
+
+    expect(proposals).toHaveAttribute('href', '/proposals');
+    expect(connections).toHaveAttribute('href', '/surrogacies');
+    expect(proposals.querySelector('svg.lucide-clipboard-list')).toBeInTheDocument();
+    expect(connections.querySelector('svg.lucide-handshake')).toBeInTheDocument();
+    expect(proposals.querySelector('svg.lucide-house')).not.toBeInTheDocument();
+    expect(connections.querySelector('svg.lucide-message-square')).not.toBeInTheDocument();
+  });
+
   it('keeps member create actions free of placeholder hrefs', () => {
     expect(getMemberActionHref('create-need')).toBe('/needs/create');
     expect(getMemberActionHref('create-offer')).toBe('/offers/create');
