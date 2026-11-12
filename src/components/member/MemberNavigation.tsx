@@ -3,7 +3,7 @@
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import {
-  HeartHandshake, Settings, LogOut,
+  HeartHandshake, LogOut,
   ChevronDown, ChevronRight
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -70,7 +70,7 @@ export function MemberNavigation() {
           );
         })}
 
-        {Object.entries(grouped).map(([section, items]) => (
+        {Object.entries(grouped).filter(([section]) => section !== 'General').map(([section, items]) => (
           <NavSection
             key={section}
             section={section}
@@ -81,12 +81,6 @@ export function MemberNavigation() {
         ))}
       </nav>
       <div className="p-4 border-t space-y-2">
-        <Link href="/settings">
-          <Button variant="ghost" className="w-full justify-start">
-            <Settings className="h-4 w-4 mr-3" />
-            Settings
-          </Button>
-        </Link>
         <Button
           variant="ghost"
           className="w-full justify-start text-destructive"
