@@ -9,6 +9,7 @@ export type ConnectionExchangeSummary = {
   id: string
   status: string | null
   confirmation_state?: string | null
+  recorded_by?: string | null
 }
 
 export type ConnectionNextStep = {
@@ -29,22 +30,23 @@ export function connectionStatusLabel(status: string | null): string {
 
 export function getConnectionNextStep(input: {
   status: string | null
+  viewerId: string
   moments: ConnectionMomentSummary[]
   exchanges: ConnectionExchangeSummary[]
   reviewedExchangeIds: ReadonlySet<string>
 }): ConnectionNextStep {
-  const { status, moments, exchanges, reviewedExchangeIds } = input
+  const { status, viewerId, moments, exchanges, reviewedExchangeIds } = input
   const needsFeedback = exchanges.some(
     exchange => exchange.confirmation_state === 'confirmed'
       && (exchange.status === 'completed' || exchange.status === 'partial')
       && !reviewedExchangeIds.has(exchange.id),
   )
-  const awaitingConfirmation = exchanges.some(exchange => exchange.confirmation_state === 'pending')
-  if (awaitingConfirmation) {
+  const awaitingYourConfirmation = exchanges.some(exchange => exchange.confirmation_state === 'pending' && exchange.recorded_by !== viewerId)
+  if (awaitingYourConfirmation) {
     return {
       kind: 'confirmation',
-      heading: 'Exchange awaiting confirmation',
-      description: 'One participant reported an outcome. Both must confirm it before feedback or new rewards become available. Review the Exchange below.',
+      heading: 'Confirm a reported Exchange',
+      description: 'The other participant reported an outcome. Review it below and confirm or dispute what actually happened. Feedback and new rewards remain unavailable until the outcome is jointly verified.',
     }
   }
   if (needsFeedback) {
@@ -52,6 +54,15 @@ export function getConnectionNextStep(input: {
       kind: 'feedback',
       heading: 'Share feedback about your Exchange',
       description: 'A completed or partial Exchange is ready for your feedback below.',
+    }
+  }
+
+  const awaitingPeerConfirmation = exchanges.some(exchange => exchange.confirmation_state === 'pending' && exchange.recorded_by === viewerId)
+  if (awaitingPeerConfirmation) {
+    return {
+      kind: 'confirmation',
+      heading: 'Waiting for the other participant',
+      description: 'You reported an Exchange outcome. The other participant must confirm or dispute it before jointly verified feedback and new rewards can become available.',
     }
   }
 
