@@ -21,6 +21,17 @@ describe('MomentActions', () => {
 
   const renderActions = () => render(<MomentActions momentId="moment-1" surrogacyId="relationship-1" />)
 
+  it('explains all outcome choices and the separate peer-confirmation step', () => {
+    renderActions()
+    for (const name of ['Complete', 'Partial', 'Disputed', 'Cancel']) {
+      expect(screen.getByRole('button', { name })).toHaveAccessibleDescription(
+        /both members\s+have confirmed/i,
+      )
+    }
+    expect(screen.getByText(/Partial means only some of it happened/i)).toBeInTheDocument()
+    expect(screen.getByText(/Disputed means the outcome/i)).toBeInTheDocument()
+  })
+
   it('reports completion success only after a confirmed server result', async () => {
     mockCompleteMomentAction.mockResolvedValue({ ok: true, data: undefined })
     renderActions()
