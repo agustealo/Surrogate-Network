@@ -18,6 +18,10 @@ type SubmitFeedbackPageProps = {
 
 export default async function SubmitFeedbackPage({ searchParams }: SubmitFeedbackPageProps) {
   const { exchange: exchangeId } = await searchParams
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) redirect(routes.public.login)
+
   if (!exchangeId) {
     return (
       <PageWrapper title="Submit Feedback" className="mx-auto max-w-xl">
@@ -26,10 +30,6 @@ export default async function SubmitFeedbackPage({ searchParams }: SubmitFeedbac
       </PageWrapper>
     )
   }
-
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
-  if (!user) redirect(routes.public.login)
 
   const { data: exchange, error: exchangeError } = await supabase
     .from('exchanges')
@@ -46,6 +46,9 @@ export default async function SubmitFeedbackPage({ searchParams }: SubmitFeedbac
     .eq('id', exchange.surrogacy_id)
     .single()
   if (relationshipError || !relationship) throw new Error('Unable to resolve the Exchange relationship.')
+  if (!relationship.partner_ids.includes(user.id)) {
+    return <PageWrapper title="Feedback unavailable" className="mx-auto max-w-xl"><p className="text-muted-foreground">This Exchange is not available to your account.</p><Button asChild><Link href={routes.member.surrogacies}>Open Connections</Link></Button></PageWrapper>
+  }
 
   const otherUserId = relationship.partner_ids.find((partnerId) => partnerId !== user.id)
   if (!otherUserId) throw new Error('Relationship participant data is incomplete.')
