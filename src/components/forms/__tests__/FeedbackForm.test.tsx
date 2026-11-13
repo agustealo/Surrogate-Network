@@ -6,7 +6,12 @@ const mockRefresh = jest.fn()
 const mockToast = jest.fn()
 const mockOnSubmitted = jest.fn()
 
-jest.mock('lucide-react', () => ({ Loader2: () => null }))
+jest.mock('lucide-react', () => ({
+  Loader2: () => null,
+  Check: () => null,
+  ChevronDown: () => null,
+  ChevronUp: () => null,
+}))
 jest.mock('@/application/actions/connectionActions', () => ({
   submitFeedbackAction: (input: unknown) => mockSubmitFeedbackAction(input),
 }))
