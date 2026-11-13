@@ -44,30 +44,36 @@ export function FeedbackForm({ exchangeId, toUserId, companionName, onSubmitted 
   const [isSubmitting, setIsSubmitting] = useState(false)
 
   async function submit() {
+    if (isSubmitting) return
     setIsSubmitting(true)
     setError(null)
-    const result = await submitFeedbackAction({
-      exchangeId,
-      toUserId,
-      ...ratings,
-      comments: comments || undefined,
-      skillEndorsements: skills
-        .split(',')
-        .map((skill) => skill.trim())
-        .filter(Boolean)
-        .filter((skill, index, all) => all.indexOf(skill) === index)
-        .slice(0, 10),
-    })
-    setIsSubmitting(false)
+    try {
+      const result = await submitFeedbackAction({
+        exchangeId,
+        toUserId,
+        ...ratings,
+        comments: comments || undefined,
+        skillEndorsements: skills
+          .split(',')
+          .map((skill) => skill.trim())
+          .filter(Boolean)
+          .filter((skill, index, all) => all.indexOf(skill) === index)
+          .slice(0, 10),
+      })
 
-    if (!result.ok) {
-      setError(result.error)
-      return
+      if (!result.ok) {
+        setError(result.error)
+        return
+      }
+
+      toast({ title: 'Feedback submitted', description: `Your review of ${companionName} is recorded.` })
+      onSubmitted?.()
+      router.refresh()
+    } catch {
+      setError('Your feedback could not be submitted. Please check your connection and try again.')
+    } finally {
+      setIsSubmitting(false)
     }
-
-    toast({ title: 'Feedback submitted', description: `Your review of ${companionName} is recorded.` })
-    onSubmitted?.()
-    router.refresh()
   }
 
   return (
