@@ -27,6 +27,24 @@ describe('MomentScheduler', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Schedule Moment' }))
   }
 
+  it('associates every visible scheduling label with its input', () => {
+    render(<MomentScheduler surrogacyId="relationship-1" />)
+    expect(screen.getByLabelText('Date & time')).toHaveAttribute('type', 'datetime-local')
+    expect(screen.getByLabelText('Duration (minutes)')).toHaveAttribute('type', 'number')
+    expect(screen.getByLabelText('Location / method')).toHaveAttribute('maxlength', '300')
+    expect(screen.getByLabelText('Shared notes or expectations (optional)')).toHaveAttribute('maxlength', '2000')
+  })
+
+  it.each(['14', '1441', '30.5'])('rejects an invalid duration of %s before calling the server', (minutes) => {
+    render(<MomentScheduler surrogacyId="relationship-1" />)
+    fireEvent.change(screen.getByLabelText('Date & time'), { target: { value: '2026-12-10T10:00' } })
+    fireEvent.change(screen.getByLabelText('Duration (minutes)'), { target: { value: minutes } })
+    fireEvent.click(screen.getByRole('button', { name: 'Schedule Moment' }))
+    expect(screen.getByRole('alert')).toHaveTextContent('Duration must be a whole number between 15 and 1,440 minutes.')
+    expect(mockCreateMomentAction).not.toHaveBeenCalled()
+    expect(mockToast).not.toHaveBeenCalled()
+  })
+
   it('records scheduling success only after a successful server response', async () => {
     mockCreateMomentAction.mockResolvedValue({ ok: true, data: { id: 'moment-1' } })
     submitMoment()
