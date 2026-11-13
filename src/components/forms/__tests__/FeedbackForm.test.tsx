@@ -37,6 +37,28 @@ describe('FeedbackForm', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Submit Feedback' }))
   }
 
+  it('associates each rating and optional field with an accessible name', () => {
+    render(
+      <FeedbackForm
+        exchangeId="exchange-1"
+        toUserId="member-2"
+        companionName="Another Member"
+      />,
+    )
+
+    for (const label of [
+      'Reliability',
+      'Communication',
+      'Boundary respect',
+      'Consideration',
+      'Follow-through',
+    ]) {
+      expect(screen.getByRole('combobox', { name: label })).toBeInTheDocument()
+    }
+    expect(screen.getByRole('textbox', { name: 'Optional comments' })).toBeInTheDocument()
+    expect(screen.getByRole('textbox', { name: 'Skill endorsements' })).toBeInTheDocument()
+  })
+
   it('reports success and refreshes only on confirmed feedback submission', async () => {
     mockSubmitFeedbackAction.mockResolvedValue({ ok: true, data: undefined })
     submitFeedback()
