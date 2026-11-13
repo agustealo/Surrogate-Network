@@ -12,6 +12,14 @@ ALTER TABLE private.reward_credit_exclusions
     'member_weekly_limit', 'pair_weekly_limit', 'reciprocal_cycle_review'
   ));
 
+-- Index the directed Feedback edges and credited evidence lookup so the
+-- per-event review does not require a quadratic historical graph scan.
+CREATE INDEX IF NOT EXISTS feedback_reciprocal_cycle_edge_idx
+  ON public.feedback (from_user_id, to_user_id, id);
+CREATE INDEX IF NOT EXISTS reward_awards_reciprocal_cycle_source_idx
+  ON private.reward_awards (source_event_id, created_at)
+  WHERE source_event_type = 'feedback' AND xp_transaction_id IS NOT NULL;
+
 CREATE OR REPLACE FUNCTION private.award_eligible_feedback_xp()
 RETURNS trigger
 LANGUAGE plpgsql
