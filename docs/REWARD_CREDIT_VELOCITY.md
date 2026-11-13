@@ -107,3 +107,25 @@ Require clean Supabase migrations, recovery, generated type parity,
 security tests, production build, accessibility, canonical two-member
 browser tests, exact-head aggregate Quality Gate and separate deployed
 revision attestation.
+
+## Version 3: bounded reciprocal-cycle review
+
+The next nonmonetary credit-policy revision retains the member/pair seven-day
+caps and checks for a **directed three-member cycle** among previously credited
+Feedback edges. If A credited B and B credited C within seven days, a subsequent
+eligible C-to-A Feedback submission is saved but does not mint new XP or
+achievements. The reason `reciprocal_cycle_review`, policy version 3,
+and contemporaneous member/pair counts are written to the existing private
+credit-exclusion and operator audit records. Unrelated Feedback still earns
+credit when otherwise eligible. Duplicate Feedback retries remain idempotent.
+
+This is an *automatic review signal*, not proof of a shared identity, abuse,
+collusion, improper conduct, or a reason to restrict reporting or account access.
+Members continue to see only their own aggregate noncredit count. Existing XP
+entries are immutable and require existing independent reward-review authority
+to reverse. This rule cannot identify same-person multi-account activity or
+rings with no credited edges. Concurrent independent-pair writes may also form
+cycles before a committed graph edge is visible; distributed graph concurrency,
+false-positive appeals for policy-only exclusions, and broader ring analysis
+remain **open under issue #57**. Do not claim full collusion prevention or
+high-value rewards from this heuristic.
