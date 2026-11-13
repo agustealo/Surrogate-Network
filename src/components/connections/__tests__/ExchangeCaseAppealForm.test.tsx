@@ -43,7 +43,7 @@ describe('ExchangeCaseAppealForm', () => {
     mockSubmitExchangeCaseAppealAction.mockResolvedValue({ ok: false, error: 'Appeal period expired.' })
     submitAppeal()
     await waitFor(() => expect(screen.getByRole('alert')).toHaveTextContent('Appeal period expired.'))
-    expect(screen.getByRole('button', { name: 'Submit appeal' })).toBeEnabled()
+    await waitFor(() => expect(screen.getByRole('button', { name: 'Submit appeal' })).toBeEnabled())
     expect(mockToast).not.toHaveBeenCalled()
     expect(mockRefresh).not.toHaveBeenCalled()
   })
@@ -54,7 +54,7 @@ describe('ExchangeCaseAppealForm', () => {
     await waitFor(() => expect(screen.getByRole('alert')).toHaveTextContent(
       'Your appeal could not be submitted. Please check your connection and try again.',
     ))
-    expect(screen.getByRole('button', { name: 'Submit appeal' })).toBeEnabled()
+    await waitFor(() => expect(screen.getByRole('button', { name: 'Submit appeal' })).toBeEnabled())
     expect(screen.queryByText('Sensitive transport details')).not.toBeInTheDocument()
     expect(mockToast).not.toHaveBeenCalled()
     expect(mockRefresh).not.toHaveBeenCalled()
