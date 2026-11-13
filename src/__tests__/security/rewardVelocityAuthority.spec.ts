@@ -263,6 +263,57 @@ describe('SN-ENG-02B2A reward-credit velocity and historical integrity', () => {
     expect(audit.data?.[0].reason).toBe('member_weekly_limit')
   }, 120000)
 
+  it('withholds only cycle-closing XP in a three-account reciprocity ring while preserving Feedback', async () => {
+    const [first, second, third, outside] = await Promise.all([
+      createPrincipal('reward-cycle-first'),
+      createPrincipal('reward-cycle-second'),
+      createPrincipal('reward-cycle-third'),
+      createPrincipal('reward-cycle-outside'),
+    ])
+
+    const firstConnection = await createConnection(first, second)
+    const secondConnection = await createConnection(second, third)
+    const closingConnection = await createConnection(third, first)
+    const outsideConnection = await createConnection(third, outside)
+
+    const firstFeedback = await runEligibleReview(first, second, firstConnection)
+    const secondFeedback = await runEligibleReview(second, third, secondConnection)
+    const cycleFeedback = await runEligibleReview(third, first, closingConnection)
+    const unrelatedFeedback = await runEligibleReview(third, outside, outsideConnection)
+
+    const [firstSummary, secondSummary, thirdSummary, preserved, audit, journal, deniedPrivate] = await Promise.all([
+      summaryFor(first),
+      summaryFor(second),
+      summaryFor(third),
+      service.from('feedback').select('id').in('id', [
+        firstFeedback.id, secondFeedback.id, cycleFeedback.id, unrelatedFeedback.id,
+      ]),
+      service.from('audit_events').select('reason,after')
+        .eq('action', 'reward_credit_excluded').eq('target_id', cycleFeedback.id),
+      service.from('xp_transactions').select('id')
+        .eq('user_id', third.id).eq('source', 'feedback'),
+      third.client.schema('private').from('reward_credit_exclusions').select('*'),
+    ])
+
+    expect(firstSummary.credited_count).toBe(1)
+    expect(secondSummary.credited_count).toBe(1)
+    expect(thirdSummary).toMatchObject({ credited_count: 1, excluded_count: 1 })
+    expect(preserved.error).toBeNull()
+    expect(preserved.data).toHaveLength(4)
+    expect(audit.error).toBeNull()
+    expect(audit.data).toHaveLength(1)
+    expect(audit.data?.[0].reason).toBe('reciprocal_cycle_review')
+    expect(audit.data?.[0].after).toMatchObject({ policy_version: 3 })
+    expect(journal.error).toBeNull()
+    expect(journal.data).toHaveLength(1)
+    expect(deniedPrivate.error).toBeTruthy()
+
+    const retry = await submitReview(third, first, cycleFeedback.exchangeId)
+    expect(retry.error).toBeNull()
+    expect(retry.data).toBe(cycleFeedback.id)
+    expect((await summaryFor(third)).excluded_count).toBe(1)
+  }, 120000)
+
   it('serializes simultaneous two-direction Feedback at the last pair-credit slot', async () => {
     const peer = peers[3]
     const connectionId = await createConnection(secondReviewer, peer)
