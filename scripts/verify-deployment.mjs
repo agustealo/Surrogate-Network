@@ -28,8 +28,9 @@ function normalizeTarget(value) {
   if (target.username || target.password) fail('Target URL must not contain credentials')
   if (target.search || target.hash) fail('Target URL must not contain query parameters or fragments')
   if (target.pathname !== '/' && target.pathname !== '') fail('Target URL must point at the deployment origin, not a nested path')
-  if (target.protocol !== 'https:' && !(allowHttp && target.protocol === 'http:')) {
-    fail('Deployment verification requires HTTPS. Use --allow-http only for a local production-runtime proof.')
+  const isLoopback = ['localhost', '127.0.0.1', '[::1]'].includes(target.hostname.toLowerCase())
+  if (target.protocol !== 'https:' && !(allowHttp && target.protocol === 'http:' && isLoopback)) {
+    fail('Deployment verification requires HTTPS. --allow-http is restricted to local loopback production-runtime proofs.')
   }
 
   return target.origin
