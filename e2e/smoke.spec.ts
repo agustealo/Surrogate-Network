@@ -385,8 +385,8 @@ test.describe('Consumer trial smoke @smoke', () => {
 
       const feedbackTitle = requester.getByText(`Feedback for ${memberA.name}`, { exact: true })
       const feedbackCard = feedbackTitle.locator('..').locator('..')
-      await feedbackCard.getByPlaceholder('Optional comments').fill('Clear, thoughtful, and easy to plan with. We left the session with concrete next steps.')
-      await feedbackCard.getByPlaceholder('Skill endorsements, comma-separated').fill('communication, reliability, planning')
+      await feedbackCard.getByRole('textbox', { name: 'Optional comments' }).fill('Clear, thoughtful, and easy to plan with. We left the session with concrete next steps.')
+      await feedbackCard.getByRole('textbox', { name: 'Skill endorsements' }).fill('communication, reliability, planning')
       await feedbackCard.getByRole('button', { name: 'Submit Feedback' }).click()
       await expect(requester.getByText('You submitted feedback for this Exchange.', { exact: true })).toBeVisible({ timeout: 20_000 })
       await requester.getByText('Moments & Exchanges', { exact: true }).scrollIntoViewIfNeeded()
