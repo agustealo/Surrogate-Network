@@ -101,6 +101,7 @@ export default async function SurrogacyDetailPage({ params }: SurrogacyDetailPag
   const otherName = need.user_id === otherUserId ? need.user_name : offer.user_name
   const agreement = displayConnectionAgreement(relationship.agreement)
   const nextStep = getConnectionNextStep({
+    viewerId: user.id,
     status: relationship.status,
     moments: momentsResult.data ?? [],
     exchanges: exchangesResult.data ?? [],
