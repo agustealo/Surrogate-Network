@@ -14,29 +14,41 @@ export function MomentActions({ momentId, surrogacyId }: { momentId: string; sur
   const [error, setError] = useState<string | null>(null)
 
   async function complete(status: 'completed' | 'partial' | 'disputed') {
+    if (busy !== null) return
     setBusy(status === 'completed' ? 'complete' : status)
     setError(null)
-    const result = await completeMomentAction(momentId, surrogacyId, status)
-    setBusy(null)
-    if (!result.ok) {
-      setError(result.error)
-      return
+    try {
+      const result = await completeMomentAction(momentId, surrogacyId, status)
+      if (!result.ok) {
+        setError(result.error)
+        return
+      }
+      toast({ title: 'Exchange recorded', description: `This Moment is recorded as ${status}.` })
+      router.refresh()
+    } catch {
+      setError('The Moment could not be updated. Please check your connection and try again.')
+    } finally {
+      setBusy(null)
     }
-    toast({ title: 'Exchange recorded', description: `This Moment is recorded as ${status}.` })
-    router.refresh()
   }
 
   async function cancel() {
+    if (busy !== null) return
     setBusy('cancel')
     setError(null)
-    const result = await cancelMomentAction(momentId, surrogacyId)
-    setBusy(null)
-    if (!result.ok) {
-      setError(result.error)
-      return
+    try {
+      const result = await cancelMomentAction(momentId, surrogacyId)
+      if (!result.ok) {
+        setError(result.error)
+        return
+      }
+      toast({ title: 'Moment cancelled' })
+      router.refresh()
+    } catch {
+      setError('The Moment could not be cancelled. Please check your connection and try again.')
+    } finally {
+      setBusy(null)
     }
-    toast({ title: 'Moment cancelled' })
-    router.refresh()
   }
 
   return (
