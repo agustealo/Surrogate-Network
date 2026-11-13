@@ -4,6 +4,7 @@ import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { ProposalComposer } from '@/components/forms/ProposalComposer'
+import { OwnerListingNextSteps } from '@/components/shared/OwnerListingNextSteps'
 import { createClient } from '@/infrastructure/supabase/server'
 import { routes } from '@/lib/routes'
 
@@ -62,6 +63,7 @@ export default async function OfferDetailPage({ params }: OfferDetailPageProps) 
           <div className="flex flex-wrap gap-2">{(offer.boundaries ?? []).map((boundary) => <Badge key={boundary} variant="secondary">{boundary}</Badge>)}</div>
         </CardContent>
       </Card>
+      {isOwner && <OwnerListingNextSteps kind="Offer" />}
       {!isOwner && offer.status === 'active' && <ProposalComposer offerId={offer.id} options={needs ?? []} />}
       {!isOwner && offer.status !== 'active' && <p className="rounded-md border p-4 text-muted-foreground">This Offer is no longer accepting proposals.</p>}
     </div>

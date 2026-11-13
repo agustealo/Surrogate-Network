@@ -4,6 +4,7 @@ import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { ProposalComposer } from '@/components/forms/ProposalComposer'
+import { OwnerListingNextSteps } from '@/components/shared/OwnerListingNextSteps'
 import { createClient } from '@/infrastructure/supabase/server'
 import { routes } from '@/lib/routes'
 
@@ -62,6 +63,7 @@ export default async function NeedDetailPage({ params }: NeedDetailPageProps) {
           <div className="flex flex-wrap gap-2">{(need.tags ?? []).map((tag) => <Badge key={tag} variant="outline">#{tag}</Badge>)}</div>
         </CardContent>
       </Card>
+      {isOwner && <OwnerListingNextSteps kind="Need" />}
       {!isOwner && need.status === 'active' && <ProposalComposer needId={need.id} options={offers ?? []} />}
       {!isOwner && need.status !== 'active' && <p className="rounded-md border p-4 text-muted-foreground">This Need is no longer accepting proposals.</p>}
     </div>
