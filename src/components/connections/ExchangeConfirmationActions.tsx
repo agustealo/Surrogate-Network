@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useId, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { CheckCheck, Flag, Loader2 } from 'lucide-react'
 import { confirmExchangeAction } from '@/application/actions/connectionActions'
@@ -17,11 +17,13 @@ export function ExchangeConfirmationActions({
   reportedStatus: 'completed' | 'partial'
 }) {
   const router = useRouter()
+  const guidanceId = useId()
   const { toast } = useToast()
   const [pending, setPending] = useState<'confirm' | 'dispute' | null>(null)
   const [error, setError] = useState<string | null>(null)
 
   async function decide(decision: 'confirm' | 'dispute') {
+    if (pending !== null) return
     setError(null)
     setPending(decision)
     try {
@@ -47,16 +49,19 @@ export function ExchangeConfirmationActions({
   return (
     <div className="space-y-3 rounded-md border p-4" aria-label="Exchange confirmation">
       <p className="text-sm font-semibold">Your confirmation is required</p>
-      <p className="text-sm text-muted-foreground">
+      <p id={guidanceId} className="text-sm text-muted-foreground">
         The other participant reported this Exchange as {reportedStatus}.
-        Confirm only if that accurately reflects what happened. A disputed
-        outcome receives no new XP or achievements.
+        Confirm only if that matches what happened. Confirmation makes verified
+        feedback available. Disputing locks the reported outcome and prevents
+        feedback and new rewards for this Exchange. Choose carefully: the
+        decision cannot be changed through these controls.
       </p>
       <div className="flex flex-wrap gap-2">
         <Button
           type="button"
           size="sm"
           onClick={() => decide('confirm')}
+          aria-describedby={guidanceId}
           disabled={pending !== null}
         >
           {pending === 'confirm' ? <Loader2 className="mr-2 h-4 w-4 animate-spin" aria-hidden="true" /> : <CheckCheck className="mr-2 h-4 w-4" aria-hidden="true" />}
@@ -67,12 +72,14 @@ export function ExchangeConfirmationActions({
           size="sm"
           variant="destructive"
           onClick={() => decide('dispute')}
+          aria-describedby={guidanceId}
           disabled={pending !== null}
         >
           {pending === 'dispute' ? <Loader2 className="mr-2 h-4 w-4 animate-spin" aria-hidden="true" /> : <Flag className="mr-2 h-4 w-4" aria-hidden="true" />}
           Dispute outcome
         </Button>
       </div>
+      {pending && <p role="status" className="text-sm text-muted-foreground">Saving your Exchange decision…</p>}
       {error && <p className="text-sm text-destructive" role="alert">{error}</p>}
     </div>
   )
