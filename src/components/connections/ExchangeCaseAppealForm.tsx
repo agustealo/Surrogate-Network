@@ -18,17 +18,21 @@ export function ExchangeCaseAppealForm({ reportId }: { reportId: string }) {
   function submit() {
     setError(null)
     startTransition(async () => {
-      const result = await submitExchangeCaseAppealAction({ reportId, reason })
-      if (!result.ok) {
-        setError(result.error)
-        return
+      try {
+        const result = await submitExchangeCaseAppealAction({ reportId, reason })
+        if (!result.ok) {
+          setError(result.error)
+          return
+        }
+        setReason('')
+        toast({
+          title: 'Appeal submitted',
+          description: 'An independent administrator can now review your request.',
+        })
+        router.refresh()
+      } catch {
+        setError('Your appeal could not be submitted. Please check your connection and try again.')
       }
-      setReason('')
-      toast({
-        title: 'Appeal submitted',
-        description: 'An independent administrator can now review your request.',
-      })
-      router.refresh()
     })
   }
 
