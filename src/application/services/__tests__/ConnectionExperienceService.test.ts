@@ -2,8 +2,9 @@ import { connectionStatusLabel, displayConnectionAgreement, getConnectionNextSte
 
 const base = {
   status: 'active',
+  viewerId: 'member-1',
   moments: [] as { status: string; scheduled_time: string }[],
-  exchanges: [] as { id: string; status: string; confirmation_state?: string }[],
+  exchanges: [] as { id: string; status: string; confirmation_state?: string; recorded_by?: string }[],
   reviewedExchangeIds: new Set<string>(),
 }
 
@@ -34,9 +35,31 @@ describe('Connection experience projection', () => {
     expect(getConnectionNextStep({ ...base, exchanges, reviewedExchangeIds: new Set(['exchange-1']) }).kind).toBe('schedule')
   })
 
-  it('routes reported outcomes to peer confirmation before feedback', () => {
-    const pending = [{ id: 'exchange-3', status: 'completed', confirmation_state: 'pending' }]
-    expect(getConnectionNextStep({ ...base, exchanges: pending }).kind).toBe('confirmation')
+  it('gives the non-reporting participant a clear confirmation action', () => {
+    const pending = [{ id: 'exchange-3', status: 'completed', confirmation_state: 'pending', recorded_by: 'member-2' }]
+    const step = getConnectionNextStep({ ...base, exchanges: pending })
+    expect(step.kind).toBe('confirmation')
+    expect(step.heading).toBe('Confirm a reported Exchange')
+    expect(step.description).toMatch(/confirm or dispute/i)
+  })
+
+  it('tells the reporting participant to await their peer rather than self-confirm', () => {
+    const pending = [{ id: 'exchange-3', status: 'partial', confirmation_state: 'pending', recorded_by: 'member-1' }]
+    const step = getConnectionNextStep({ ...base, exchanges: pending })
+    expect(step.kind).toBe('confirmation')
+    expect(step.heading).toBe('Waiting for the other participant')
+    expect(step.description).toMatch(/other participant must confirm or dispute/i)
+  })
+
+  it('prioritizes actionable confirmed feedback over waiting for a separate Exchange', () => {
+    const exchanges = [
+      { id: 'exchange-3', status: 'completed', confirmation_state: 'pending', recorded_by: 'member-1' },
+      { id: 'exchange-4', status: 'completed', confirmation_state: 'confirmed', recorded_by: 'member-2' },
+    ]
+    expect(getConnectionNextStep({ ...base, exchanges }).kind).toBe('feedback')
+  })
+
+  it('does not offer confirmation of a legacy unverified Exchange', () => {
     const legacy = [{ id: 'exchange-3', status: 'completed', confirmation_state: 'legacy_unverified' }]
     expect(getConnectionNextStep({ ...base, exchanges: legacy }).kind).toBe('schedule')
   })
