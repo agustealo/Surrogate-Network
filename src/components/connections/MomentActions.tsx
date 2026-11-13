@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useId, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { Loader2 } from 'lucide-react'
 import { cancelMomentAction, completeMomentAction } from '@/application/actions/connectionActions'
@@ -9,6 +9,7 @@ import { useToast } from '@/hooks/use-toast'
 
 export function MomentActions({ momentId, surrogacyId }: { momentId: string; surrogacyId: string }) {
   const router = useRouter()
+  const guidanceId = useId()
   const { toast } = useToast()
   const [busy, setBusy] = useState<'complete' | 'partial' | 'disputed' | 'cancel' | null>(null)
   const [error, setError] = useState<string | null>(null)
@@ -53,11 +54,19 @@ export function MomentActions({ momentId, surrogacyId }: { momentId: string; sur
 
   return (
     <div className="space-y-2">
+      <p id={guidanceId} className="text-sm text-muted-foreground">
+        Record what actually happened: Complete means the Moment was fulfilled,
+        Partial means only some of it happened, and Disputed means the outcome
+        is contested. Cancel is for a Moment that will not take place. Recording
+        an outcome starts the Exchange process; it does not mean both members
+        have confirmed the result.
+      </p>
+      {busy && <p role="status" className="text-sm text-muted-foreground">Saving your Moment decision…</p>}
       <div className="flex flex-wrap gap-2">
-        <Button size="sm" onClick={() => complete('completed')} disabled={busy !== null}>{busy === 'complete' && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}Complete</Button>
-        <Button size="sm" variant="outline" onClick={() => complete('partial')} disabled={busy !== null}>Partial</Button>
-        <Button size="sm" variant="destructive" onClick={() => complete('disputed')} disabled={busy !== null}>Disputed</Button>
-        <Button size="sm" variant="ghost" onClick={cancel} disabled={busy !== null}>{busy === 'cancel' && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}Cancel</Button>
+        <Button size="sm" aria-describedby={guidanceId} onClick={() => complete('completed')} disabled={busy !== null}>{busy === 'complete' && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}Complete</Button>
+        <Button size="sm" variant="outline" aria-describedby={guidanceId} onClick={() => complete('partial')} disabled={busy !== null}>Partial</Button>
+        <Button size="sm" variant="destructive" aria-describedby={guidanceId} onClick={() => complete('disputed')} disabled={busy !== null}>Disputed</Button>
+        <Button size="sm" variant="ghost" aria-describedby={guidanceId} onClick={cancel} disabled={busy !== null}>{busy === 'cancel' && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}Cancel</Button>
       </div>
       {error && <p role="alert" className="text-sm text-destructive">{error}</p>}
     </div>
