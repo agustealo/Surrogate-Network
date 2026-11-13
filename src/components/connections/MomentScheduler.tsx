@@ -32,27 +32,33 @@ export function MomentScheduler({ surrogacyId }: { surrogacyId: string }) {
       return
     }
 
+    if (isSubmitting) return
     setIsSubmitting(true)
     setError(null)
-    const result = await createMomentAction({
-      surrogacyId,
-      scheduledTime: parsed.toISOString(),
-      duration,
-      location: location || undefined,
-      notes: notes || undefined,
-    })
-    setIsSubmitting(false)
+    try {
+      const result = await createMomentAction({
+        surrogacyId,
+        scheduledTime: parsed.toISOString(),
+        duration,
+        location: location || undefined,
+        notes: notes || undefined,
+      })
 
-    if (!result.ok) {
-      setError(result.error)
-      return
+      if (!result.ok) {
+        setError(result.error)
+        return
+      }
+
+      toast({ title: 'Moment scheduled', description: 'The Moment is now part of this relationship.' })
+      setScheduledTime('')
+      setLocation('')
+      setNotes('')
+      router.refresh()
+    } catch {
+      setError('The Moment could not be scheduled. Please check your connection and try again.')
+    } finally {
+      setIsSubmitting(false)
     }
-
-    toast({ title: 'Moment scheduled', description: 'The Moment is now part of this relationship.' })
-    setScheduledTime('')
-    setLocation('')
-    setNotes('')
-    router.refresh()
   }
 
   return (
