@@ -1,4 +1,6 @@
 import Link from 'next/link'
+import { redirect } from 'next/navigation'
+import { routes } from '@/lib/routes'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
@@ -11,10 +13,11 @@ function formatDate(value: string | null): string {
 export default async function MemberSurrogaciesPage() {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
+  if (!user) redirect(routes.public.login)
   const { data: surrogacies, error } = await supabase
     .from('surrogacies')
     .select('id,status,started_at,ended_at,need_id,offer_id')
-    .contains('partner_ids', [user!.id])
+    .contains('partner_ids', [user.id])
     .order('started_at', { ascending: false })
 
   if (error) throw new Error('Unable to load your connections.')
@@ -48,7 +51,7 @@ export default async function MemberSurrogaciesPage() {
     <div className="container mx-auto max-w-5xl px-4 py-6">
       <div className="mb-6 flex flex-wrap items-end justify-between gap-3">
         <div><h1 className="text-3xl font-bold">Connections</h1><p className="text-muted-foreground">Established relationships created from accepted proposals.</p></div>
-        <Button asChild variant="outline"><Link href="/proposals">View Proposals</Link></Button>
+        <Button asChild variant="outline"><Link href={routes.member.proposals}>View Proposals</Link></Button>
       </div>
       {connections.length ? (
         <div className="grid gap-4">
@@ -62,13 +65,13 @@ export default async function MemberSurrogaciesPage() {
                   <div className="flex flex-wrap items-center gap-2"><CardTitle>{needTitle} ↔ {offerTitle}</CardTitle><Badge>{item.status}</Badge></div>
                   <CardDescription>Established from the accepted Need and Offer.</CardDescription>
                 </CardHeader>
-                <CardContent className="flex flex-wrap items-center justify-between gap-3"><p className="text-sm text-muted-foreground">Started {formatDate(item.started_at)}</p><Button asChild><Link href={`/surrogacies/${item.id}`}>Open</Link></Button></CardContent>
+                <CardContent className="flex flex-wrap items-center justify-between gap-3"><p className="text-sm text-muted-foreground">Started {formatDate(item.started_at)}</p><Button asChild><Link href={routes.memberDynamic.surrogacy(item.id)}>Open Connection</Link></Button></CardContent>
               </Card>
             )
           })}
         </div>
       ) : (
-        <Card><CardContent className="py-10 text-center"><p className="text-muted-foreground">No active relationship yet. Accepting a proposal creates one atomically.</p><Button asChild className="mt-4"><Link href="/discover">Discover</Link></Button></CardContent></Card>
+        <Card><CardContent className="py-10 text-center"><p className="text-muted-foreground">No Connections yet. An accepted proposal creates a Connection that you can revisit here.</p><Button asChild className="mt-4"><Link href={routes.member.discover}>Explore Discover</Link></Button></CardContent></Card>
       )}
     </div>
   )
