@@ -36,6 +36,9 @@ describe('ProposalActions', () => {
     mockAcceptProposalAction.mockResolvedValue({ ok: true, data: { surrogacyId: 'relationship-1' } })
     render(<ProposalActions {...props} />)
     fireEvent.click(screen.getByRole('button', { name: 'Accept' }))
+    expect(mockAcceptProposalAction).not.toHaveBeenCalled()
+    expect(screen.getByText('Accept this proposal?')).toBeInTheDocument()
+    fireEvent.click(screen.getByRole('button', { name: 'Confirm acceptance' }))
     await waitFor(() => expect(mockPush).toHaveBeenCalledWith('/surrogacies/relationship-1'))
     expect(mockToast).toHaveBeenCalledWith(expect.objectContaining({ title: 'Proposal accepted' }))
     expect(mockRefresh).toHaveBeenCalledTimes(1)
@@ -45,6 +48,7 @@ describe('ProposalActions', () => {
     mockAcceptProposalAction.mockResolvedValue({ ok: false, error: 'Proposal is no longer active.' })
     render(<ProposalActions {...props} />)
     fireEvent.click(screen.getByRole('button', { name: 'Accept' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Confirm acceptance' }))
     await waitFor(() => expect(screen.getByRole('alert')).toHaveTextContent('Proposal is no longer active.'))
     expect(screen.getByRole('button', { name: 'Accept' })).toBeEnabled()
     expect(mockPush).not.toHaveBeenCalled()
@@ -63,6 +67,14 @@ describe('ProposalActions', () => {
       fireEvent.click(screen.getByRole('button', { name: 'Counter' }))
     }
     fireEvent.click(screen.getByRole('button', { name: buttonName }))
+    if (buttonName !== 'Send counter') {
+      const confirmLabel = buttonName === 'Accept'
+        ? 'Confirm acceptance'
+        : buttonName === 'Decline'
+          ? 'Confirm decline'
+          : 'Confirm withdrawal'
+      fireEvent.click(screen.getByRole('button', { name: confirmLabel }))
+    }
     await waitFor(() => expect(screen.getByRole('alert')).toHaveTextContent(
       'Your proposal action could not be completed. Please try again.',
     ))
@@ -72,4 +84,26 @@ describe('ProposalActions', () => {
     expect(mockRefresh).not.toHaveBeenCalled()
     expect(mockToast).not.toHaveBeenCalled()
   })
+  it.each([
+    ['Accept', 'Confirm acceptance', mockAcceptProposalAction, props],
+    ['Decline', 'Confirm decline', mockDeclineProposalAction, props],
+    ['Withdraw', 'Confirm withdrawal', mockWithdrawProposalAction, { ...props, currentUserId: 'proposer-1' }],
+  ])('explains %s before running its transition and allows cancelling review', (actionLabel, confirmLabel, action, options) => {
+    render(<ProposalActions {...options} />)
+    fireEvent.click(screen.getByRole('button', { name: actionLabel }))
+    expect(screen.getByRole('region', { name: 'Review proposal decision' })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: confirmLabel })).toBeEnabled()
+    expect(action).not.toHaveBeenCalled()
+    fireEvent.click(screen.getByRole('button', { name: 'Keep reviewing' }))
+    expect(screen.queryByRole('region', { name: 'Review proposal decision' })).not.toBeInTheDocument()
+    expect(action).not.toHaveBeenCalled()
+  })
+
+  it('explains that countering requires the other member to respond', () => {
+    render(<ProposalActions {...props} />)
+    fireEvent.click(screen.getByRole('button', { name: 'Counter' }))
+    expect(screen.getByText(/A counter does not create a Connection/)).toBeInTheDocument()
+    expect(mockCounterProposalAction).not.toHaveBeenCalled()
+  })
+
 })
