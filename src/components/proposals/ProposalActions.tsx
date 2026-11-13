@@ -51,49 +51,54 @@ export function ProposalActions({
     : (isProposer || isRecipient) && counteredByUserId !== currentUserId
 
   async function run(action: ActionName) {
+    if (busy !== null) return
     setBusy(action)
     setError(null)
 
-    if (action === 'accept') {
-      const result = await acceptProposalAction(proposalId)
-      setBusy(null)
+    try {
+      if (action === 'accept') {
+        const result = await acceptProposalAction(proposalId)
+        if (!result.ok) {
+          setError(result.error)
+          return
+        }
+        toast({ title: 'Proposal accepted', description: 'The relationship is now active.' })
+        router.push(`/surrogacies/${result.data.surrogacyId}`)
+        router.refresh()
+        return
+      }
+
+      const result = action === 'decline'
+        ? await declineProposalAction(proposalId)
+        : action === 'withdraw'
+          ? await withdrawProposalAction(proposalId)
+          : await counterProposalAction({
+              proposalId,
+              message: message || undefined,
+              proposedDate: proposedDate || undefined,
+              duration: duration || undefined,
+              frequency: frequency || undefined,
+              locationMethod: locationMethod || undefined,
+            })
+
       if (!result.ok) {
         setError(result.error)
         return
       }
-      toast({ title: 'Proposal accepted', description: 'The relationship is now active.' })
-      router.push(`/surrogacies/${result.data.surrogacyId}`)
+
+      const title = action === 'counter'
+        ? 'Proposal countered'
+        : action === 'decline'
+          ? 'Proposal declined'
+          : 'Proposal withdrawn'
+      toast({ title })
+      setCounterOpen(false)
       router.refresh()
-      return
+    } catch {
+      setError('Your proposal action could not be completed. Please try again.')
+    } finally {
+      setBusy(null)
     }
-
-    const result = action === 'decline'
-      ? await declineProposalAction(proposalId)
-      : action === 'withdraw'
-        ? await withdrawProposalAction(proposalId)
-        : await counterProposalAction({
-            proposalId,
-            message: message || undefined,
-            proposedDate: proposedDate || undefined,
-            duration: duration || undefined,
-            frequency: frequency || undefined,
-            locationMethod: locationMethod || undefined,
-          })
-
-    setBusy(null)
-    if (!result.ok) {
-      setError(result.error)
-      return
-    }
-
-    const title = action === 'counter'
-      ? 'Proposal countered'
-      : action === 'decline'
-        ? 'Proposal declined'
-        : 'Proposal withdrawn'
-    toast({ title })
-    setCounterOpen(false)
-    router.refresh()
   }
 
   return (
