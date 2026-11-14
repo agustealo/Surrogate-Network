@@ -108,7 +108,7 @@ export default async function RewardsPage() {
               Next rank at {nextMilestone.toLocaleString()} XP
             </p>
             <p className="text-xs text-muted-foreground">
-              Eligible, jointly confirmed Exchange feedback can earn 10 XP, regardless of rating. To discourage farming, up to {pairWeeklyLimit} credits per pair and {memberWeeklyLimit} per member are issued in a rolling seven-day window. You can still submit honest feedback after reaching those limits. XP has no cash value.
+              Eligible, jointly confirmed Exchange feedback can earn 10 XP, regardless of rating. To discourage farming, up to {pairWeeklyLimit} credits per pair and {memberWeeklyLimit} per member are issued in a rolling seven-day window. New credits can also be withheld when a three-member reciprocal Feedback pattern requires review. This does not establish misconduct. You can always submit honest Feedback. XP has no cash value.
             </p>
           </CardContent>
         </Card>
@@ -118,7 +118,7 @@ export default async function RewardsPage() {
             <CardDescription>Evidence-linked achievements only</CardDescription>
           </CardHeader>
           <CardContent className="space-y-2">
-            {uncreditedFeedbackCount > 0 && <p className="text-sm text-muted-foreground" role="status">{uncreditedFeedbackCount} saved {uncreditedFeedbackCount === 1 ? 'feedback submission has' : 'feedback submissions have'} not earned XP under the rolling participation limits. This is not a misconduct finding.</p>}
+            {uncreditedFeedbackCount > 0 && <p className="text-sm text-muted-foreground" role="status">{uncreditedFeedbackCount} saved {uncreditedFeedbackCount === 1 ? 'feedback submission has' : 'feedback submissions have'} not earned XP under reward eligibility safeguards, including weekly limits or reciprocal-cycle review. This is not a misconduct finding. A review signal is not a fraud verdict.</p>}
             <p className="text-3xl font-bold">{earnedCount} <span className="text-base font-normal text-muted-foreground">of {definitions.length} earned</span></p>
             <p className="text-xs text-muted-foreground">Completed Exchanges alone do not issue high-value awards. Recognition follows recorded eligible Feedback.</p>
           </CardContent>

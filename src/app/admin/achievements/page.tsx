@@ -119,8 +119,9 @@ export default async function AchievementAdministrationPage() {
             <CardDescription>
               A rolling seven-day window allows up to four rewarded Feedback submissions
               across a member pair, and ten per member. Additional Feedback is saved,
-              but does not create XP or new achievement milestones. Exclusions are
-              nonpunitive and are not findings of fraud.
+              but does not create XP or new achievement milestones. A three-member
+              reciprocal credit cycle may also withhold new XP for review. Exclusions
+              are nonpunitive signals, not findings of fraud.
             </CardDescription>
           </CardHeader>
           <CardContent>
@@ -133,7 +134,9 @@ export default async function AchievementAdministrationPage() {
                         ? 'Repeated pair credit limit'
                         : event.reason === 'member_weekly_limit'
                           ? 'Member weekly credit limit'
-                          : 'Credit policy exclusion'}
+                          : event.reason === 'reciprocal_cycle_review'
+                            ? 'Three-member reciprocal-cycle credit review'
+                            : 'Credit policy exclusion'}
                     </p>
                     <p className="text-xs text-muted-foreground">
                       Member {event.actor_id ?? 'Unavailable'} ·
